@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "serve:phone": "npm run build && vite preview --host 0.0.0.0 --port 4173",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
@@ -14,6 +15,8 @@
     "@sveltejs/kit": "^2.8.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^25.9.3",
+    "@types/qrcode": "^1.5.6",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.0.0",

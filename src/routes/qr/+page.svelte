@@ -52,7 +52,7 @@
       {code}
     </div>
     <p class="text-sm text-ink/80 mt-2">
-      Se la cassa non può scansionare, comunica questo codice.
+      Codice di riferimento da comunicare all'addetto in caso di assistenza.
     </p>
   </div>
 

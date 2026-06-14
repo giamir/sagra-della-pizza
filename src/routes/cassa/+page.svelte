@@ -22,6 +22,91 @@
   };
 
   const COVER_LINE_ID = '__cover__';
+  const CASHIER_SECTIONS = [
+    {
+      id: 'bevande',
+      label: 'Bevande',
+      itemIds: [
+        'acqua-naturale-litro',
+        'acqua-gassata-litro',
+        'acqua-frizzante',
+        'acqua-naturale',
+        'vino-bicchiere-rosso',
+        'vino-bicchiere-bianco',
+        'vino-frizzante',
+        'vino-bottiglia-rosso',
+        'vino-bottiglia-bianco',
+        'vino-bottiglia-frizzante',
+        'coca-cola-zero',
+        'coca-cola',
+        'fanta',
+        'sprite',
+        'the-limone',
+        'the-pesca',
+        'birra-spina-grande',
+        'birra-spina-piccola',
+        'ipa'
+      ]
+    },
+    {
+      id: 'griglia',
+      label: 'Griglia',
+      itemIds: [
+        'salsicce',
+        'bistecca-manzo-normale',
+        'bistecca-manzo-al-sangue',
+        'bistecca-manzo-ben-cotta',
+        'rosticciana',
+        'bistecca-maiale'
+      ]
+    },
+    {
+      id: 'crostini',
+      label: 'Crostini',
+      itemIds: ['crostini-romana', 'crostini-alici', 'crostini-misti']
+    },
+    { id: 'cecina', label: 'Cecina', itemIds: ['cecina'] },
+    {
+      id: 'cucina',
+      label: 'Cucina',
+      itemIds: ['lasagne', 'antipasto-toscano', 'prosciutto-melone', 'bruschetta']
+    },
+    {
+      id: 'contorni',
+      label: 'Contorni',
+      itemIds: ['fagioli', 'insalata', 'patatine', 'pomodori']
+    },
+    {
+      id: 'pizza',
+      label: 'Pizza',
+      itemIds: [
+        'margherita',
+        'prosciutto-cotto',
+        'cipolla',
+        'wurstel',
+        'salame-piccante',
+        'funghi',
+        'funghi-salsiccia',
+        'funghi-cotto',
+        'salsiccia',
+        'funghi-crudo',
+        'prosciutto-crudo',
+        'marinara',
+        'napoli',
+        'genova',
+        'pisana',
+        'salsiccia-cipolla',
+        'focaccina-sale-olio',
+        'focaccia-cotto',
+        'focaccia-crudo'
+      ]
+    },
+    {
+      id: 'bar',
+      label: 'Bar',
+      itemIds: ['caffe', 'dolce-sagra', 'caffe-corretto', 'spumante-bottiglia', 'spumante']
+    }
+  ] as const;
 
   let payload = $state<Payload | null>(null);
   let error = $state<string | null>(null);
@@ -36,7 +121,7 @@
   let rafId = 0;
 
   const menuLines = $derived.by(() => {
-    const index: Record<string, CashierLine & { categoryId: string; categoryLabel: string }> = {};
+    const index: Record<string, CashierLine> = {};
     for (const category of MENU.categories) {
       for (const group of category.groups) {
         for (const item of group.items) {
@@ -48,9 +133,7 @@
                 price: item.price,
                 qty: 0,
                 subtotal: 0,
-                known: true,
-                categoryId: category.id,
-                categoryLabel: category.label
+                known: true
               };
             }
           } else {
@@ -60,9 +143,7 @@
               price: item.price,
               qty: 0,
               subtotal: 0,
-              known: true,
-              categoryId: category.id,
-              categoryLabel: category.label
+              known: true
             };
           }
         }
@@ -182,39 +263,51 @@
   const categories = $derived.by(() => {
     if (!payload) return [];
 
-    const categoryMap = new Map<string, CashierCategory>();
+    const payloadLines = new Map(payload.l);
     const unknownLines: CashierLine[] = [];
 
     for (const [id, qty] of payload.l) {
-      const menuLine = menuLines[id];
-      if (!menuLine) {
+      if (!menuLines[id]) {
         unknownLines.push({ id, name: id, price: 0, qty, subtotal: 0, known: false });
-        continue;
       }
-
-      let category = categoryMap.get(menuLine.categoryId);
-      if (!category) {
-        category = {
-          id: menuLine.categoryId,
-          label: menuLine.categoryLabel,
-          lines: []
-        };
-        categoryMap.set(menuLine.categoryId, category);
-      }
-      category.lines.push({
-        id,
-        name: menuLine.name,
-        price: menuLine.price,
-        qty,
-        subtotal: menuLine.price * qty,
-        known: true
-      });
     }
 
-    const ordered = MENU.categories.flatMap((category) => {
-      const cashierCategory = categoryMap.get(category.id);
-      return cashierCategory ? [cashierCategory] : [];
+    const ordered: CashierCategory[] = CASHIER_SECTIONS.flatMap((section) => {
+      const sectionLines = section.itemIds.flatMap((id) => {
+        const qty = payloadLines.get(id);
+        const menuLine = menuLines[id];
+        if (!qty || !menuLine) return [];
+
+        return [
+          {
+            id,
+            name: menuLine.name,
+            price: menuLine.price,
+            qty,
+            subtotal: menuLine.price * qty,
+            known: true
+          }
+        ];
+      });
+
+      if (!sectionLines.length) return [];
+      return [{ id: section.id, label: section.label, lines: sectionLines }];
     });
+
+    const orderedIds = new Set<string>(CASHIER_SECTIONS.flatMap((section) => section.itemIds));
+    for (const [id, qty] of payload.l) {
+      const menuLine = menuLines[id];
+      if (menuLine && !orderedIds.has(id)) {
+        unknownLines.push({
+          id,
+          name: menuLine.name,
+          price: menuLine.price,
+          qty,
+          subtotal: menuLine.price * qty,
+          known: false
+        });
+      }
+    }
 
     if (unknownLines.length) {
       ordered.push({ id: 'unknown', label: 'Articoli non riconosciuti', lines: unknownLines });
@@ -226,7 +319,6 @@
   const lineIds = $derived([...lines.map((line) => line.id), COVER_LINE_ID]);
   const completedCount = $derived(lineIds.filter((id) => checkedLines[id]).length);
   const hasUnknownLines = $derived(lines.some((line) => !line.known));
-  const allLinesChecked = $derived(lineIds.length > 0 && completedCount === lineIds.length);
 
   const computedTotal = $derived.by(() => {
     if (!payload) return 0;
@@ -237,9 +329,7 @@
   const payloadTotalMatches = $derived(
     payload !== null && Math.round(computedTotal * 100) === payload.t
   );
-  const canComplete = $derived(
-    allLinesChecked && totalMatches && payloadTotalMatches && !hasUnknownLines
-  );
+  const canComplete = $derived(totalMatches && payloadTotalMatches && !hasUnknownLines);
 
   function completeOrder() {
     if (!canComplete) return;
@@ -319,7 +409,46 @@
       </div>
     </div>
 
-    <p class="text-ink/80 mb-4">Tocca ogni riga dopo averla inserita in MisterPOS.</p>
+    <p class="text-ink/80 mb-4">
+      Puoi toccare le righe mentre le inserisci in MisterPOS. Le spunte sono facoltative.
+    </p>
+
+    <section class="mb-5">
+      <h2 class="text-lg font-bold uppercase tracking-wide text-tomato mb-2">Coperto</h2>
+      <button
+        type="button"
+        onclick={() => toggleLine(COVER_LINE_ID)}
+        aria-pressed={checkedLines[COVER_LINE_ID] ?? false}
+        class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg"
+        class:bg-green-100={checkedLines[COVER_LINE_ID]}
+        class:opacity-60={checkedLines[COVER_LINE_ID]}
+      >
+        <span
+          class="w-11 h-11 shrink-0 rounded-lg border-2 flex items-center justify-center text-2xl font-bold"
+          class:bg-green-700={checkedLines[COVER_LINE_ID]}
+          class:border-green-700={checkedLines[COVER_LINE_ID]}
+          class:text-white={checkedLines[COVER_LINE_ID]}
+          class:border-leaf={!checkedLines[COVER_LINE_ID]}
+        >
+          {checkedLines[COVER_LINE_ID] ? '✓' : ''}
+        </span>
+        <span class="text-3xl font-bold tabular-nums w-14 shrink-0 text-tomato">
+          {payload.p}×
+        </span>
+        <span class="flex-1 min-w-0">
+          <span
+            class="block text-xl font-semibold text-ink leading-tight"
+            class:line-through={checkedLines[COVER_LINE_ID]}
+          >
+            Coperto
+          </span>
+          <span class="block text-sm text-leaf mt-1">
+            {formatEUR(MENU.coperto.perPersona)} cad. ·
+            {formatEUR(MENU.coperto.perPersona * payload.p)}
+          </span>
+        </span>
+      </button>
+    </section>
 
     {#each categories as category (category.id)}
       <section class="mb-5">
@@ -382,43 +511,6 @@
       </section>
     {/each}
 
-    <section class="mb-5">
-      <h2 class="text-lg font-bold uppercase tracking-wide text-tomato mb-2">Coperto</h2>
-      <button
-        type="button"
-        onclick={() => toggleLine(COVER_LINE_ID)}
-        aria-pressed={checkedLines[COVER_LINE_ID] ?? false}
-        class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg"
-        class:bg-green-100={checkedLines[COVER_LINE_ID]}
-        class:opacity-60={checkedLines[COVER_LINE_ID]}
-      >
-        <span
-          class="w-11 h-11 shrink-0 rounded-lg border-2 flex items-center justify-center text-2xl font-bold"
-          class:bg-green-700={checkedLines[COVER_LINE_ID]}
-          class:border-green-700={checkedLines[COVER_LINE_ID]}
-          class:text-white={checkedLines[COVER_LINE_ID]}
-          class:border-leaf={!checkedLines[COVER_LINE_ID]}
-        >
-          {checkedLines[COVER_LINE_ID] ? '✓' : ''}
-        </span>
-        <span class="text-3xl font-bold tabular-nums w-14 shrink-0 text-tomato">
-          {payload.p}×
-        </span>
-        <span class="flex-1 min-w-0">
-          <span
-            class="block text-xl font-semibold text-ink leading-tight"
-            class:line-through={checkedLines[COVER_LINE_ID]}
-          >
-            Pane e coperto
-          </span>
-          <span class="block text-sm text-leaf mt-1">
-            {formatEUR(MENU.coperto.perPersona)} cad. ·
-            {formatEUR(MENU.coperto.perPersona * payload.p)}
-          </span>
-        </span>
-      </button>
-    </section>
-
     <div class="bg-leaf text-cream-50 rounded-lg px-4 py-4 mb-4 flex items-center justify-between">
       <div class="text-xl font-semibold">Totale atteso</div>
       <div class="text-3xl font-bold tabular-nums">{formatEUR(computedTotal)}</div>
@@ -445,12 +537,12 @@
 
     <label
       class="flex items-center gap-3 bg-white border-2 border-leaf rounded-lg px-4 py-4 mb-4"
-      class:opacity-50={!allLinesChecked || !payloadTotalMatches || hasUnknownLines}
+      class:opacity-50={!payloadTotalMatches || hasUnknownLines}
     >
       <input
         type="checkbox"
         bind:checked={totalMatches}
-        disabled={!allLinesChecked || !payloadTotalMatches || hasUnknownLines}
+        disabled={!payloadTotalMatches || hasUnknownLines}
         class="w-7 h-7 shrink-0 accent-green-700"
       />
       <span class="text-lg font-bold text-ink">

@@ -3,14 +3,13 @@
   import { page } from '$app/state';
   import { count, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
-  import { encodeOrder, shortCode } from '$lib/utils/payload';
+  import { encodeOrder } from '$lib/utils/payload';
   import QRCode from 'qrcode';
 
   let canvasEl = $state<HTMLCanvasElement | null>(null);
 
   const t = $derived(total());
   const payload = $derived(encodeOrder(order, t));
-  const code = $derived(shortCode(payload));
   const url = $derived.by(() => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/cassa#p=${payload}`;
@@ -42,18 +41,6 @@
 
   <div class="mt-6 bg-white rounded-2xl p-4 shadow-xl border-4 border-leaf">
     <canvas bind:this={canvasEl} aria-label="Codice QR del tuo ordine"></canvas>
-  </div>
-
-  <div class="mt-6 text-center">
-    <div class="text-sm text-ink/70 uppercase tracking-wide">Codice</div>
-    <div
-      class="text-4xl font-bold font-mono tracking-widest text-leaf bg-cream-100 rounded-lg px-4 py-2 mt-1"
-    >
-      {code}
-    </div>
-    <p class="text-sm text-ink/80 mt-2">
-      Codice di riferimento da comunicare all'addetto in caso di assistenza.
-    </p>
   </div>
 
   <div class="mt-8 flex flex-col gap-3 w-full">

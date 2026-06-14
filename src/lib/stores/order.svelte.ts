@@ -6,9 +6,9 @@ const STORAGE_KEY = 'sagra-order-v1';
 const MENU = menu as Menu;
 
 function loadInitial(): OrderState {
-  if (typeof sessionStorage === 'undefined') return { people: 2, lines: {} };
+  if (typeof localStorage === 'undefined') return { people: 2, lines: {} };
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return { people: 2, lines: {} };
     const parsed = JSON.parse(raw) as OrderState;
     if (typeof parsed.people !== 'number' || typeof parsed.lines !== 'object') {
@@ -20,6 +20,8 @@ function loadInitial(): OrderState {
         (parsed.lines['bistecca-manzo-normale'] ?? 0) + legacySteakQty;
       delete parsed.lines['bistecca-manzo'];
     }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    sessionStorage.removeItem(STORAGE_KEY);
     return parsed;
   } catch {
     return { people: 2, lines: {} };
@@ -29,9 +31,9 @@ function loadInitial(): OrderState {
 export const order: OrderState = $state(loadInitial());
 
 export function persist() {
-  if (typeof sessionStorage === 'undefined') return;
+  if (typeof localStorage === 'undefined') return;
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(order));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(order));
   } catch {
     /* ignore */
   }

@@ -33,6 +33,6 @@
     </button>
   </div>
   <p class="text-base text-ink text-center max-w-md px-4">
-    Aggiungeremo <strong>€ 1,50</strong> di pane e coperto per persona.
+    Aggiungeremo <strong>€ 1,50</strong> di coperto per persona.
   </p>
 </div>

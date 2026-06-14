@@ -1,6 +1,6 @@
 <script lang="ts">
   import StepHeader from '$lib/components/StepHeader.svelte';
-  import { MENU, clearOrder, dec, inc, order, total } from '$lib/stores/order.svelte';
+  import { MENU, clearOrder, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
 
   const linesByCategory = $derived.by(() => {
@@ -44,80 +44,58 @@
 <StepHeader title="Il tuo ordine" subtitle="Controlla tutto prima di mostrare il QR alla cassa" />
 
 <div class="px-4 pb-32 max-w-2xl mx-auto w-full">
-  <div class="bg-cream-100 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
-    <div>
-      <div class="text-sm uppercase tracking-wide text-leaf font-semibold">Tavolo</div>
-      <div class="text-2xl font-bold text-ink">
-        {order.people} {order.people === 1 ? 'persona' : 'persone'}
-      </div>
-    </div>
-    <a
-      href="/ordina/persone"
-      class="text-base text-leaf underline underline-offset-4 min-h-12 inline-flex items-center px-2"
-    >
-      Modifica
-    </a>
-  </div>
-
   {#if isEmpty}
     <p class="text-center text-xl text-ink py-10">
       Non hai ancora scelto niente. Torna indietro e aggiungi qualcosa!
     </p>
   {:else}
+    <ul class="mb-3 border-y border-cream-200">
+      <li class="grid grid-cols-[2rem_1fr_auto_auto] items-center gap-2 py-1.5">
+        <div
+          class="text-sm font-bold tabular-nums text-leaf"
+          aria-label={`Quantità: ${order.people}`}
+        >
+          {order.people}×
+        </div>
+        <div class="min-w-0 truncate text-sm font-semibold text-ink">Coperto</div>
+        <a
+          href="/ordina/persone"
+          class="text-xs text-leaf underline underline-offset-2"
+        >
+          Modifica
+        </a>
+        <div class="text-sm font-bold tabular-nums text-ink">{formatEUR(copertoTot)}</div>
+      </li>
+    </ul>
+
     {#each linesByCategory as cat (cat.categoryId)}
-      <section class="mb-6">
-        <div class="flex items-baseline justify-between mb-2">
-          <h2 class="text-xl font-bold text-tomato">{cat.categoryLabel}</h2>
+      <section class="mb-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold uppercase tracking-wide text-tomato">
+            {cat.categoryLabel}
+          </h2>
           <a
             href={`/ordina/${cat.categoryId}`}
-            class="text-base text-leaf underline underline-offset-4 min-h-12 inline-flex items-center px-2"
+            class="text-xs text-leaf underline underline-offset-2 min-h-8 inline-flex items-center px-1"
           >
             Modifica
           </a>
         </div>
-        <ul class="bg-cream-100 rounded-lg divide-y divide-cream-200">
+        <ul class="divide-y divide-cream-200 border-y border-cream-200">
           {#each cat.lines as line (line.id)}
-            <li class="flex items-center gap-3 px-3 py-3">
-              <div class="flex-1 min-w-0">
-                <div class="text-lg font-semibold text-ink leading-tight">{line.name}</div>
-                <div class="text-sm text-leaf">
-                  {formatEUR(line.price)} × {line.qty} = <strong>{formatEUR(line.price * line.qty)}</strong>
-                </div>
+            <li class="grid grid-cols-[2rem_1fr_auto] items-center gap-2 py-1.5">
+              <div class="text-sm font-bold tabular-nums text-leaf" aria-label={`Quantità: ${line.qty}`}>
+                {line.qty}×
               </div>
-              <div class="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onclick={() => dec(line.id)}
-                  aria-label={`Diminuisci ${line.name}`}
-                  class="w-10 h-10 rounded-full bg-cream-50 border-2 border-leaf text-leaf text-xl font-bold"
-                >
-                  −
-                </button>
-                <div class="w-8 text-center text-xl font-bold tabular-nums">{line.qty}</div>
-                <button
-                  type="button"
-                  onclick={() => inc(line.id)}
-                  aria-label={`Aumenta ${line.name}`}
-                  class="w-10 h-10 rounded-full bg-tomato text-white text-xl font-bold"
-                >
-                  +
-                </button>
+              <div class="min-w-0 truncate text-sm font-semibold text-ink">{line.name}</div>
+              <div class="text-sm font-bold tabular-nums text-ink">
+                {formatEUR(line.price * line.qty)}
               </div>
             </li>
           {/each}
         </ul>
       </section>
     {/each}
-
-    <div class="bg-cream-100 rounded-lg px-4 py-3 mb-6 flex items-center justify-between">
-      <div>
-        <div class="text-lg font-semibold text-ink">Pane e coperto</div>
-        <div class="text-sm text-leaf">
-          {formatEUR(MENU.coperto.perPersona)} × {order.people}
-        </div>
-      </div>
-      <div class="text-xl font-bold tabular-nums">{formatEUR(copertoTot)}</div>
-    </div>
 
     <div class="bg-leaf text-cream-50 rounded-lg px-4 py-4 mb-6 flex items-center justify-between">
       <div class="text-xl font-semibold">Totale</div>

@@ -5,7 +5,18 @@ export function buildPriceIndex(menu: Menu): Record<string, { name: string; pric
   for (const cat of menu.categories) {
     for (const group of cat.groups) {
       for (const item of group.items) {
-        idx[item.id] = { name: item.name, price: item.price };
+        if (item.variants?.length) {
+          // Keep generic item IDs readable for QR codes created before variants existed.
+          idx[item.id] = { name: item.name, price: item.price };
+          for (const variant of item.variants) {
+            idx[variant.id] = {
+              name: `${item.name} - ${variant.label}`,
+              price: item.price
+            };
+          }
+        } else {
+          idx[item.id] = { name: item.name, price: item.price };
+        }
       }
     }
   }

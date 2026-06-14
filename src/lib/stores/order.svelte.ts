@@ -14,6 +14,12 @@ function loadInitial(): OrderState {
     if (typeof parsed.people !== 'number' || typeof parsed.lines !== 'object') {
       return { people: 2, lines: {} };
     }
+    const legacySteakQty = parsed.lines['bistecca-manzo'];
+    if (legacySteakQty > 0) {
+      parsed.lines['bistecca-manzo-normale'] =
+        (parsed.lines['bistecca-manzo-normale'] ?? 0) + legacySteakQty;
+      delete parsed.lines['bistecca-manzo'];
+    }
     return parsed;
   } catch {
     return { people: 2, lines: {} };

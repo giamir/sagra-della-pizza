@@ -2,6 +2,11 @@ export type MenuItem = {
   id: string;
   name: string;
   price: number;
+  description?: string;
+  variants?: Array<{
+    id: string;
+    label: string;
+  }>;
 };
 
 export type MenuGroup = {

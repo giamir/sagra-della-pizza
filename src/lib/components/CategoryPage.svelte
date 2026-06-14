@@ -19,7 +19,7 @@
     <ul class="bg-cream-50 rounded-lg">
       {#each group.items as item (item.id)}
         <li>
-          <ItemRow id={item.id} name={item.name} price={item.price} />
+          <ItemRow {item} />
         </li>
       {/each}
     </ul>

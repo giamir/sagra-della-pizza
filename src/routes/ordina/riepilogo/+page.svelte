@@ -2,9 +2,6 @@
   import StepHeader from '$lib/components/StepHeader.svelte';
   import { MENU, clearOrder, dec, inc, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
-  import { buildPriceIndex } from '$lib/utils/pricing';
-
-  const priceIdx = $derived(buildPriceIndex(MENU));
 
   const linesByCategory = $derived.by(() => {
     const out: Array<{
@@ -16,8 +13,22 @@
       const lines: Array<{ id: string; name: string; price: number; qty: number }> = [];
       for (const group of cat.groups) {
         for (const item of group.items) {
-          const qty = order.lines[item.id] ?? 0;
-          if (qty > 0) lines.push({ id: item.id, name: item.name, price: item.price, qty });
+          if (item.variants?.length) {
+            for (const variant of item.variants) {
+              const qty = order.lines[variant.id] ?? 0;
+              if (qty > 0) {
+                lines.push({
+                  id: variant.id,
+                  name: `${item.name} - ${variant.label}`,
+                  price: item.price,
+                  qty
+                });
+              }
+            }
+          } else {
+            const qty = order.lines[item.id] ?? 0;
+            if (qty > 0) lines.push({ id: item.id, name: item.name, price: item.price, qty });
+          }
         }
       }
       if (lines.length) out.push({ categoryLabel: cat.label, categoryId: cat.id, lines });

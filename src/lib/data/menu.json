@@ -42,8 +42,18 @@
         {
           "label": "Le Nostre Specialità",
           "items": [
-            { "id": "pisana", "name": "La Pisana", "price": 6.00 },
-            { "id": "genova", "name": "Genova (Bianca)", "price": 6.50 }
+            {
+              "id": "pisana",
+              "name": "La Pisana",
+              "price": 6.00,
+              "description": "Pomodoro, capperi e grana grattugiato"
+            },
+            {
+              "id": "genova",
+              "name": "Genova (Bianca)",
+              "price": 6.50,
+              "description": "Mozzarella, pesto genovese e pomodorini"
+            }
           ]
         },
         {
@@ -73,7 +83,17 @@
           "label": "",
           "items": [
             { "id": "salsicce", "name": "Salsicce (2 pezzi)", "price": 4.00 },
-            { "id": "bistecca-manzo", "name": "Bistecca di Manzo", "price": 18.00 },
+            {
+              "id": "bistecca-manzo",
+              "name": "Bistecca di Manzo",
+              "price": 18.00,
+              "description": "Scegli il tipo di cottura",
+              "variants": [
+                { "id": "bistecca-manzo-normale", "label": "Normale" },
+                { "id": "bistecca-manzo-al-sangue", "label": "Al sangue" },
+                { "id": "bistecca-manzo-ben-cotta", "label": "Ben cotta" }
+              ]
+            },
             { "id": "rosticciana", "name": "Rosticciana (3 pezzi)", "price": 5.50 },
             { "id": "bistecca-maiale", "name": "Bistecca di Maiale", "price": 7.00 }
           ]

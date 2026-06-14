@@ -8,14 +8,14 @@
         {
           "label": "",
           "items": [
-            { "id": "antipasto-toscano", "name": "Antipasto Toscano", "price": 7.00 },
+            { "id": "antipasto-toscano", "name": "Antipasto Toscano", "price": 8.00 },
             { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 },
-            { "id": "bruschetta", "name": "Bruschetta", "price": 3.50 },
-            { "id": "lasagne", "name": "Lasagne", "price": 6.00 },
-            { "id": "crostini-misti", "name": "Crostini Misti", "price": 5.00 },
-            { "id": "crostini-romana", "name": "Crostini alla Romana", "price": 4.50 },
-            { "id": "crostini-alici", "name": "Crostini alle Alici", "price": 4.50 },
-            { "id": "cecina", "name": "Cecina", "price": 3.00 }
+            { "id": "bruschetta", "name": "Bruschetta", "price": 2.50 },
+            { "id": "lasagne", "name": "Lasagne", "price": 5.50 },
+            { "id": "crostini-misti", "name": "Crostini Misti (2+2 pezzi)", "price": 4.00 },
+            { "id": "crostini-romana", "name": "Crostini alla Romana (4 pezzi)", "price": 4.00 },
+            { "id": "crostini-alici", "name": "Crostini alle Alici (4 pezzi)", "price": 4.00 },
+            { "id": "cecina", "name": "Cecina (1 fetta)", "price": 1.50 }
           ]
         }
       ]
@@ -27,40 +27,40 @@
         {
           "label": "Le Classiche",
           "items": [
-            { "id": "marinara", "name": "Marinara", "price": 5.50 },
-            { "id": "margherita", "name": "Margherita", "price": 6.50 },
-            { "id": "napoli", "name": "Napoli", "price": 7.50 },
-            { "id": "salsiccia", "name": "Salsiccia", "price": 8.00 },
-            { "id": "cipolla", "name": "Cipolla", "price": 6.50 },
-            { "id": "prosciutto-cotto", "name": "Prosciutto Cotto", "price": 7.50 },
-            { "id": "prosciutto-crudo", "name": "Prosciutto Crudo", "price": 8.50 },
-            { "id": "funghi", "name": "Funghi", "price": 7.50 },
-            { "id": "wurstel", "name": "Wurstel", "price": 7.00 },
-            { "id": "salame-piccante", "name": "Salame Piccante", "price": 8.00 }
+            { "id": "marinara", "name": "Marinara", "price": 4.50 },
+            { "id": "margherita", "name": "Margherita", "price": 5.50 },
+            { "id": "napoli", "name": "Napoli", "price": 6.00 },
+            { "id": "salsiccia", "name": "Salsiccia", "price": 6.00 },
+            { "id": "cipolla", "name": "Cipolla", "price": 6.00 },
+            { "id": "prosciutto-cotto", "name": "Prosciutto Cotto", "price": 6.00 },
+            { "id": "prosciutto-crudo", "name": "Prosciutto Crudo", "price": 6.50 },
+            { "id": "funghi", "name": "Funghi", "price": 6.00 },
+            { "id": "wurstel", "name": "Wurstel", "price": 6.00 },
+            { "id": "salame-piccante", "name": "Salamino Piccante", "price": 6.00 }
           ]
         },
         {
           "label": "Le Nostre Specialità",
           "items": [
-            { "id": "pisana", "name": "La Pisana", "price": 9.50 },
-            { "id": "genova", "name": "Genova", "price": 9.50 }
+            { "id": "pisana", "name": "La Pisana", "price": 6.00 },
+            { "id": "genova", "name": "Genova (Bianca)", "price": 6.50 }
           ]
         },
         {
           "label": "I Grandi Abbinamenti",
           "items": [
-            { "id": "funghi-salsiccia", "name": "Funghi e Salsiccia", "price": 9.00 },
-            { "id": "funghi-cotto", "name": "Funghi e Cotto", "price": 9.00 },
-            { "id": "funghi-crudo", "name": "Funghi e Crudo", "price": 9.50 },
-            { "id": "salsiccia-cipolla", "name": "Salsiccia e Cipolla", "price": 9.00 }
+            { "id": "funghi-salsiccia", "name": "Funghi e Salsiccia", "price": 6.50 },
+            { "id": "funghi-cotto", "name": "Funghi e Cotto", "price": 6.50 },
+            { "id": "funghi-crudo", "name": "Funghi e Crudo", "price": 7.00 },
+            { "id": "salsiccia-cipolla", "name": "Salsiccia e Cipolla", "price": 6.50 }
           ]
         },
         {
           "label": "I Ciaccini",
           "items": [
-            { "id": "focaccina-sale-olio", "name": "Focaccina Sale e Olio", "price": 3.50 },
-            { "id": "focaccia-cotto", "name": "Focaccia Bianca con Cotto", "price": 5.50 },
-            { "id": "focaccia-crudo", "name": "Focaccia Bianca con Crudo", "price": 6.50 }
+            { "id": "focaccina-sale-olio", "name": "Focaccina Sale e Olio (Ciaccino)", "price": 3.00 },
+            { "id": "focaccia-cotto", "name": "Focaccia Bianca con Cotto", "price": 4.50 },
+            { "id": "focaccia-crudo", "name": "Focaccia Bianca con Crudo", "price": 5.00 }
           ]
         }
       ]
@@ -72,10 +72,10 @@
         {
           "label": "",
           "items": [
-            { "id": "bistecca-manzo", "name": "Bistecca di Manzo", "price": 14.00 },
-            { "id": "bistecca-maiale", "name": "Bistecca di Maiale", "price": 10.00 },
-            { "id": "salsicce", "name": "Salsicce", "price": 7.00 },
-            { "id": "rosticciana", "name": "Rosticciana", "price": 9.00 }
+            { "id": "salsicce", "name": "Salsicce (2 pezzi)", "price": 4.00 },
+            { "id": "bistecca-manzo", "name": "Bistecca di Manzo", "price": 18.00 },
+            { "id": "rosticciana", "name": "Rosticciana (3 pezzi)", "price": 5.50 },
+            { "id": "bistecca-maiale", "name": "Bistecca di Maiale", "price": 7.00 }
           ]
         }
       ]
@@ -87,10 +87,10 @@
         {
           "label": "",
           "items": [
-            { "id": "fagioli", "name": "Fagioli al forno", "price": 4.00 },
-            { "id": "insalata", "name": "Insalata", "price": 3.50 },
-            { "id": "pomodori", "name": "Pomodori", "price": 3.50 },
-            { "id": "patatine", "name": "Patatine Fritte", "price": 4.00 }
+            { "id": "fagioli", "name": "Fagioli al Forno", "price": 3.50 },
+            { "id": "insalata", "name": "Insalata", "price": 2.50 },
+            { "id": "patatine", "name": "Patatine Fritte", "price": 3.50 },
+            { "id": "pomodori", "name": "Pomodori", "price": 2.50 }
           ]
         }
       ]
@@ -102,7 +102,7 @@
         {
           "label": "",
           "items": [
-            { "id": "dolce-sagra", "name": "I Dolci della Sagra", "price": 4.00 }
+            { "id": "dolce-sagra", "name": "Dolce", "price": 4.00 }
           ]
         }
       ]
@@ -114,36 +114,44 @@
         {
           "label": "Vino",
           "items": [
-            { "id": "vino-bicchiere-rosso", "name": "Vino Rosso (bicchiere)", "price": 2.50 },
-            { "id": "vino-bicchiere-bianco", "name": "Vino Bianco (bicchiere)", "price": 2.50 },
-            { "id": "vino-frizzante", "name": "Frizzante (bicchiere)", "price": 2.50 },
-            { "id": "vino-mezzo", "name": "Vino mezzo litro", "price": 6.00 },
-            { "id": "vino-litro", "name": "Vino un litro", "price": 10.00 }
+            { "id": "vino-bicchiere-rosso", "name": "Vino Rosso (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-bicchiere-bianco", "name": "Vino Bianco (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-frizzante", "name": "Vino Frizzante (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-bottiglia-rosso", "name": "Vino Rosso (bottiglia 0,75 L)", "price": 7.00 },
+            { "id": "vino-bottiglia-bianco", "name": "Vino Bianco (bottiglia 0,75 L)", "price": 7.00 },
+            { "id": "vino-bottiglia-frizzante", "name": "Vino Frizzante (bottiglia 0,75 L)", "price": 7.00 }
           ]
         },
         {
           "label": "Birra",
           "items": [
-            { "id": "birra-spina-piccola", "name": "Birra alla spina piccola", "price": 3.00 },
-            { "id": "birra-spina-media", "name": "Birra alla spina media", "price": 5.00 },
-            { "id": "ipa", "name": "Birra artigianale IPA", "price": 6.00 },
-            { "id": "lattina", "name": "Lattina", "price": 2.50 }
+            { "id": "birra-spina-grande", "name": "Birra alla Spina Grande", "price": 5.00 },
+            { "id": "birra-spina-piccola", "name": "Birra alla Spina Piccola", "price": 3.50 },
+            { "id": "ipa", "name": "Birra Artigianale IPA", "price": 6.00 }
           ]
         },
         {
           "label": "Analcoliche",
           "items": [
-            { "id": "acqua-naturale", "name": "Acqua naturale 0.5L", "price": 1.00 },
-            { "id": "acqua-frizzante", "name": "Acqua frizzante 0.5L", "price": 1.00 }
+            { "id": "acqua-naturale-litro", "name": "Acqua Naturale 1 L", "price": 1.50 },
+            { "id": "acqua-gassata-litro", "name": "Acqua Gassata 1 L", "price": 1.50 },
+            { "id": "acqua-frizzante", "name": "Acqua Minerale Piccola Gassata", "price": 1.00 },
+            { "id": "acqua-naturale", "name": "Acqua Minerale Piccola Naturale", "price": 1.00 },
+            { "id": "coca-cola-zero", "name": "Coca-Cola Zero (lattina)", "price": 2.50 },
+            { "id": "coca-cola", "name": "Coca-Cola (lattina)", "price": 2.50 },
+            { "id": "fanta", "name": "Fanta (lattina)", "price": 2.50 },
+            { "id": "sprite", "name": "Sprite (lattina)", "price": 2.50 },
+            { "id": "the-limone", "name": "Tè al Limone (lattina)", "price": 2.50 },
+            { "id": "the-pesca", "name": "Tè alla Pesca (lattina)", "price": 2.50 }
           ]
         },
         {
-          "label": "Caffè e Liquori",
+          "label": "Bar",
           "items": [
-            { "id": "caffe", "name": "Caffè", "price": 1.20 },
-            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 2.00 },
-            { "id": "amaro", "name": "Amaro / Grappa / Limoncello", "price": 3.00 },
-            { "id": "spumante", "name": "Spumante (calice)", "price": 3.00 }
+            { "id": "caffe", "name": "Caffè", "price": 1.00 },
+            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 1.50 },
+            { "id": "spumante-bottiglia", "name": "Spumante (bottiglia)", "price": 9.00 },
+            { "id": "spumante", "name": "Spumante (bicchiere)", "price": 2.00 }
           ]
         }
       ]

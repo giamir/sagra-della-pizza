@@ -25,7 +25,6 @@
 
   let payload = $state<Payload | null>(null);
   let error = $state<string | null>(null);
-  let pasted = $state('');
   let scanning = $state(false);
   let cameraRequiresHttps = $state(false);
   let checkedLines = $state<Record<string, boolean>>({});
@@ -81,7 +80,6 @@
   function resetOrder() {
     stopScan();
     payload = null;
-    pasted = '';
     error = null;
     checkedLines = {};
     totalMatches = false;
@@ -117,8 +115,7 @@
     error = null;
 
     if (!window.isSecureContext) {
-      error =
-        'La fotocamera richiede HTTPS. Apri la cassa da un indirizzo https:// oppure usa il caricamento manuale qui sotto.';
+      error = 'La fotocamera richiede HTTPS. Apri la cassa da un indirizzo https://.';
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -145,7 +142,7 @@
       } else if (scanError instanceof DOMException && scanError.name === 'NotFoundError') {
         error = 'Nessuna fotocamera disponibile su questo dispositivo.';
       } else {
-        error = 'Impossibile avviare la fotocamera. Riprova o usa il caricamento manuale.';
+        error = 'Impossibile avviare la fotocamera. Riprova.';
       }
       stopScan();
     }
@@ -270,7 +267,7 @@
           <p class="font-bold">La scansione non funziona su HTTP</p>
           <p class="mt-1">
             I browser dei telefoni consentono la fotocamera solo su HTTPS. Apri questa pagina da
-            un indirizzo <strong>https://</strong> oppure incolla il contenuto del QR qui sotto.
+            un indirizzo <strong>https://</strong>.
           </p>
         </div>
       {/if}
@@ -299,30 +296,6 @@
           Annulla scansione
         </button>
       {/if}
-
-      <div class="flex items-center gap-2 my-2">
-        <div class="flex-1 h-px bg-cream-200"></div>
-        <span class="text-sm text-ink/70 uppercase">oppure</span>
-        <div class="flex-1 h-px bg-cream-200"></div>
-      </div>
-
-      <label for="payload-input" class="text-lg font-semibold text-ink">
-        Incolla il contenuto o l'URL del QR
-      </label>
-      <textarea
-        id="payload-input"
-        bind:value={pasted}
-        rows="3"
-        class="w-full p-3 border-2 border-leaf rounded-lg text-base font-mono bg-white"
-        placeholder="es. https://.../cassa#p=..."
-      ></textarea>
-      <button
-        type="button"
-        onclick={() => tryLoad(pasted)}
-        class="w-full px-6 py-3 min-h-12 rounded-full bg-leaf text-cream-50 text-lg font-bold"
-      >
-        Carica ordine
-      </button>
 
       {#if error}
         <p class="text-tomato font-semibold text-center" role="alert">{error}</p>

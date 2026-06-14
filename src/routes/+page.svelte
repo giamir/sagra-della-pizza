@@ -6,8 +6,17 @@
 
 <div class="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
   <div class="max-w-md">
-    <p class="text-tomato text-lg font-semibold tracking-wide uppercase">Sagra della Pizza</p>
-    <h1 class="text-5xl sm:text-6xl font-bold text-leaf mt-2 leading-tight">Orentano</h1>
+    <img
+      src="/ente-carnevale-dei-bambini.png"
+      alt="Ente Carnevale dei Bambini"
+      width="256"
+      height="256"
+      class="w-28 sm:w-32 h-auto mx-auto mb-6 rounded-full mix-blend-multiply"
+    />
+    <h1 class="text-4xl sm:text-5xl font-bold text-leaf leading-tight">
+      Sagra della Pizza
+    </h1>
+    <p class="mt-3 text-xl font-semibold tracking-wide uppercase text-tomato">Orentano</p>
     <p class="mt-6 text-xl text-ink">
       Ordina mentre sei in fila. Mostra il QR alla cassa: il tuo ordine sarà già pronto!
     </p>

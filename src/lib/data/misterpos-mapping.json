@@ -1,0 +1,193 @@
+{
+  "cover": {
+    "articleKey": 11
+  },
+  "items": {
+    "antipasto-toscano": {
+      "articleKey": 12
+    },
+    "prosciutto-melone": {
+      "articleKey": 13
+    },
+    "bruschetta": {
+      "articleKey": 14
+    },
+    "lasagne": {
+      "articleKey": 15
+    },
+    "crostini-misti": {
+      "articleKey": 16
+    },
+    "crostini-romana": {
+      "articleKey": 17
+    },
+    "crostini-alici": {
+      "articleKey": 18
+    },
+    "cecina": {
+      "articleKey": 19
+    },
+    "marinara": {
+      "articleKey": 20
+    },
+    "margherita": {
+      "articleKey": 21
+    },
+    "napoli": {
+      "articleKey": 22
+    },
+    "salsiccia": {
+      "articleKey": 23
+    },
+    "cipolla": {
+      "articleKey": 24
+    },
+    "prosciutto-cotto": {
+      "articleKey": 25
+    },
+    "prosciutto-crudo": {
+      "articleKey": 26
+    },
+    "funghi": {
+      "articleKey": 27
+    },
+    "wurstel": {
+      "articleKey": 28
+    },
+    "salame-piccante": {
+      "articleKey": 29
+    },
+    "pisana": {
+      "articleKey": 30
+    },
+    "genova": {
+      "articleKey": 31
+    },
+    "funghi-salsiccia": {
+      "articleKey": 32
+    },
+    "funghi-cotto": {
+      "articleKey": 33
+    },
+    "funghi-crudo": {
+      "articleKey": 34
+    },
+    "salsiccia-cipolla": {
+      "articleKey": 35
+    },
+    "focaccina-sale-olio": {
+      "articleKey": 36
+    },
+    "focaccia-cotto": {
+      "articleKey": 37
+    },
+    "focaccia-crudo": {
+      "articleKey": 38
+    },
+    "salsicce": {
+      "articleKey": 39
+    },
+    "bistecca-manzo-normale": {
+      "articleKey": 40,
+      "description": "Bistecca di Manzo - Normale"
+    },
+    "bistecca-manzo-al-sangue": {
+      "articleKey": 41,
+      "description": "Bistecca di Manzo - Al sangue"
+    },
+    "bistecca-manzo-ben-cotta": {
+      "articleKey": 42,
+      "description": "Bistecca di Manzo - Ben cotta"
+    },
+    "rosticciana": {
+      "articleKey": 43
+    },
+    "bistecca-maiale": {
+      "articleKey": 44
+    },
+    "fagioli": {
+      "articleKey": 45
+    },
+    "insalata": {
+      "articleKey": 46
+    },
+    "patatine": {
+      "articleKey": 47
+    },
+    "pomodori": {
+      "articleKey": 48
+    },
+    "dolce-sagra": {
+      "articleKey": 49
+    },
+    "vino-bicchiere-rosso": {
+      "articleKey": 50
+    },
+    "vino-bicchiere-bianco": {
+      "articleKey": 51
+    },
+    "vino-frizzante": {
+      "articleKey": 52
+    },
+    "vino-bottiglia-rosso": {
+      "articleKey": 53
+    },
+    "vino-bottiglia-bianco": {
+      "articleKey": 54
+    },
+    "vino-bottiglia-frizzante": {
+      "articleKey": 55
+    },
+    "birra-spina-grande": {
+      "articleKey": 56
+    },
+    "birra-spina-piccola": {
+      "articleKey": 57
+    },
+    "ipa": {
+      "articleKey": 58
+    },
+    "acqua-naturale-litro": {
+      "articleKey": 59
+    },
+    "acqua-gassata-litro": {
+      "articleKey": 60
+    },
+    "acqua-frizzante": {
+      "articleKey": 61
+    },
+    "acqua-naturale": {
+      "articleKey": 62
+    },
+    "coca-cola-zero": {
+      "articleKey": 63
+    },
+    "coca-cola": {
+      "articleKey": 64
+    },
+    "fanta": {
+      "articleKey": 65
+    },
+    "sprite": {
+      "articleKey": 66
+    },
+    "the-limone": {
+      "articleKey": 67
+    },
+    "the-pesca": {
+      "articleKey": 68
+    },
+    "caffe": {
+      "articleKey": 69
+    },
+    "caffe-corretto": {
+      "articleKey": 70
+    },
+    "spumante-bottiglia": {
+      "articleKey": 71
+    },
+    "spumante": {
+      "articleKey": 72
+    }
+  }
+}

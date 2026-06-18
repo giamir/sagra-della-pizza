@@ -150,34 +150,6 @@
   let lastScannedCode = '';
   let lastScannedAt = 0;
 
-  let scanBuffer = '';
-  let scanBufferTimer = 0;
-
-  function handleKeyInput(event: KeyboardEvent) {
-    const target = event.target as HTMLElement;
-    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT') return;
-
-    if (event.key === 'Escape') {
-      scanBuffer = '';
-      clearTimeout(scanBufferTimer);
-      return;
-    }
-
-    if (event.key === 'Enter') {
-      clearTimeout(scanBufferTimer);
-      const raw = scanBuffer.trim();
-      scanBuffer = '';
-      if (raw.length > 0) void handleScannedCode(raw);
-      return;
-    }
-
-    if (event.key.length === 1) {
-      clearTimeout(scanBufferTimer);
-      scanBuffer += event.key;
-      scanBufferTimer = window.setTimeout(() => { scanBuffer = ''; }, 2000);
-    }
-  }
-
   const connectionBadge = $derived.by(() => {
     if (connectionState === 'connected') return 'MisterPOS';
     if (connectionState === 'checking') return 'POS verifica';
@@ -320,12 +292,7 @@
     }
     void checkMisterPosConnection();
     if (!payload) void startScan();
-    window.addEventListener('keydown', handleKeyInput);
-    return () => {
-      stopScan();
-      window.removeEventListener('keydown', handleKeyInput);
-      clearTimeout(scanBufferTimer);
-    };
+    return () => stopScan();
   });
 
   async function startScan() {

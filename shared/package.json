@@ -1,0 +1,13 @@
+{
+  "name": "@sagra/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/types.ts",
+    "./utils/payload": "./src/utils/payload.ts",
+    "./utils/pricing": "./src/utils/pricing.ts",
+    "./utils/currency": "./src/utils/currency.ts",
+    "./data/menu.json": "./src/data/menu.json"
+  }
+}

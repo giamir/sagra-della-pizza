@@ -1,0 +1,36 @@
+// Maps item IDs to kitchen station labels, in print order.
+export const STATION_ORDER = ['Pizza', 'Griglia', 'Crostini', 'Cecina', 'Cucina', 'Contorni', 'Bevande'];
+
+const MAP: Record<string, string> = {
+  // Pizza
+  margherita: 'Pizza', 'prosciutto-cotto': 'Pizza', cipolla: 'Pizza', wurstel: 'Pizza',
+  'salame-piccante': 'Pizza', funghi: 'Pizza', 'funghi-salsiccia': 'Pizza', 'funghi-cotto': 'Pizza',
+  salsiccia: 'Pizza', 'funghi-crudo': 'Pizza', 'prosciutto-crudo': 'Pizza', marinara: 'Pizza',
+  napoli: 'Pizza', genova: 'Pizza', pisana: 'Pizza', 'salsiccia-cipolla': 'Pizza',
+  'focaccina-sale-olio': 'Pizza', 'focaccia-cotto': 'Pizza', 'focaccia-crudo': 'Pizza',
+  // Griglia
+  salsicce: 'Griglia', 'bistecca-manzo-normale': 'Griglia', 'bistecca-manzo-al-sangue': 'Griglia',
+  'bistecca-manzo-ben-cotta': 'Griglia', rosticciana: 'Griglia', 'bistecca-maiale': 'Griglia',
+  // Crostini
+  'crostini-romana': 'Crostini', 'crostini-alici': 'Crostini', 'crostini-misti': 'Crostini',
+  // Cecina
+  cecina: 'Cecina',
+  // Cucina
+  lasagne: 'Cucina', 'antipasto-toscano': 'Cucina', 'prosciutto-melone': 'Cucina', bruschetta: 'Cucina',
+  // Contorni
+  fagioli: 'Contorni', insalata: 'Contorni', patatine: 'Contorni', pomodori: 'Contorni',
+  // Bevande
+  'acqua-naturale-litro': 'Bevande', 'acqua-gassata-litro': 'Bevande', 'acqua-frizzante': 'Bevande',
+  'acqua-naturale': 'Bevande', 'vino-bicchiere-rosso': 'Bevande', 'vino-bicchiere-bianco': 'Bevande',
+  'vino-frizzante': 'Bevande', 'vino-bottiglia-rosso': 'Bevande', 'vino-bottiglia-bianco': 'Bevande',
+  'vino-bottiglia-frizzante': 'Bevande', 'coca-cola-zero': 'Bevande', 'coca-cola': 'Bevande',
+  fanta: 'Bevande', sprite: 'Bevande', 'the-limone': 'Bevande', 'the-pesca': 'Bevande',
+  'birra-spina-grande': 'Bevande', 'birra-spina-piccola': 'Bevande', ipa: 'Bevande',
+  // Bar (same station as Bevande)
+  caffe: 'Bevande', 'dolce-sagra': 'Bevande', 'caffe-corretto': 'Bevande',
+  'spumante-bottiglia': 'Bevande', spumante: 'Bevande',
+};
+
+export function getStation(itemId: string): string {
+  return MAP[itemId] ?? 'Altro';
+}

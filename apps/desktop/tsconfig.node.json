@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "outDir": "dist-electron",
+    "types": ["electron-vite/node", "node"],
+    "paths": {
+      "@sagra/shared/types": ["../../shared/src/types.ts"],
+      "@sagra/shared/utils/payload": ["../../shared/src/utils/payload.ts"],
+      "@sagra/shared/utils/pricing": ["../../shared/src/utils/pricing.ts"],
+      "@sagra/shared/utils/currency": ["../../shared/src/utils/currency.ts"],
+      "@sagra/shared/data/menu.json": ["../../shared/src/data/menu.json"]
+    }
+  },
+  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"]
+}

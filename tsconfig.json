@@ -9,15 +9,6 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "bundler",
-    "paths": {
-      "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"],
-      "@sagra/shared/types": ["./shared/src/types.ts"],
-      "@sagra/shared/utils/payload": ["./shared/src/utils/payload.ts"],
-      "@sagra/shared/utils/pricing": ["./shared/src/utils/pricing.ts"],
-      "@sagra/shared/utils/currency": ["./shared/src/utils/currency.ts"],
-      "@sagra/shared/data/menu.json": ["./shared/src/data/menu.json"]
-    }
+    "moduleResolution": "bundler"
   }
 }

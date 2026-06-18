@@ -90,7 +90,7 @@
           max="65535"
           class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
         />
-        <span class="text-xs text-gray-400">Configurata sul terminale (default Ingenico: 7500)</span>
+        <span class="text-xs text-gray-400">Configurata sul terminale (Nexi SmartPOS: 8220)</span>
       </label>
     {/if}
 

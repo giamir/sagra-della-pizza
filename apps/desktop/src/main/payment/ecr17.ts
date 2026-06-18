@@ -74,7 +74,7 @@ export type ECR17Config = {
 export const ECR17_DEFAULTS: ECR17Config = {
   enabled: false,
   host: '192.168.1.50',
-  port: 7500,
+  port: 8220,
 };
 
 /**

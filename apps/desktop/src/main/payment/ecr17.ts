@@ -3,7 +3,7 @@
  *
  * Frame format:  STX | field1 | FS | field2 | FS | … | ETX | LRC
  *   STX = 0x02, ETX = 0x03, FS = 0x1C
- *   LRC = XOR of field bytes only (STX excluded, ETX excluded)
+ *   LRC = XOR(message bytes + ETX) with initial value 0x7F  [Nexi ECR17 spec]
  *
  * Purchase request fields:
  *   [0] = "01"            – transaction type (Vendita)
@@ -28,7 +28,7 @@ function hex(buf: Buffer): string {
 }
 
 function lrc(data: Buffer): number {
-  let v = 0;
+  let v = 0x7F;
   for (let i = 0; i < data.length; i++) v ^= data[i];
   return v;
 }
@@ -42,8 +42,8 @@ function buildFrame(fields: string[]): Buffer {
   frame[0] = STX;
   body.copy(frame, 1);
   frame[etxPos] = ETX;
-  // LRC = XOR of field bytes only (STX excluded, ETX excluded)
-  frame[lrcPos] = lrc(frame.slice(1, etxPos));
+  // LRC = XOR of message bytes + ETX, base value 0x7F (Nexi ECR17 spec)
+  frame[lrcPos] = lrc(frame.slice(1, lrcPos));
   return frame;
 }
 

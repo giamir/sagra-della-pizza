@@ -3,7 +3,7 @@
  *
  * Frame format:  STX | field1 | FS | field2 | FS | … | ETX | LRC
  *   STX = 0x02, ETX = 0x03, FS = 0x1C
- *   LRC = XOR of every byte from (after STX) through (including ETX)
+ *   LRC = XOR of every byte from STX (inclusive) through ETX (inclusive)
  *
  * The terminal may send a bare ACK (0x06) before the response frame — we skip it.
  *
@@ -42,8 +42,8 @@ function buildFrame(fields: string[]): Buffer {
   frame[i++] = STX;
   body.copy(frame, i); i += body.length;
   frame[i++] = ETX;
-  // LRC over everything after STX (i.e. body + ETX byte)
-  frame[i++] = lrc(frame.slice(1, i - 1 + 1)); // slice(1, pos of LRC)
+  // LRC = XOR of every byte from STX (inclusive) through ETX (inclusive)
+  frame[i++] = lrc(frame.slice(0, i));
   return frame;
 }
 

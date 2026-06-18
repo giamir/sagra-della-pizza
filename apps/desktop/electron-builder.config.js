@@ -1,15 +1,12 @@
-import type { Configuration } from 'electron-builder'
-
-const config: Configuration = {
+/** @type {import('electron-builder').Configuration} */
+const config = {
   appId: 'it.sagra.gestionale',
   productName: 'Sagra della Pizza',
   directories: {
     buildResources: 'build',
     output: 'dist'
   },
-  // electron-vite builds to out/ (main → out/main, preload → out/preload, renderer → out/renderer)
   files: ['out/**'],
-  // better-sqlite3 ships a native .node binary — it cannot live inside the asar archive
   asarUnpack: ['**/*.node'],
   extraResources: [{ from: 'resources/', to: '.' }],
   win: {
@@ -30,4 +27,4 @@ const config: Configuration = {
   }
 }
 
-export default config
+module.exports = config

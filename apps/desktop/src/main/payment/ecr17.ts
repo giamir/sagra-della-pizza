@@ -34,14 +34,16 @@ function lrc(data: Buffer): number {
 }
 
 function buildFrame(fields: string[]): Buffer {
-  const body = Buffer.from(fields.join(String.fromCharCode(FS)), 'latin1');
-  const frame = Buffer.allocUnsafe(1 + body.length + 1 + 1);
-  let i = 0;
-  frame[i++] = STX;
-  body.copy(frame, i); i += body.length;
-  frame[i++] = ETX;
-  // LRC = XOR of field bytes only (after STX, before ETX — both excluded)
-  frame[i++] = lrc(frame.slice(1, i - 1));
+  const body   = Buffer.from(fields.join(String.fromCharCode(FS)), 'latin1');
+  const etxPos = 1 + body.length;   // index of ETX
+  const lrcPos = etxPos + 1;        // index of LRC
+  const frame  = Buffer.allocUnsafe(lrcPos + 1);
+
+  frame[0] = STX;
+  body.copy(frame, 1);
+  frame[etxPos] = ETX;
+  // LRC = XOR of field bytes only (STX excluded, ETX excluded)
+  frame[lrcPos] = lrc(frame.slice(1, etxPos));
   return frame;
 }
 
@@ -104,7 +106,11 @@ export function requestPayment(
         '01',
         String(amountCents).padStart(9, '0'),
       ]);
+      const etxPos = frame.indexOf(ETX);
       console.log('[ECR17] SEND:', hex(frame));
+      console.log('[ECR17] LRC candidates — body_only:', frame[etxPos + 1].toString(16).padStart(2,'0').toUpperCase(),
+        '| body+ETX:', lrc(frame.slice(1, etxPos + 1)).toString(16).padStart(2,'0').toUpperCase(),
+        '| STX+body+ETX:', lrc(frame.slice(0, etxPos + 1)).toString(16).padStart(2,'0').toUpperCase());
       socket.write(frame);
     });
 

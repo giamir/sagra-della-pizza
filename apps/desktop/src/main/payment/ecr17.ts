@@ -1,25 +1,19 @@
 /**
- * ECR17 / Ingenico-SICA TCP protocol client.
+ * ECR17 / Ingenico-SICA TCP protocol client for Nexi SmartPOS.
  *
  * Frame format:  STX | field1 | FS | field2 | FS | … | ETX | LRC
  *   STX = 0x02, ETX = 0x03, FS = 0x1C
- *   LRC = XOR of every byte from STX (inclusive) through ETX (inclusive)
- *
- * The terminal may send a bare ACK (0x06) before the response frame — we skip it.
+ *   LRC = XOR of bytes after STX through ETX inclusive (body + ETX)
  *
  * Purchase request fields:
  *   [0] = "01"            – transaction type (Vendita)
  *   [1] = 9-digit amount  – cents, zero-padded ("000001500" = €15.00)
- *   [2] = "978"           – ISO-4217 EUR (optional on EUR-only terminals)
  *
  * Purchase response fields:
  *   [0] = result code     – "00" = approved
  *   [1] = amount (echo)
  *   [2] = authorization code
  *   [3…] = receipt / extra data
- *
- * If your terminal needs a different field order or uses a different
- * LRC convention, adjust buildFrame / parseFrame / FIELDS_* below.
  */
 
 import * as net from 'net';
@@ -28,6 +22,10 @@ const STX = 0x02;
 const ETX = 0x03;
 const FS  = 0x1c;
 const ACK = 0x06;
+
+function hex(buf: Buffer): string {
+  return Array.from(buf).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+}
 
 function lrc(data: Buffer): number {
   let v = 0;
@@ -42,17 +40,13 @@ function buildFrame(fields: string[]): Buffer {
   frame[i++] = STX;
   body.copy(frame, i); i += body.length;
   frame[i++] = ETX;
-  // LRC = XOR of every byte from STX (inclusive) through ETX (inclusive)
-  frame[i++] = lrc(frame.slice(0, i));
+  // LRC = XOR of bytes after STX through ETX inclusive
+  frame[i++] = lrc(frame.slice(1, i));
   return frame;
 }
 
 function parseFrame(buf: Buffer): string[] {
-  // Skip any leading ACK bytes
-  let start = 0;
-  while (start < buf.length && buf[start] === ACK) start++;
-
-  const stx = buf.indexOf(STX, start);
+  const stx = buf.indexOf(STX);
   if (stx === -1) throw new Error('STX non trovato');
   const etx = buf.indexOf(ETX, stx + 1);
   if (etx === -1) throw new Error('Frame incompleto (ETX mancante)');
@@ -109,16 +103,15 @@ export function requestPayment(
       const frame = buildFrame([
         '01',
         String(amountCents).padStart(9, '0'),
-        '978',
       ]);
+      console.log('[ECR17] SEND:', hex(frame));
       socket.write(frame);
     });
 
     socket.on('data', (chunk: Buffer) => {
+      console.log('[ECR17] RECV:', hex(chunk));
       buf = Buffer.concat([buf, chunk]);
 
-      // Find the start of the response frame — skip ACKs, NAKs, or any
-      // preamble bytes the terminal sends before the actual STX frame.
       const stx = buf.indexOf(STX);
       if (stx === -1) return; // no frame start yet — accumulate
 
@@ -127,7 +120,7 @@ export function requestPayment(
 
       try {
         const fields = parseFrame(buf.slice(stx));
-        // Send ACK back to terminal
+        console.log('[ECR17] fields:', fields);
         socket.write(Buffer.from([ACK]));
         settle(() => {
           const responseCode = fields[0] ?? '';
@@ -160,8 +153,8 @@ export function cancelPayment(config: ECR17Config): void {
   const socket = new net.Socket();
   socket.setTimeout(5000);
   socket.connect(config.port, config.host, () => {
-    // Transaction type "05" = Storno/Cancel
     const frame = buildFrame(['05']);
+    console.log('[ECR17] CANCEL SEND:', hex(frame));
     socket.write(frame);
     socket.write(Buffer.from([ACK]));
     socket.destroy();

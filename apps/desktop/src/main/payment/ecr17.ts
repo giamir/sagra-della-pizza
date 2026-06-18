@@ -3,7 +3,7 @@
  *
  * Frame format:  STX | field1 | FS | field2 | FS | … | ETX | LRC
  *   STX = 0x02, ETX = 0x03, FS = 0x1C
- *   LRC = XOR of bytes after STX through ETX inclusive (body + ETX)
+ *   LRC = XOR of field bytes only (STX excluded, ETX excluded)
  *
  * Purchase request fields:
  *   [0] = "01"            – transaction type (Vendita)
@@ -40,8 +40,8 @@ function buildFrame(fields: string[]): Buffer {
   frame[i++] = STX;
   body.copy(frame, i); i += body.length;
   frame[i++] = ETX;
-  // LRC = XOR of bytes after STX through ETX inclusive
-  frame[i++] = lrc(frame.slice(1, i));
+  // LRC = XOR of field bytes only (after STX, before ETX — both excluded)
+  frame[i++] = lrc(frame.slice(1, i - 1));
   return frame;
 }
 

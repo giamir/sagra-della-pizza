@@ -117,18 +117,16 @@ export function requestPayment(
     socket.on('data', (chunk: Buffer) => {
       buf = Buffer.concat([buf, chunk]);
 
-      // Skip leading ACK(s) — terminal may ack our request before responding
-      let start = 0;
-      while (start < buf.length && buf[start] === ACK) start++;
-      const payload = buf.slice(start);
+      // Find the start of the response frame — skip ACKs, NAKs, or any
+      // preamble bytes the terminal sends before the actual STX frame.
+      const stx = buf.indexOf(STX);
+      if (stx === -1) return; // no frame start yet — accumulate
 
-      if (payload.length === 0) return; // only ACKs so far — wait for frame
-
-      const etx = payload.indexOf(ETX, 1);
+      const etx = buf.indexOf(ETX, stx + 1);
       if (etx === -1) return; // incomplete frame — accumulate
 
       try {
-        const fields = parseFrame(payload);
+        const fields = parseFrame(buf.slice(stx));
         // Send ACK back to terminal
         socket.write(Buffer.from([ACK]));
         settle(() => {

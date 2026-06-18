@@ -2,6 +2,7 @@
 const config = {
   appId: 'it.sagra.gestionale',
   productName: 'Sagra della Pizza',
+  publish: null,
   directories: {
     buildResources: 'build',
     output: 'dist'
@@ -21,7 +22,9 @@ const config = {
     uninstallerIcon: 'build/icon.png'
   },
   mac: {
-    target: [{ target: 'dmg', arch: ['x64', 'arm64'] }],
+    target: [
+      { target: 'dmg', arch: ['x64', 'arm64'] }
+    ],
     category: 'public.app-category.business',
     icon: 'build/icon.png'
   }

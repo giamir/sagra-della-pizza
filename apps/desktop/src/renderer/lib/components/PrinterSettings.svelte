@@ -40,12 +40,13 @@
   });
 
   function normalizedConfig(): Config {
+    const snap = $state.snapshot(config) as Config;
     return {
-      ...config,
-      port: Number(config.port),
-      width: Number(config.width),
-      tcpTimeoutMs: Number(config.tcpTimeoutMs),
-      tcpCloseDelayMs: Number(config.tcpCloseDelayMs)
+      ...snap,
+      port: Number(snap.port),
+      width: Number(snap.width),
+      tcpTimeoutMs: Number(snap.tcpTimeoutMs),
+      tcpCloseDelayMs: Number(snap.tcpCloseDelayMs)
     };
   }
 

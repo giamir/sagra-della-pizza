@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare SvelteKit config
+        run: npx svelte-kit sync
+
       - name: Rebuild better-sqlite3 for Electron (macOS)
         working-directory: apps/desktop
         run: npm run postinstall
@@ -50,6 +53,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Prepare SvelteKit config
+        run: npx svelte-kit sync
 
       - name: Rebuild better-sqlite3 for Electron (Windows)
         working-directory: apps/desktop

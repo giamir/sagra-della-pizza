@@ -174,6 +174,8 @@ Su Windows: `ipconfig` nel Prompt dei comandi (cercare "Indirizzo IPv4").
 
 Usare **Stampa test** per verificare la connessione prima del servizio.
 
+Se una stampante USB viene vista dal sistema ma la stampa test fallisce, aprire **Risoluzione problemi avanzata** nella stessa schermata. Da lì si possono cambiare senza ricompilare l'app la modalità di invio USB, il comando CUPS (`lp`/`lpr`), l'opzione raw e i timeout della stampa di rete.
+
 ---
 
 ## Aggiornamento del catalogo sul sito web

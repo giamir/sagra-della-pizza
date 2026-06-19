@@ -16,6 +16,11 @@ export type PrinterConfig = {
   port: number;
   usbTarget: string; // CUPS printer name (macOS) or device path (/dev/usb/lp0) or COM port (Windows)
   width: number; // 32 (58mm), 42 or 48 (80mm)
+  tcpTimeoutMs: number;
+  tcpCloseDelayMs: number;
+  usbWriteMode: 'auto' | 'cups' | 'file';
+  usbPrintCommand: 'lp' | 'lpr';
+  usbRawOption: string;
   stations: StationConfig[];
 };
 
@@ -30,6 +35,11 @@ const DEFAULTS: PrinterConfig = {
   port: 9100,
   usbTarget: '',
   width: 42,
+  tcpTimeoutMs: 5000,
+  tcpCloseDelayMs: 200,
+  usbWriteMode: 'auto',
+  usbPrintCommand: 'lp',
+  usbRawOption: 'raw',
   stations: defaultStations()
 };
 
@@ -81,14 +91,20 @@ export function savePrinterConfig(config: PrinterConfig): void {
   setSetting('printer_config', JSON.stringify(config));
 }
 
-export async function sendToTcpPrinter(host: string, port: number, data: Buffer): Promise<void> {
+export async function sendToTcpPrinter(
+  host: string,
+  port: number,
+  data: Buffer,
+  timeoutMs = DEFAULTS.tcpTimeoutMs,
+  closeDelayMs = DEFAULTS.tcpCloseDelayMs
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const socket = createConnection(port, host);
-    socket.setTimeout(5000);
+    socket.setTimeout(timeoutMs);
     socket.on('connect', () => {
       socket.write(data, (err) => {
         if (err) { socket.destroy(); reject(err); return; }
-        setTimeout(() => socket.end(), 200);
+        setTimeout(() => socket.end(), closeDelayMs);
       });
     });
     socket.on('close', () => resolve());
@@ -104,17 +120,29 @@ export async function sendToTcpPrinter(host: string, port: number, data: Buffer)
 // On macOS/Linux: if target starts with '/' treat as device path (write directly),
 // otherwise assume it's a CUPS queue name and use `lp -d target -o raw`.
 // On Windows: write directly to the device path (e.g. COM3, LPT1:).
-export async function sendToUsbPrinter(target: string, data: Buffer): Promise<void> {
+export async function sendToUsbPrinter(
+  target: string,
+  data: Buffer,
+  options: Pick<PrinterConfig, 'usbWriteMode' | 'usbPrintCommand' | 'usbRawOption'> = DEFAULTS
+): Promise<void> {
   if (!target) throw new Error('Nessuna stampante USB configurata');
 
-  if (process.platform === 'win32' || target.startsWith('/')) {
+  const mode = options.usbWriteMode ?? 'auto';
+  const directFile = mode === 'file' || (mode === 'auto' && (process.platform === 'win32' || target.startsWith('/')));
+
+  if (directFile) {
     await writeFile(target, data);
     return;
   }
 
   // CUPS raw print (macOS / Linux printer name)
   return new Promise((resolve, reject) => {
-    const proc = spawn('lp', ['-d', target, '-o', 'raw', '-']);
+    const command = options.usbPrintCommand === 'lpr' ? 'lpr' : 'lp';
+    const rawOption = (options.usbRawOption || 'raw').trim();
+    const args = command === 'lpr'
+      ? ['-P', target, ...(rawOption ? ['-o', rawOption] : [])]
+      : ['-d', target, ...(rawOption ? ['-o', rawOption] : []), '-'];
+    const proc = spawn(command, args);
     let stderr = '';
     proc.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
     proc.stdin.write(data, (err) => {

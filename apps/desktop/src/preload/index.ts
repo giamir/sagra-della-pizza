@@ -23,6 +23,7 @@ const api = {
   // Payment terminal (ECR17 / Nexi Ingenico)
   getPaymentConfig: () => ipcRenderer.invoke('payment:config:get'),
   savePaymentConfig: (config: unknown) => ipcRenderer.invoke('payment:config:save', config),
+  testPaymentConnection: () => ipcRenderer.invoke('payment:test-connection'),
   startPayment: (amountCents: number) => ipcRenderer.invoke('payment:start', amountCents),
   cancelPayment: () => ipcRenderer.invoke('payment:cancel'),
 

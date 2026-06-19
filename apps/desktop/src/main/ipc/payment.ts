@@ -3,6 +3,7 @@ import { getSetting, setSetting } from '../db/schema.js';
 import {
   requestPayment,
   cancelPayment,
+  testECR17Connection,
   ECR17_DEFAULTS,
   type ECR17Config,
   type ECR17Result,
@@ -21,6 +22,19 @@ export function registerPaymentHandlers(): void {
   ipcMain.handle('payment:config:save', (_event, config: ECR17Config) => {
     setSetting('ecr17_config', JSON.stringify(config));
     return { ok: true };
+  });
+
+  ipcMain.handle('payment:test-connection', async () => {
+    const config = loadECR17Config();
+    if (!config.enabled) {
+      return { ok: false, error: 'Terminale non abilitato nelle impostazioni' };
+    }
+    try {
+      await testECR17Connection(config);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'Errore connessione terminale' };
+    }
   });
 
   ipcMain.handle('payment:start', async (_event, amountCents: number) => {

@@ -140,12 +140,14 @@ Terminale risponde: APPROVATO → ordine completato + stampa
 | "Timeout: nessuna risposta" | Terminale non raggiungibile | Verifica IP, porta, e che ECR TCP sia attivo |
 | "Terminale non configurato" | Toggle disabilitato nel gestionale | ⚙ Terminale → abilita |
 | "Rifiutato (codice XX)" | Carta rifiutata dal circuito | Cliente riprova o paga in contanti |
-| Il terminale stampa ma il gestionale dice errore | Timeout TCP troppo breve o risposta fuori standard | Contatta supporto Nexi per versione firmware ECR17 |
-| Connessione OK ma frame non parsato | Versione firmware ECR con campo order diverso | Vedi nota sotto |
+| Il terminale stampa ma il gestionale dice errore | Timeout TCP troppo breve o risposta fuori standard | Aumenta il timeout in ⚙ Terminale → Risoluzione problemi avanzata |
+| Connessione OK ma frame non parsato | Versione firmware ECR con separatore/LRC diverso | Vedi nota sotto |
 
 ### Nota sulla compatibilità firmware ECR17
 
-Il protocollo ECR17 Ingenico ha avuto revisioni nel tempo. Se il terminale risponde ma la transazione non viene riconosciuta correttamente, verificare con Nexi la versione firmware e confrontare il campo separator (default nel gestionale: `0x1C`) e la convenzione LRC. I parametri si trovano in `apps/desktop/src/main/payment/ecr17.ts` nelle costanti in cima al file.
+Il protocollo ECR17 Ingenico ha avuto revisioni nel tempo. Se il terminale risponde ma la transazione non viene riconosciuta correttamente, verificare con Nexi la versione firmware e confrontare il separatore campo (default nel gestionale: `0x1C`), il seed LRC (default: `0x7F`), l'eventuale inclusione di `STX` nel calcolo LRC, i codici operazione e l'invio di `ACK`.
+
+Questi parametri si modificano senza ricompilare da ⚙ Terminale → Risoluzione problemi avanzata.
 
 ---
 

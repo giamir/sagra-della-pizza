@@ -11,16 +11,23 @@
     port: number;
     usbTarget: string;
     width: number;
+    tcpTimeoutMs: number;
+    tcpCloseDelayMs: number;
+    usbWriteMode: 'auto' | 'cups' | 'file';
+    usbPrintCommand: 'lp' | 'lpr';
+    usbRawOption: string;
     stations: StationConfig[];
   };
 
   let config = $state<Config>({
     enabled: false, connectionType: 'tcp', host: '192.168.1.100', port: 9100,
-    usbTarget: '', width: 42, stations: []
+    usbTarget: '', width: 42, tcpTimeoutMs: 5000, tcpCloseDelayMs: 200,
+    usbWriteMode: 'auto', usbPrintCommand: 'lp', usbRawOption: 'raw', stations: []
   });
   let saving = $state(false);
   let testing = $state(false);
   let loadingPrinters = $state(false);
+  let advancedOpen = $state(false);
   let availablePrinters = $state<string[]>([]);
   let message = $state<{ ok: boolean; text: string } | null>(null);
 
@@ -33,7 +40,13 @@
   });
 
   function normalizedConfig(): Config {
-    return { ...config, port: Number(config.port), width: Number(config.width) };
+    return {
+      ...config,
+      port: Number(config.port),
+      width: Number(config.width),
+      tcpTimeoutMs: Number(config.tcpTimeoutMs),
+      tcpCloseDelayMs: Number(config.tcpCloseDelayMs)
+    };
   }
 
   function validateConfig(nextConfig: Config): string | null {
@@ -45,10 +58,20 @@
       if (!Number.isInteger(nextConfig.port) || nextConfig.port < 1 || nextConfig.port > 65535) {
         return 'Inserisci una porta stampante valida tra 1 e 65535.';
       }
+      if (!Number.isInteger(nextConfig.tcpTimeoutMs) || nextConfig.tcpTimeoutMs < 500 || nextConfig.tcpTimeoutMs > 60000) {
+        return 'Inserisci un timeout TCP tra 500 e 60000 ms.';
+      }
+      if (!Number.isInteger(nextConfig.tcpCloseDelayMs) || nextConfig.tcpCloseDelayMs < 0 || nextConfig.tcpCloseDelayMs > 5000) {
+        return 'Inserisci una pausa chiusura TCP tra 0 e 5000 ms.';
+      }
     }
 
     if (nextConfig.connectionType === 'usb' && !nextConfig.usbTarget.trim()) {
       return 'Seleziona o inserisci il nome della stampante USB.';
+    }
+
+    if (!['auto', 'cups', 'file'].includes(nextConfig.usbWriteMode)) {
+      return 'Seleziona una modalità USB valida.';
     }
 
     return null;
@@ -266,6 +289,74 @@
             <option value={48}>48 col · 80 mm</option>
           </select>
         </label>
+
+        <div class="rounded-lg border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            onclick={() => advancedOpen = !advancedOpen}
+            class="w-full flex items-center justify-between px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            <span>Risoluzione problemi avanzata</span>
+            <span class="text-gray-400">{advancedOpen ? '−' : '+'}</span>
+          </button>
+
+          {#if advancedOpen}
+            <div class="border-t border-gray-100 p-3 space-y-3 bg-gray-50/60">
+              {#if config.connectionType === 'tcp'}
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="block">
+                    <span class="text-xs font-semibold text-gray-600">Timeout TCP (ms)</span>
+                    <input
+                      type="number"
+                      bind:value={config.tcpTimeoutMs}
+                      min="500"
+                      max="60000"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                    />
+                  </label>
+                  <label class="block">
+                    <span class="text-xs font-semibold text-gray-600">Pausa chiusura (ms)</span>
+                    <input
+                      type="number"
+                      bind:value={config.tcpCloseDelayMs}
+                      min="0"
+                      max="5000"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                    />
+                  </label>
+                </div>
+              {:else}
+                <label class="block">
+                  <span class="text-xs font-semibold text-gray-600">Modalità invio USB</span>
+                  <select bind:value={config.usbWriteMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white">
+                    <option value="auto">Automatica</option>
+                    <option value="cups">Forza CUPS</option>
+                    <option value="file">Scrittura diretta</option>
+                  </select>
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="block">
+                    <span class="text-xs font-semibold text-gray-600">Comando CUPS</span>
+                    <select bind:value={config.usbPrintCommand} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white">
+                      <option value="lp">lp</option>
+                      <option value="lpr">lpr</option>
+                    </select>
+                  </label>
+                  <label class="block">
+                    <span class="text-xs font-semibold text-gray-600">Opzione raw</span>
+                    <input
+                      type="text"
+                      bind:value={config.usbRawOption}
+                      placeholder="raw"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                    />
+                  </label>
+                </div>
+                <p class="text-xs text-gray-500">Usa queste opzioni solo se la stampa test fallisce con la configurazione normale.</p>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </fieldset>
 
       <!-- Stations -->

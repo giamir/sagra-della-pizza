@@ -46,9 +46,9 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
 
   async function send(data: Buffer): Promise<void> {
     if (config.connectionType === 'usb') {
-      await sendToUsbPrinter(config.usbTarget, data);
+      await sendToUsbPrinter(config.usbTarget, data, config);
     } else {
-      await sendToTcpPrinter(config.host, config.port, data);
+      await sendToTcpPrinter(config.host, config.port, data, config.tcpTimeoutMs, config.tcpCloseDelayMs);
     }
   }
 

@@ -85,8 +85,8 @@
     },
     { id: 'cecina', label: 'Cecina', itemIds: ['cecina'] },
     {
-      id: 'cucina',
-      label: 'Cucina',
+      id: 'gastronomia',
+      label: 'Gastronomia',
       itemIds: ['lasagne', 'antipasto-toscano', 'prosciutto-melone', 'bruschetta']
     },
     {

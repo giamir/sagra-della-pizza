@@ -1,5 +1,5 @@
 import { EscPos } from './escpos.js';
-import { STATION_ORDER } from './station-map.js';
+import { STATION_ORDER, normalizeStation } from './station-map.js';
 
 export type PrintLine = {
   itemId: string;
@@ -104,7 +104,7 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
 export function groupByStation(lines: PrintLine[]): Map<string, PrintLine[]> {
   const map = new Map<string, PrintLine[]>();
   for (const l of lines) {
-    const s = l.station || 'Altro';
+    const s = normalizeStation(l.station || 'Altro');
     if (!map.has(s)) map.set(s, []);
     map.get(s)!.push(l);
   }

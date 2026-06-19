@@ -2,7 +2,7 @@ import { createConnection } from 'net';
 import { writeFile } from 'fs/promises';
 import { spawn, execFile } from 'child_process';
 import { getSetting, setSetting } from '../db/schema.js';
-import { STATION_ORDER } from './station-map.js';
+import { STATION_ORDER, normalizeStation } from './station-map.js';
 
 export type StationConfig = {
   name: string;
@@ -38,7 +38,7 @@ export function loadPrinterConfig(): PrinterConfig {
   if (!raw) return structuredClone(DEFAULTS);
   try {
     const saved = JSON.parse(raw) as Partial<PrinterConfig>;
-    const savedMap = new Map((saved.stations ?? []).map((s) => [s.name, s]));
+    const savedMap = new Map((saved.stations ?? []).map((s) => [normalizeStation(s.name), { ...s, name: normalizeStation(s.name) }]));
     const stations = STATION_ORDER.map((name) => savedMap.get(name) ?? { name, enabled: true });
     return { ...DEFAULTS, ...saved, stations };
   } catch {

@@ -1,5 +1,9 @@
 // Maps item IDs to kitchen station labels, in print order.
-export const STATION_ORDER = ['Pizza', 'Griglia', 'Crostini', 'Cecina', 'Cucina', 'Contorni', 'Bevande'];
+export const STATION_ORDER = ['Pizza', 'Griglia', 'Crostini', 'Cecina', 'Gastronomia', 'Contorni', 'Bevande'];
+
+export function normalizeStation(station: string): string {
+  return station === 'Cucina' ? 'Gastronomia' : station;
+}
 
 const MAP: Record<string, string> = {
   // Pizza
@@ -15,8 +19,8 @@ const MAP: Record<string, string> = {
   'crostini-romana': 'Crostini', 'crostini-alici': 'Crostini', 'crostini-misti': 'Crostini',
   // Cecina
   cecina: 'Cecina',
-  // Cucina
-  lasagne: 'Cucina', 'antipasto-toscano': 'Cucina', 'prosciutto-melone': 'Cucina', bruschetta: 'Cucina',
+  // Gastronomia
+  lasagne: 'Gastronomia', 'antipasto-toscano': 'Gastronomia', 'prosciutto-melone': 'Gastronomia', bruschetta: 'Gastronomia',
   // Contorni
   fagioli: 'Contorni', insalata: 'Contorni', patatine: 'Contorni', pomodori: 'Contorni',
   // Bevande

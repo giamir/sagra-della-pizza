@@ -25,34 +25,111 @@
   let message = $state<{ ok: boolean; text: string } | null>(null);
 
   onMount(async () => {
-    config = await window.api.getPrinterConfig();
+    try {
+      config = await withTimeout(window.api.getPrinterConfig(), 'Caricamento configurazione stampante scaduto.');
+    } catch (err) {
+      message = { ok: false, text: errorMessage(err, 'Impossibile caricare la configurazione stampante.') };
+    }
   });
+
+  function normalizedConfig(): Config {
+    return { ...config, port: Number(config.port), width: Number(config.width) };
+  }
+
+  function validateConfig(nextConfig: Config): string | null {
+    if (!nextConfig.enabled) return null;
+    if (![32, 42, 48].includes(nextConfig.width)) return 'Seleziona una larghezza carta valida.';
+
+    if (nextConfig.connectionType === 'tcp') {
+      if (!nextConfig.host.trim()) return 'Inserisci l’indirizzo IP della stampante.';
+      if (!Number.isInteger(nextConfig.port) || nextConfig.port < 1 || nextConfig.port > 65535) {
+        return 'Inserisci una porta stampante valida tra 1 e 65535.';
+      }
+    }
+
+    if (nextConfig.connectionType === 'usb' && !nextConfig.usbTarget.trim()) {
+      return 'Seleziona o inserisci il nome della stampante USB.';
+    }
+
+    return null;
+  }
+
+  function errorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error && err.message) return err.message;
+    if (typeof err === 'string' && err) return err;
+    return fallback;
+  }
+
+  async function withTimeout<T>(promise: Promise<T>, timeoutMessage: string, ms = 10000): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+        })
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function persistConfig(): Promise<void> {
+    const nextConfig = normalizedConfig();
+    const validationError = validateConfig(nextConfig);
+    if (validationError) throw new Error(validationError);
+
+    const result = await withTimeout(
+      window.api.savePrinterConfig(nextConfig),
+      'Salvataggio configurazione stampante scaduto. Verifica che l’app desktop sia ancora in esecuzione.'
+    );
+    if (result && typeof result === 'object' && 'ok' in result && !result.ok) {
+      throw new Error('error' in result && typeof result.error === 'string' ? result.error : 'Errore salvataggio configurazione stampante.');
+    }
+  }
 
   async function save() {
     saving = true;
-    await window.api.savePrinterConfig({ ...config, port: Number(config.port), width: Number(config.width) });
-    saving = false;
-    message = { ok: true, text: 'Configurazione salvata.' };
-    setTimeout(() => { message = null; }, 3000);
+    message = null;
+    try {
+      await persistConfig();
+      message = { ok: true, text: 'Configurazione salvata.' };
+      setTimeout(() => { message = null; }, 3000);
+    } catch (err) {
+      message = { ok: false, text: errorMessage(err, 'Errore salvataggio configurazione stampante.') };
+    } finally {
+      saving = false;
+    }
   }
 
   async function testPrint() {
     testing = true;
     message = null;
-    await window.api.savePrinterConfig({ ...config, port: Number(config.port), width: Number(config.width) });
-    const result = await window.api.printTest();
-    testing = false;
-    message = { ok: result.ok, text: result.ok ? 'Stampa test inviata!' : result.error };
+    try {
+      await persistConfig();
+      const result = await withTimeout(
+        window.api.printTest(),
+        'Stampa test scaduta. Controlla collegamento, indirizzo e porta della stampante.',
+        15000
+      );
+      message = { ok: result.ok, text: result.ok ? 'Stampa test inviata!' : result.error };
+    } catch (err) {
+      message = { ok: false, text: errorMessage(err, 'Errore stampa test.') };
+    } finally {
+      testing = false;
+    }
   }
 
   async function loadPrinters() {
     loadingPrinters = true;
     try {
-      const result = await window.api.listPrinters();
+      const result = await withTimeout(window.api.listPrinters(), 'Ricerca stampanti scaduta.');
       availablePrinters = result.printers ?? [];
       if (availablePrinters.length === 0) {
         message = { ok: false, text: 'Nessuna stampante trovata. Assicurati che sia collegata e installata nel sistema.' };
       }
+    } catch (err) {
+      message = { ok: false, text: errorMessage(err, 'Impossibile cercare le stampanti.') };
     } finally {
       loadingPrinters = false;
     }

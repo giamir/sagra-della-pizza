@@ -1,7 +1,7 @@
 import menuData from '@sagra/shared/data/menu.json';
 import type { Menu } from '@sagra/shared/types';
 import { getSetting, setSetting } from '../db/schema.js';
-import { getStation } from '../printing/station-map.js';
+import { getStation, normalizeStation } from '../printing/station-map.js';
 import { buildPriceIndex } from '@sagra/shared/utils/pricing';
 import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
 
@@ -23,20 +23,22 @@ export function getStationOverrides(): Record<string, string> {
   const raw = getSetting('station_overrides');
   if (!raw) return {};
   try {
-    return JSON.parse(raw) as Record<string, string>;
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return Object.fromEntries(Object.entries(parsed).map(([itemId, station]) => [itemId, normalizeStation(station)]));
   } catch {
     return {};
   }
 }
 
 export function saveStationOverrides(overrides: Record<string, string>): void {
-  setSetting('station_overrides', JSON.stringify(overrides));
+  const normalized = Object.fromEntries(Object.entries(overrides).map(([itemId, station]) => [itemId, normalizeStation(station)]));
+  setSetting('station_overrides', JSON.stringify(normalized));
 }
 
 // Resolves station for an item, checking overrides first then the hardcoded map.
 export function resolveStation(itemId: string): string {
   const overrides = getStationOverrides();
-  return overrides[itemId] ?? getStation(itemId);
+  return normalizeStation(overrides[itemId] ?? getStation(itemId));
 }
 
 export function getLivePriceIndex(): ReturnType<typeof buildPriceIndex> {

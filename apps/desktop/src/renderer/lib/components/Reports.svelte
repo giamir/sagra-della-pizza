@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { formatEUR } from '@sagra/shared/utils/currency';
-  import { STATION_ORDER } from '$lib/station-order';
+  import { STATION_ORDER, normalizeStation } from '$lib/station-order';
 
   type ReportLine = { itemId: string; name: string; qty: number; unitPriceCents: number; station: string };
   type ReportOrder = {
@@ -127,7 +127,7 @@
     const map = new Map<string, { qty: number; cents: number }>();
     for (const o of orders) {
       for (const l of o.lines) {
-        const key = l.station || 'Altro';
+        const key = normalizeStation(l.station || 'Altro');
         const cur = map.get(key) ?? { qty: 0, cents: 0 };
         cur.qty += l.qty;
         cur.cents += l.qty * l.unitPriceCents;

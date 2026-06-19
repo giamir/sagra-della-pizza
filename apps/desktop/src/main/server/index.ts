@@ -31,6 +31,17 @@ export function startServer(port = 7331): void {
   const app = express();
   app.use(express.json());
 
+  // Allow cross-origin requests from the web app (phones on the same LAN).
+  // The Private-Network header lets Chrome/Safari call an HTTP local IP from an HTTPS page.
+  app.use((_req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    next();
+  });
+  app.options('*', (_req, res) => { res.sendStatus(204); });
+
   // --- Health ---
   app.get('/ping', (_req, res) => res.json({ ok: true, role: 'host' }));
 

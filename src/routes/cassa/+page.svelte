@@ -1,17 +1,8 @@
 <script lang="ts">
   import { MENU } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
-  import {
-    DEFAULT_MISTERPOS_CONFIG,
-    loadMisterPosDesktopCart,
-    loadMisterPosConfig,
-    pingMisterPosDesktopBridge,
-    prepareMisterPosOrder,
-    saveMisterPosConfig
-  } from '$lib/utils/misterpos';
   import { decodeOrder } from '$lib/utils/payload';
   import type { Payload } from '$lib/types';
-  import type { MisterPosConfig, MisterPosPreparedOrder } from '$lib/types/misterpos';
   import jsQR from 'jsqr';
   import { onMount, tick } from 'svelte';
 
@@ -38,6 +29,12 @@
     message: string;
     summary: string;
     totalCents: number;
+  };
+
+  type CassaConfig = {
+    host: string;
+    port: number;
+    tillName: string;
   };
 
   const CASHIER_SECTIONS = [
@@ -128,18 +125,25 @@
 
   const RECENT_SCANS_KEY = 'sagra-cassa-recent-scans-v1';
   const RECENT_SCAN_LIMIT = 10;
+  const CONFIG_KEY = 'sagra-cassa-config-v1';
+
+  const DEFAULT_CONFIG: CassaConfig = {
+    host: '192.168.1.1',
+    port: 7331,
+    tillName: 'Cassa telefono'
+  };
 
   let payload = $state<Payload | null>(null);
   let error = $state<string | null>(null);
   let scanning = $state(false);
   let cameraRequiresHttps = $state(false);
-  let totalMatches = $state(false);
   let configOpen = $state(false);
-  let misterPosConfig = $state<MisterPosConfig>({ ...DEFAULT_MISTERPOS_CONFIG });
+  let config = $state<CassaConfig>({ ...DEFAULT_CONFIG });
   let connectionState = $state<'idle' | 'checking' | 'connected' | 'failed'>('idle');
   let connectionMessage = $state('Connessione non verificata');
   let sending = $state(false);
   let sendMessage = $state<string | null>(null);
+  let sendSuccess = $state(false);
   let scanStatusMessage = $state<string | null>(null);
   let recentScans = $state<RecentScan[]>([]);
 
@@ -151,10 +155,10 @@
   let lastScannedAt = 0;
 
   const connectionBadge = $derived.by(() => {
-    if (connectionState === 'connected') return 'MisterPOS';
-    if (connectionState === 'checking') return 'POS verifica';
-    if (connectionState === 'failed') return 'POS offline';
-    return 'POS ?';
+    if (connectionState === 'connected') return 'Cassa online';
+    if (connectionState === 'checking') return 'Cassa verifica';
+    if (connectionState === 'failed') return 'Cassa offline';
+    return 'Cassa ?';
   });
 
   const menuLines = $derived.by(() => {
@@ -189,6 +193,25 @@
     return index;
   });
 
+  function loadConfig(): CassaConfig {
+    if (typeof localStorage === 'undefined') return { ...DEFAULT_CONFIG };
+    try {
+      const stored = JSON.parse(localStorage.getItem(CONFIG_KEY) ?? '{}') as Partial<CassaConfig>;
+      return {
+        ...DEFAULT_CONFIG,
+        ...stored,
+        port: Number(stored.port ?? DEFAULT_CONFIG.port)
+      };
+    } catch {
+      return { ...DEFAULT_CONFIG };
+    }
+  }
+
+  function saveConfig(cfg: CassaConfig) {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  }
+
   function loadRecentScans(): RecentScan[] {
     if (typeof localStorage === 'undefined') return [];
     try {
@@ -214,11 +237,7 @@
     return names.length ? names.join(', ') : 'Solo coperti';
   }
 
-  function rememberScan(
-    value: Payload,
-    status: RecentScan['status'],
-    message: string
-  ) {
+  function rememberScan(value: Payload, status: RecentScan['status'], message: string) {
     const scan: RecentScan = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       scannedAt: new Date().toISOString(),
@@ -243,7 +262,7 @@
   function reopenScan(scan: RecentScan) {
     stopScan();
     payload = scan.payload;
-    totalMatches = scan.status === 'loaded';
+    sendSuccess = scan.status === 'loaded';
     sendMessage = scan.message;
     scanStatusMessage = null;
     error = null;
@@ -259,7 +278,7 @@
     stopScan();
     payload = null;
     error = null;
-    totalMatches = false;
+    sendSuccess = false;
     sendMessage = null;
     clearHash();
   }
@@ -272,7 +291,7 @@
       else if (value.startsWith('p=')) value = value.slice(2);
 
       payload = decodeOrder(value);
-      totalMatches = false;
+      sendSuccess = false;
       sendMessage = null;
       error = null;
       return true;
@@ -285,12 +304,12 @@
 
   onMount(() => {
     cameraRequiresHttps = !window.isSecureContext;
-    misterPosConfig = loadMisterPosConfig();
+    config = loadConfig();
     recentScans = loadRecentScans();
     if (window.location.hash.startsWith('#p=')) {
       tryLoad(window.location.hash.slice(3));
     }
-    void checkMisterPosConnection();
+    void checkConnection();
     if (!payload) void startScan();
     return () => stopScan();
   });
@@ -303,7 +322,7 @@
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      error = 'Questo browser non supporta l’accesso alla fotocamera.';
+      error = 'Questo browser non supporta l\'accesso alla fotocamera.';
       return;
     }
 
@@ -321,8 +340,7 @@
       loop();
     } catch (scanError) {
       if (scanError instanceof DOMException && scanError.name === 'NotAllowedError') {
-        error =
-          'Permesso fotocamera negato. Abilitalo nelle impostazioni del browser e riprova.';
+        error = 'Permesso fotocamera negato. Abilitalo nelle impostazioni del browser e riprova.';
       } else if (scanError instanceof DOMException && scanError.name === 'NotFoundError') {
         error = 'Nessuna fotocamera disponibile su questo dispositivo.';
       } else {
@@ -360,22 +378,22 @@
 
   async function handleScannedCode(raw: string) {
     stopScan();
-    scanStatusMessage = 'QR letto. Preparo l’ordine…';
+    scanStatusMessage = 'QR letto. Preparo l\'ordine…';
     if (!tryLoad(raw)) return;
 
     await tick();
     if (!payload) return;
-    const loaded = await loadIntoMisterPosDesktop();
+    const loaded = await submitOrder();
     if (!loaded) {
       rememberScan(payload, 'failed', sendMessage ?? 'Da verificare manualmente.');
       scanStatusMessage = null;
       return;
     }
 
-    rememberScan(payload, 'loaded', sendMessage ?? 'Ordine caricato in MisterPOS.');
-    scanStatusMessage = sendMessage ?? 'Ordine caricato in MisterPOS.';
+    rememberScan(payload, 'loaded', sendMessage ?? 'Ordine inviato alla cassa.');
+    scanStatusMessage = sendMessage ?? 'Ordine inviato alla cassa.';
     resetOrder();
-    scanStatusMessage = 'Ordine caricato in MisterPOS. Pronto per il prossimo QR.';
+    scanStatusMessage = 'Ordine inviato alla cassa. Pronto per il prossimo QR.';
     await tick();
     await startScan();
   }
@@ -393,9 +411,9 @@
     const payloadLines = new Map(payload.l);
     const unknownLines: CashierLine[] = [];
 
-    for (const [id, qty] of payload.l) {
+    for (const [id] of payload.l) {
       if (!menuLines[id]) {
-        unknownLines.push({ id, name: id, price: 0, qty, subtotal: 0, known: false });
+        unknownLines.push({ id, name: id, price: 0, qty: payloadLines.get(id) ?? 0, subtotal: 0, known: false });
       }
     }
 
@@ -404,19 +422,8 @@
         const qty = payloadLines.get(id);
         const menuLine = menuLines[id];
         if (!qty || !menuLine) return [];
-
-        return [
-          {
-            id,
-            name: menuLine.name,
-            price: menuLine.price,
-            qty,
-            subtotal: menuLine.price * qty,
-            known: true
-          }
-        ];
+        return [{ id, name: menuLine.name, price: menuLine.price, qty, subtotal: menuLine.price * qty, known: true }];
       });
-
       if (!sectionLines.length) return [];
       return [{ id: section.id, label: section.label, lines: sectionLines }];
     });
@@ -425,14 +432,7 @@
     for (const [id, qty] of payload.l) {
       const menuLine = menuLines[id];
       if (menuLine && !orderedIds.has(id)) {
-        unknownLines.push({
-          id,
-          name: menuLine.name,
-          price: menuLine.price,
-          qty,
-          subtotal: menuLine.price * qty,
-          known: false
-        });
+        unknownLines.push({ id, name: menuLine.name, price: menuLine.price, qty, subtotal: menuLine.price * qty, known: false });
       }
     }
 
@@ -444,26 +444,6 @@
 
   const lines = $derived(categories.flatMap((category) => category.lines));
   const hasUnknownLines = $derived(lines.some((line) => !line.known));
-  const misterPosMenuLines = $derived.by(() => {
-    const result: Record<string, { name: string; priceCents: number }> = {
-      __cover__: {
-        name: 'Coperto',
-        priceCents: Math.round(MENU.coperto.perPersona * 100)
-      }
-    };
-    for (const [id, line] of Object.entries(menuLines)) {
-      result[id] = { name: line.name, priceCents: Math.round(line.price * 100) };
-    }
-    return result;
-  });
-  const preparedMisterPosOrder = $derived<MisterPosPreparedOrder | null>(
-    payload ? prepareMisterPosOrder(payload, misterPosMenuLines) : null
-  );
-  const missingMappingNames = $derived(
-    preparedMisterPosOrder?.missingIds.map((id) =>
-      id === '__cover__' ? 'Coperto' : (menuLines[id]?.name ?? id)
-    ) ?? []
-  );
 
   const computedTotal = $derived.by(() => {
     if (!payload) return 0;
@@ -474,80 +454,91 @@
   const payloadTotalMatches = $derived(
     payload !== null && Math.round(computedTotal * 100) === payload.t
   );
-  const canTryLoadMisterPos = $derived(
-    preparedMisterPosOrder !== null &&
-      preparedMisterPosOrder.missingIds.length === 0 &&
+
+  const canSubmit = $derived(
+    payload !== null &&
       payloadTotalMatches &&
       !hasUnknownLines &&
       !sending &&
       connectionState !== 'checking'
   );
-  const canComplete = $derived(totalMatches && payloadTotalMatches && !hasUnknownLines);
 
-  function completeOrder() {
-    if (!canComplete) return;
-    resetOrder();
-  }
-
-  function confirmReset() {
-    if (confirm('Abbandonare questo ordine e tornare alla scansione?')) resetOrder();
-  }
-
-  function persistMisterPosConfig() {
-    misterPosConfig.uiSeatKey = Number(misterPosConfig.uiSeatKey);
-    misterPosConfig.desktopBridgePort = Number(misterPosConfig.desktopBridgePort);
-    saveMisterPosConfig(misterPosConfig);
+  function persistConfig() {
+    config.port = Number(config.port);
+    saveConfig(config);
     connectionState = 'idle';
     connectionMessage = 'Configurazione salvata. Verifica la connessione.';
   }
 
-  async function checkMisterPosConnection(): Promise<boolean> {
-    persistMisterPosConfig();
+  async function checkConnection(): Promise<boolean> {
+    persistConfig();
     connectionState = 'checking';
-    connectionMessage = 'Connessione al bridge cassa desktop…';
+    connectionMessage = 'Connessione alla cassa desktop…';
 
     try {
-      const result = await pingMisterPosDesktopBridge(misterPosConfig);
-      connectionState = result.ok ? 'connected' : 'failed';
-      connectionMessage = result.message;
-      return result.ok;
-    } catch (pingError) {
+      const response = await fetch(`http://${config.host}:${config.port}/ping`);
+      const data = (await response.json()) as { ok?: boolean; role?: string };
+      if (!response.ok || !data.ok) {
+        connectionState = 'failed';
+        connectionMessage = `La cassa ha risposto con HTTP ${response.status}.`;
+        return false;
+      }
+      connectionState = 'connected';
+      connectionMessage = `Cassa raggiungibile su ${config.host}:${config.port}.`;
+      return true;
+    } catch {
       connectionState = 'failed';
-      connectionMessage =
-        pingError instanceof Error ? pingError.message : 'Connessione al bridge non riuscita.';
+      connectionMessage = `Impossibile raggiungere la cassa su ${config.host}:${config.port}. Verifica l'IP e che la cassa sia in esecuzione.`;
       return false;
     }
   }
 
-  async function loadIntoMisterPosDesktop(): Promise<boolean> {
-    if (!canTryLoadMisterPos || !preparedMisterPosOrder) return false;
+  async function submitOrder(): Promise<boolean> {
+    if (!payload) return false;
 
     sending = true;
 
     try {
       if (connectionState !== 'connected') {
-        sendMessage = 'Verifica connessione al bridge MisterPOS…';
-        const connected = await checkMisterPosConnection();
+        sendMessage = 'Verifica connessione alla cassa desktop…';
+        const connected = await checkConnection();
         if (!connected) {
           sendMessage = connectionMessage;
           return false;
         }
       }
 
-      sendMessage = 'Caricamento nella cassa desktop MisterPOS…';
-      const result = await loadMisterPosDesktopCart(misterPosConfig, preparedMisterPosOrder);
-      totalMatches = true;
-      sendMessage = result.message;
+      sendMessage = 'Invio ordine alla cassa…';
+      const response = await fetch(`http://${config.host}:${config.port}/orders`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          people: payload.p,
+          totalCents: payload.t,
+          lines: payload.l,
+          source: 'qr_scan',
+          tillName: config.tillName,
+          paymentMethod: 'cash'
+        })
+      });
+      const data = (await response.json()) as { ok?: boolean; orderId?: string; error?: string };
+      if (!response.ok || !data.ok) {
+        sendMessage = data.error ?? `La cassa ha risposto con HTTP ${response.status}.`;
+        return false;
+      }
+      sendSuccess = true;
+      sendMessage = `Ordine #${data.orderId ?? '?'} registrato in cassa.`;
       return true;
-    } catch (sendError) {
-      sendMessage =
-        sendError instanceof Error
-          ? sendError.message
-          : 'Caricamento nella cassa desktop MisterPOS non riuscito.';
+    } catch (err) {
+      sendMessage = err instanceof Error ? err.message : 'Invio alla cassa non riuscito.';
       return false;
     } finally {
       sending = false;
     }
+  }
+
+  function confirmReset() {
+    resetOrder();
   }
 </script>
 
@@ -577,30 +568,30 @@
 
 <div class="px-4 py-4 max-w-2xl mx-auto w-full">
   {#if configOpen}
-    <section class="bg-white border-2 border-leaf rounded-xl p-4 mb-5" aria-labelledby="pos-config">
+    <section class="bg-white border-2 border-leaf rounded-xl p-4 mb-5" aria-labelledby="cassa-config">
       <div class="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h2 id="pos-config" class="text-xl font-bold text-leaf">Configurazione MisterPOS</h2>
+          <h2 id="cassa-config" class="text-xl font-bold text-leaf">Configurazione cassa</h2>
           <p class="text-sm text-ink/75 mt-1">
-            Salvata solo su questo dispositivo di cassa.
+            Salvata solo su questo dispositivo.
           </p>
         </div>
       </div>
 
       <div class="grid sm:grid-cols-2 gap-3 mt-3">
         <label class="font-semibold">
-          Host bridge desktop
+          IP cassa desktop
           <input
-            bind:value={misterPosConfig.desktopBridgeHost}
+            bind:value={config.host}
             inputmode="url"
-            placeholder="192.168.1.20"
+            placeholder="192.168.1.1"
             class="block w-full mt-1 px-3 py-2 min-h-12 border-2 border-leaf rounded-lg bg-cream-50"
           />
         </label>
         <label class="font-semibold">
-          Porta bridge
+          Porta
           <input
-            bind:value={misterPosConfig.desktopBridgePort}
+            bind:value={config.port}
             type="number"
             min="1"
             max="65535"
@@ -609,30 +600,21 @@
         </label>
       </div>
 
-      <div class="grid sm:grid-cols-2 gap-3 mt-3">
+      <div class="mt-3">
         <label class="font-semibold">
-          Tavolo UI MisterPOS
+          Nome cassa
           <input
-            bind:value={misterPosConfig.uiSeatKey}
-            type="number"
-            min="0"
-            class="block w-full mt-1 px-3 py-2 min-h-12 border-2 border-leaf rounded-lg bg-cream-50"
-          />
-        </label>
-        <label class="font-semibold">
-          Nome tavolo UI
-          <input
-            bind:value={misterPosConfig.uiSeatDescription}
-            placeholder="Al banco"
+            bind:value={config.tillName}
+            placeholder="Cassa telefono"
             class="block w-full mt-1 px-3 py-2 min-h-12 border-2 border-leaf rounded-lg bg-cream-50"
           />
         </label>
       </div>
 
       <div class="bg-amber-100 border border-amber-700 text-amber-950 rounded-lg px-3 py-3 mt-4">
-        <p class="font-bold">Bridge cassa desktop</p>
+        <p class="font-bold">Stesso Wi-Fi</p>
         <p class="text-sm mt-1">
-          Il bridge deve essere avviato sul computer dove gira la cassa MisterPOS desktop.
+          Il telefono e il PC della cassa devono essere collegati alla stessa rete locale.
         </p>
       </div>
 
@@ -651,14 +633,14 @@
       <div class="grid sm:grid-cols-2 gap-3 mt-3">
         <button
           type="button"
-          onclick={persistMisterPosConfig}
+          onclick={persistConfig}
           class="px-5 py-3 min-h-12 rounded-full border-2 border-leaf text-leaf font-bold"
         >
           Salva
         </button>
         <button
           type="button"
-          onclick={checkMisterPosConnection}
+          onclick={checkConnection}
           disabled={connectionState === 'checking'}
           class="px-5 py-3 min-h-12 rounded-full bg-leaf text-white font-bold"
         >
@@ -731,9 +713,7 @@
                         class:bg-red-100={scan.status === 'failed'}
                         class:text-red-900={scan.status === 'failed'}
                       >
-                        {scan.status === 'loaded'
-                          ? 'Caricato'
-                          : 'Verifica'}
+                        {scan.status === 'loaded' ? 'Inviato' : 'Verifica'}
                       </span>
                     </div>
                     <p class="font-semibold truncate">{scan.summary}</p>
@@ -759,93 +739,77 @@
   {:else}
     <div class="sticky top-0 z-10 bg-cream-50 pb-3">
       <div class="bg-cream-100 rounded-lg px-4 py-3">
-        <div>
-          <div class="text-sm uppercase tracking-wide text-leaf font-semibold">Coperti</div>
-          <div class="text-2xl font-bold text-ink">
-            {payload.p} {payload.p === 1 ? 'persona' : 'persone'}
-          </div>
+        <div class="text-sm uppercase tracking-wide text-leaf font-semibold">Coperti</div>
+        <div class="text-2xl font-bold text-ink">
+          {payload.p} {payload.p === 1 ? 'persona' : 'persone'}
         </div>
       </div>
     </div>
 
     <section class="bg-white border-2 border-leaf rounded-xl p-4 mb-5">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="text-xl font-bold text-leaf">Cassa desktop MisterPOS</h2>
-            <p class="text-sm mt-1">
-              {connectionState === 'connected'
-                ? connectionMessage
-                : 'Il caricamento verificherà la connessione prima di inviare.'}
-            </p>
-          </div>
-          <span
-            class="w-4 h-4 rounded-full shrink-0"
-            class:bg-green-600={connectionState === 'connected'}
-            class:bg-red-600={connectionState === 'failed'}
-            class:bg-amber-500={connectionState === 'idle' || connectionState === 'checking'}
-            aria-hidden="true"
-          ></span>
-        </div>
-
-        {#if missingMappingNames.length}
-          <div class="bg-amber-100 border border-amber-700 text-amber-950 rounded-lg px-3 py-3 mt-3">
-            <p class="font-bold">Mappatura MisterPOS incompleta</p>
-            <p class="text-sm mt-1">
-              L’invio sarà disponibile dopo aver associato questi articoli:
-              {missingMappingNames.join(', ')}.
-            </p>
-          </div>
-        {/if}
-
-        <div class="mt-4">
-          <button
-            type="button"
-            onclick={loadIntoMisterPosDesktop}
-            disabled={!canTryLoadMisterPos}
-            class="w-full px-6 py-4 min-h-14 rounded-full bg-tomato text-white text-lg font-bold disabled:bg-cream-200 disabled:text-ink/50"
-          >
-            {#if sending}
-              Caricamento…
-            {:else}
-              Carica cassa desktop
-            {/if}
-          </button>
-        </div>
-
-        {#if sendMessage}
-          <p
-            class="mt-3 rounded-lg px-3 py-3 font-semibold"
-            class:bg-green-100={totalMatches}
-            class:text-green-900={totalMatches}
-            class:bg-red-100={!totalMatches && !sending}
-            class:text-red-900={!totalMatches && !sending}
-            class:bg-cream-100={sending}
-            role="status"
-          >
-            {sendMessage}
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold text-leaf">Invia alla cassa</h2>
+          <p class="text-sm mt-1">
+            {connectionState === 'connected'
+              ? connectionMessage
+              : 'L\'invio verificherà la connessione prima di procedere.'}
           </p>
-        {/if}
+        </div>
+        <span
+          class="w-4 h-4 rounded-full shrink-0"
+          class:bg-green-600={connectionState === 'connected'}
+          class:bg-red-600={connectionState === 'failed'}
+          class:bg-amber-500={connectionState === 'idle' || connectionState === 'checking'}
+          aria-hidden="true"
+        ></span>
+      </div>
+
+      <div class="mt-4">
+        <button
+          type="button"
+          onclick={submitOrder}
+          disabled={!canSubmit}
+          class="w-full px-6 py-4 min-h-14 rounded-full bg-tomato text-white text-lg font-bold disabled:bg-cream-200 disabled:text-ink/50"
+        >
+          {#if sending}
+            Invio…
+          {:else}
+            Invia ordine alla cassa
+          {/if}
+        </button>
+      </div>
+
+      {#if sendMessage}
+        <p
+          class="mt-3 rounded-lg px-3 py-3 font-semibold"
+          class:bg-green-100={sendSuccess}
+          class:text-green-900={sendSuccess}
+          class:bg-red-100={!sendSuccess && !sending}
+          class:text-red-900={!sendSuccess && !sending}
+          class:bg-cream-100={sending}
+          role="status"
+        >
+          {sendMessage}
+        </p>
+      {/if}
     </section>
 
     <div class="bg-cream-100 border-l-4 border-leaf rounded-r-lg px-4 py-3 mb-4">
       <p class="font-bold">Inserimento manuale sempre disponibile</p>
       <p class="text-sm mt-1">
-        Leggi le righe qui sotto e inseriscile in MisterPOS.
+        Leggi le righe qui sotto e inseriscile nella cassa.
       </p>
     </div>
 
     <section class="mb-5">
       <h2 class="text-lg font-bold uppercase tracking-wide text-tomato mb-2">Coperto</h2>
-      <div
-        class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg"
-      >
+      <div class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg">
         <span class="text-3xl font-bold tabular-nums w-14 shrink-0 text-tomato">
           {payload.p}×
         </span>
         <span class="flex-1 min-w-0">
-          <span class="block text-xl font-semibold text-ink leading-tight">
-            Coperto
-          </span>
+          <span class="block text-xl font-semibold text-ink leading-tight">Coperto</span>
           <span class="block text-sm text-leaf mt-1">
             {formatEUR(MENU.coperto.perPersona)} cad. ·
             {formatEUR(MENU.coperto.perPersona * payload.p)}
@@ -918,36 +882,22 @@
       </p>
     {/if}
 
-    <label
-      class="flex items-center gap-3 bg-white border-2 border-leaf rounded-lg px-4 py-4 mb-4"
-      class:opacity-50={!payloadTotalMatches || hasUnknownLines}
-    >
-      <input
-        type="checkbox"
-        bind:checked={totalMatches}
-        disabled={!payloadTotalMatches || hasUnknownLines}
-        class="w-7 h-7 shrink-0 accent-green-700"
-      />
-      <span class="text-lg font-bold text-ink">
-        Il totale in MisterPOS corrisponde a {formatEUR(computedTotal)}
-      </span>
-    </label>
-
-    <button
-      type="button"
-      onclick={completeOrder}
-      disabled={!canComplete}
-      class="w-full px-6 py-4 min-h-14 rounded-full bg-tomato hover:bg-tomato-dark disabled:bg-cream-200 disabled:text-ink/50 text-white text-xl font-bold mb-3"
-    >
-      Completa e scansiona il prossimo
-    </button>
+    {#if sendSuccess}
+      <button
+        type="button"
+        onclick={resetOrder}
+        class="w-full px-6 py-4 min-h-14 rounded-full bg-tomato hover:bg-tomato-dark text-white text-xl font-bold mb-3"
+      >
+        Scansiona il prossimo
+      </button>
+    {/if}
 
     <button
       type="button"
       onclick={confirmReset}
       class="w-full px-6 py-3 min-h-12 rounded-full bg-cream-100 border-2 border-leaf text-leaf font-bold"
     >
-      Abbandona ordine
+      {sendSuccess ? 'Torna alla scansione' : 'Abbandona ordine'}
     </button>
   {/if}
 </div>

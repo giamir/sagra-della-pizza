@@ -9,6 +9,15 @@
     totalCents: number; source: 'qr' | 'manual'; paymentMethod: 'cash' | 'card';
     lines: ReportLine[];
   };
+  type TrendBucket = {
+    key: string;
+    label: string;
+    rangeLabel: string;
+    orders: number;
+    cents: number;
+    pct: number;
+    revenuePct: number;
+  };
 
   let {
     onClose,
@@ -148,7 +157,41 @@
     return Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 10);
   });
 
-  const byHour = $derived.by(() => {
+  const orderTrend = $derived.by((): TrendBucket[] => {
+    if (period === 'hour' && !customDate) {
+      const to = new Date();
+      to.setSeconds(0, 0);
+      const from = new Date(to.getTime() - 60 * 60 * 1000);
+      const buckets: TrendBucket[] = [];
+      for (let i = 0; i < 6; i++) {
+        const start = new Date(from.getTime() + i * 10 * 60 * 1000);
+        const end = new Date(start.getTime() + 10 * 60 * 1000);
+        buckets.push({
+          key: start.toISOString(),
+          label: start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+          rangeLabel: `${start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}-${end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+          orders: 0,
+          cents: 0,
+          pct: 0,
+          revenuePct: 0
+        });
+      }
+      for (const o of orders) {
+        const createdAt = new Date(o.createdAt);
+        const index = Math.floor((createdAt.getTime() - from.getTime()) / (10 * 60 * 1000));
+        if (index < 0 || index >= buckets.length) continue;
+        buckets[index].orders++;
+        buckets[index].cents += o.totalCents;
+      }
+      const maxOrders = Math.max(1, ...buckets.map((b) => b.orders));
+      const maxRevenue = Math.max(1, ...buckets.map((b) => b.cents));
+      return buckets.map((b) => ({
+        ...b,
+        pct: Math.round((b.orders / maxOrders) * 100),
+        revenuePct: Math.round((b.cents / maxRevenue) * 100)
+      }));
+    }
+
     const map = new Map<number, { orders: number; cents: number }>();
     for (const o of orders) {
       const h = new Date(o.createdAt).getHours();
@@ -157,11 +200,43 @@
       cur.cents += o.totalCents;
       map.set(h, cur);
     }
-    const maxOrders = Math.max(1, ...Array.from(map.values()).map((v) => v.orders));
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([h, v]) => ({ hour: h, ...v, pct: Math.round((v.orders / maxOrders) * 100) }));
+    const hours = customDate || period === 'all'
+      ? Array.from({ length: 24 }, (_, i) => i)
+      : Array.from({ length: new Date().getHours() + 1 }, (_, i) => i);
+    const maxOrders = Math.max(1, ...hours.map((h) => map.get(h)?.orders ?? 0));
+    const maxRevenue = Math.max(1, ...hours.map((h) => map.get(h)?.cents ?? 0));
+    return hours.map((h) => {
+      const v = map.get(h) ?? { orders: 0, cents: 0 };
+      const label = String(h).padStart(2, '0');
+      return {
+        key: label,
+        label,
+        rangeLabel: `${label}:00-${String((h + 1) % 24).padStart(2, '0')}:00`,
+        ...v,
+        pct: Math.round((v.orders / maxOrders) * 100),
+        revenuePct: Math.round((v.cents / maxRevenue) * 100)
+      };
+    });
   });
+
+  const trendSummary = $derived.by(() => {
+    const active = orderTrend.filter((b) => b.orders > 0);
+    const peak = [...active].sort((a, b) => b.orders - a.orders || b.cents - a.cents)[0] ?? null;
+    const totalTrendRevenue = active.reduce((sum, b) => sum + b.cents, 0);
+    const totalTrendOrders = active.reduce((sum, b) => sum + b.orders, 0);
+    return {
+      peak,
+      averageOrders: active.length ? totalTrendOrders / active.length : 0,
+      averageTicketCents: totalTrendOrders ? Math.round(totalTrendRevenue / totalTrendOrders) : 0
+    };
+  });
+
+  const topTrendBuckets = $derived(
+    [...orderTrend]
+      .filter((bucket) => bucket.orders > 0)
+      .sort((a, b) => b.orders - a.orders || b.cents - a.cents)
+      .slice(0, 5)
+  );
 
   function fmtTime(iso: string): string {
     return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
@@ -321,21 +396,116 @@
 
         </div>
 
-        <!-- Hourly chart -->
-        {#if byHour.length > 0}
-          <div class="mx-4 mb-4 border border-gray-100 rounded-xl p-4">
-            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Ordini per ora</p>
-            <div class="flex items-end gap-1 h-16">
-              {#each byHour as h}
-                <div class="flex-1 flex flex-col items-center gap-1">
-                  <span class="text-xs text-gray-500">{h.orders}</span>
-                  <div
-                    class="w-full rounded-t bg-green-600"
-                    style="height: {Math.max(4, h.pct * 0.48)}px"
-                  ></div>
-                  <span class="text-xs text-gray-400">{String(h.hour).padStart(2, '0')}</span>
+        <!-- Order trend -->
+        {#if orderTrend.length > 0}
+          <div class="mx-4 mb-4 border border-gray-100 rounded-xl overflow-hidden">
+            <div class="flex flex-col gap-3 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Andamento ordini</p>
+                <p class="text-sm font-semibold text-gray-800">
+                  {#if period === 'hour' && !customDate}
+                    Ultima ora, divisa ogni 10 minuti
+                  {:else if period === 'all'}
+                    Distribuzione per fascia oraria
+                  {:else}
+                    Ordini per ora
+                  {/if}
+                </p>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <div class="rounded-lg bg-white px-3 py-2">
+                  <span class="block text-gray-400">Picco</span>
+                  <span class="font-bold text-gray-900">{trendSummary.peak?.rangeLabel ?? '-'}</span>
                 </div>
-              {/each}
+                <div class="rounded-lg bg-white px-3 py-2">
+                  <span class="block text-gray-400">Ordini picco</span>
+                  <span class="font-bold text-gray-900">{trendSummary.peak?.orders ?? 0}</span>
+                </div>
+                <div class="rounded-lg bg-white px-3 py-2">
+                  <span class="block text-gray-400">Media</span>
+                  <span class="font-bold text-gray-900">{trendSummary.averageOrders.toFixed(1)}</span>
+                </div>
+                <div class="rounded-lg bg-white px-3 py-2">
+                  <span class="block text-gray-400">Scontrino medio</span>
+                  <span class="font-bold text-gray-900">{formatEUR(trendSummary.averageTicketCents / 100)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4">
+              <div class="grid grid-cols-[2.5rem_1fr] gap-3">
+                <div class="flex flex-col justify-between pb-7 pt-1 text-right text-[10px] text-gray-300">
+                  <span>{trendSummary.peak?.orders ?? 0}</span>
+                  <span>{Math.round((trendSummary.peak?.orders ?? 0) / 2)}</span>
+                  <span>0</span>
+                </div>
+                <div>
+                  <div class="overflow-x-auto pb-1">
+                    <div class="relative flex h-44 min-w-[32rem] items-end gap-1 border-b border-l border-gray-100 pl-2">
+                      <div class="pointer-events-none absolute inset-x-2 top-0 border-t border-dashed border-gray-100"></div>
+                      <div class="pointer-events-none absolute inset-x-2 top-1/2 border-t border-dashed border-gray-100"></div>
+                      {#each orderTrend as bucket}
+                        <div class="group relative flex min-w-5 flex-1 flex-col items-center justify-end gap-1">
+                          {#if bucket.orders > 0}
+                            <span class="text-[10px] font-semibold text-gray-500">{bucket.orders}</span>
+                          {:else}
+                            <span class="text-[10px] text-transparent">0</span>
+                          {/if}
+                          <div class="relative flex h-32 w-full items-end justify-center">
+                            <div
+                              class="w-full max-w-8 rounded-t bg-green-700 transition-colors group-hover:bg-green-800"
+                              class:bg-gray-200={bucket.orders === 0}
+                              title={`${bucket.rangeLabel}: ${bucket.orders} ordini, ${formatEUR(bucket.cents / 100)}`}
+                              style="height: {bucket.orders === 0 ? 3 : Math.max(8, bucket.pct * 1.28)}px"
+                            ></div>
+                            {#if bucket.cents > 0}
+                              <div
+                                class="absolute bottom-0 w-1 rounded-t bg-amber-400"
+                                title={`${bucket.rangeLabel}: incasso ${formatEUR(bucket.cents / 100)}`}
+                                style="height: {Math.max(6, bucket.revenuePct * 1.28)}px"
+                              ></div>
+                            {/if}
+                          </div>
+                          <span class="w-full truncate text-center text-[10px] text-gray-400">{bucket.label}</span>
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                  <div class="mt-3 flex items-center justify-end gap-4 text-xs text-gray-500">
+                    <span class="inline-flex items-center gap-1"><span class="h-2 w-3 rounded-sm bg-green-700"></span> Ordini</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-amber-400"></span> Incasso</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 overflow-hidden rounded-lg border border-gray-100">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-gray-50 text-xs text-gray-400">
+                      <th class="px-3 py-2 text-left font-medium">Fascia</th>
+                      <th class="px-3 py-2 text-right font-medium">Ordini</th>
+                      <th class="px-3 py-2 text-right font-medium">Quota</th>
+                      <th class="px-3 py-2 text-right font-medium">Incasso</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each topTrendBuckets as bucket}
+                      <tr class="border-t border-gray-50">
+                        <td class="px-3 py-2 font-medium text-gray-800">{bucket.rangeLabel}</td>
+                        <td class="px-3 py-2 text-right font-bold text-gray-800">{bucket.orders}</td>
+                        <td class="px-3 py-2 text-right text-gray-500">
+                          {orders.length ? Math.round((bucket.orders / orders.length) * 100) : 0}%
+                        </td>
+                        <td class="px-3 py-2 text-right font-semibold text-green-800">{formatEUR(bucket.cents / 100)}</td>
+                      </tr>
+                    {:else}
+                      <tr>
+                        <td colspan="4" class="px-3 py-6 text-center text-sm text-gray-400">Nessuna fascia con ordini</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         {/if}

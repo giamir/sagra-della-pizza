@@ -33,14 +33,15 @@
     { key: 'today', label: 'Oggi' },
     { key: 'all',   label: 'Tutto' },
   ];
-  const TABS: { key: 'summary' | 'orders'; label: string }[] = [
+  const TABS: { key: 'summary' | 'items' | 'orders'; label: string }[] = [
     { key: 'summary', label: 'Riepilogo' },
+    { key: 'items',   label: 'Articoli' },
     { key: 'orders',  label: 'Ordini' },
   ];
   let period = $state<Period>('today');
   // YYYY-MM-DD string; when set, overrides the period quick-filter
   let customDate = $state('');
-  let tab = $state<'summary' | 'orders'>('summary');
+  let tab = $state<'summary' | 'items' | 'orders'>('summary');
   let orders = $state<ReportOrder[]>([]);
   let loading = $state(false);
   let error = $state<string | null>(null);
@@ -144,18 +145,31 @@
       );
   });
 
-  const topItems = $derived.by(() => {
-    const map = new Map<string, { name: string; qty: number; cents: number }>();
+  const soldItems = $derived.by(() => {
+    const map = new Map<string, { itemId: string; name: string; qty: number; cents: number; unitPriceCents: number; station: string }>();
     for (const o of orders) {
       for (const l of o.lines) {
-        const cur = map.get(l.itemId) ?? { name: l.name, qty: 0, cents: 0 };
+        const cur = map.get(l.itemId) ?? {
+          itemId: l.itemId,
+          name: l.name,
+          qty: 0,
+          cents: 0,
+          unitPriceCents: l.unitPriceCents,
+          station: normalizeStation(l.station || 'Altro')
+        };
         cur.qty += l.qty;
         cur.cents += l.qty * l.unitPriceCents;
         map.set(l.itemId, cur);
       }
     }
-    return Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 10);
+    return Array.from(map.values()).sort((a, b) =>
+      b.qty - a.qty ||
+      b.cents - a.cents ||
+      a.name.localeCompare(b.name, 'it')
+    );
   });
+  const topItems = $derived(soldItems.slice(0, 10));
+  const soldItemsTotalQty = $derived(soldItems.reduce((sum, item) => sum + item.qty, 0));
 
   const orderTrend = $derived.by((): TrendBucket[] => {
     if (period === 'hour' && !customDate) {
@@ -243,6 +257,144 @@
   }
   function fmtDate(iso: string): string {
     return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+  }
+
+  function csvCell(value: string | number): string {
+    const text = String(value).replaceAll('"', '""');
+    return `"${text}"`;
+  }
+
+  function csvEuro(cents: number): string {
+    return (cents / 100).toFixed(2).replace('.', ',');
+  }
+
+  function htmlEscape(value: string | number): string {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function exportRangeKey(): string {
+    if (customDate) return customDate;
+    if (period === 'today') return new Date().toISOString().slice(0, 10);
+    if (period === 'hour') return `ultima-ora-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`;
+    return 'tutto';
+  }
+
+  function exportSoldItemsCsv() {
+    const rows = [
+      ['item_id', 'articolo', 'stazione', 'quantita', 'prezzo_eur', 'incasso_eur'],
+      ...soldItems.map((item) => [
+        item.itemId,
+        item.name,
+        item.station,
+        item.qty,
+        csvEuro(item.unitPriceCents),
+        csvEuro(item.cents)
+      ])
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(';')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `articoli-venduti-${exportRangeKey()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportSoldItemsPdf() {
+    const generatedAt = new Date().toLocaleString('it-IT');
+    const rows = soldItems.map((item) => `
+      <tr>
+        <td>
+          <strong>${htmlEscape(item.name)}</strong>
+        </td>
+        <td>${htmlEscape(item.station)}</td>
+        <td class="num qty">${item.qty}</td>
+        <td class="num">${formatEUR(item.unitPriceCents / 100)}</td>
+        <td class="num total">${formatEUR(item.cents / 100)}</td>
+      </tr>
+    `).join('');
+    const html = `<!doctype html>
+      <html lang="it">
+        <head>
+          <meta charset="utf-8" />
+          <title>Articoli venduti - ${htmlEscape(rangeLabel)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+            header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #14532d; padding-bottom: 14px; margin-bottom: 18px; }
+            h1 { margin: 0; color: #14532d; font-size: 24px; }
+            p { margin: 4px 0 0; color: #4b5563; font-size: 12px; }
+            .kpis { display: flex; gap: 10px; margin-bottom: 18px; }
+            .kpi { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; min-width: 120px; }
+            .kpi span { display: block; color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+            .kpi strong { display: block; margin-top: 4px; font-size: 18px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th { text-align: left; background: #f3f4f6; color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+            th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; vertical-align: top; }
+            tbody tr:nth-child(even) { background: #f9fafb; }
+            .num { text-align: right; white-space: nowrap; }
+            .qty { font-weight: 800; font-size: 14px; }
+            .total { color: #166534; font-weight: 800; }
+            @page { margin: 14mm; }
+          </style>
+        </head>
+        <body>
+          <header>
+            <div>
+              <h1>Articoli venduti</h1>
+              <p>${htmlEscape(rangeLabel)} · generato ${htmlEscape(generatedAt)}</p>
+            </div>
+            <div>
+              <p>${orders.length} ordini · ${totalCovers} coperti</p>
+              <p>${formatEUR(totalRevenue / 100)} incasso totale</p>
+            </div>
+          </header>
+          <section class="kpis">
+            <div class="kpi"><span>Articoli diversi</span><strong>${soldItems.length}</strong></div>
+            <div class="kpi"><span>Pezzi totali</span><strong>${soldItemsTotalQty}</strong></div>
+          </section>
+          <table>
+            <thead>
+              <tr>
+                <th>Articolo</th>
+                <th>Stazione</th>
+                <th class="num">Qtà</th>
+                <th class="num">Prezzo</th>
+                <th class="num">Incasso</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </body>
+      </html>`;
+
+    const frame = document.createElement('iframe');
+    frame.style.position = 'fixed';
+    frame.style.right = '0';
+    frame.style.bottom = '0';
+    frame.style.width = '0';
+    frame.style.height = '0';
+    frame.style.border = '0';
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    if (!doc) {
+      frame.remove();
+      return;
+    }
+    doc.open();
+    doc.write(html);
+    doc.close();
+    frame.onload = () => {
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+      window.setTimeout(() => frame.remove(), 1000);
+    };
   }
 </script>
 
@@ -509,6 +661,87 @@
             </div>
           </div>
         {/if}
+
+      {:else if tab === 'items'}
+
+        <!-- Sold items list -->
+        <div class="p-4">
+          <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Articoli venduti</p>
+              <h2 class="text-xl font-black text-gray-900">{rangeLabel}</h2>
+            </div>
+            <div class="flex flex-wrap items-end justify-end gap-2">
+              <div class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+                <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
+                  <span class="block text-xs font-semibold text-gray-400">Ordini</span>
+                  <span class="font-black text-gray-900">{orders.length}</span>
+                </div>
+                <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
+                  <span class="block text-xs font-semibold text-gray-400">Coperti</span>
+                  <span class="font-black text-gray-900">{totalCovers}</span>
+                </div>
+                <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
+                  <span class="block text-xs font-semibold text-gray-400">Articoli diversi</span>
+                  <span class="font-black text-gray-900">{soldItems.length}</span>
+                </div>
+                <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
+                  <span class="block text-xs font-semibold text-gray-400">Pezzi totali</span>
+                  <span class="font-black text-gray-900">{soldItemsTotalQty}</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  onclick={exportSoldItemsCsv}
+                  disabled={soldItems.length === 0}
+                  class="rounded-lg bg-green-800 px-4 py-2 text-sm font-bold text-white hover:bg-green-900 disabled:bg-gray-200 disabled:text-gray-400"
+                >
+                  CSV
+                </button>
+                <button
+                  type="button"
+                  onclick={exportSoldItemsPdf}
+                  disabled={soldItems.length === 0}
+                  class="rounded-lg border border-green-800 px-4 py-2 text-sm font-bold text-green-900 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent"
+                >
+                  PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-hidden rounded-xl border border-gray-100">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-50 text-xs text-gray-400">
+                  <th class="px-4 py-2 text-left font-medium">Articolo</th>
+                  <th class="px-4 py-2 text-left font-medium">Stazione</th>
+                  <th class="px-4 py-2 text-right font-medium">Qtà</th>
+                  <th class="px-4 py-2 text-right font-medium">Prezzo</th>
+                  <th class="px-4 py-2 text-right font-medium">Incasso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each soldItems as item, index (item.itemId)}
+                  <tr class="border-t border-gray-50" class:bg-gray-50={index % 2 === 1}>
+                    <td class="px-4 py-2 font-semibold text-gray-800">
+                      <span class="block truncate max-w-[20rem]">{item.name}</span>
+                    </td>
+                    <td class="px-4 py-2 text-gray-500">{item.station}</td>
+                    <td class="px-4 py-2 text-right text-lg font-black tabular-nums text-gray-900">{item.qty}</td>
+                    <td class="px-4 py-2 text-right text-gray-500 tabular-nums">{formatEUR(item.unitPriceCents / 100)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-green-800 tabular-nums">{formatEUR(item.cents / 100)}</td>
+                  </tr>
+                {:else}
+                  <tr>
+                    <td colspan="5" class="px-4 py-8 text-center text-gray-400">Nessun articolo venduto nel periodo selezionato</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
       {:else}
 

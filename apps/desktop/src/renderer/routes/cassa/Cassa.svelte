@@ -22,6 +22,27 @@
 
   const MENU = menuData as Menu;
   const PRICE_INDEX = buildPriceIndex(MENU);
+  const LIVE_STATS_REFRESH_MS = 15000;
+  const LOW_STOCK_LIMIT = 5;
+
+  type ReportLine = {
+    itemId: string;
+    name: string;
+    qty: number;
+    unitPriceCents: number;
+    station: string;
+  };
+
+  type ReportOrder = {
+    id: string;
+    tillName: string;
+    createdAt: string;
+    people: number;
+    totalCents: number;
+    source: 'qr' | 'manual';
+    paymentMethod: 'cash' | 'card';
+    lines: ReportLine[];
+  };
 
   // --- Cart state ---
   let cart = $state<Record<string, number>>({});
@@ -44,10 +65,16 @@
   let paymentSettingsOpen = $state(false);
   let reportsOpen = $state(false);
   let menuOpen = $state(false);
+  let liveStatsOpen = $state(false);
   let tillName = $state('Cassa');
   let paymentModalOpen = $state(false);
   let paymentEnabled = $state(false);
   let catalogAdminOpen = $state(false);
+  let todayOrders = $state<ReportOrder[]>([]);
+  let statsLoading = $state(false);
+  let statsError = $state<string | null>(null);
+  let statsIncreased = $state(false);
+  let statsDeltaCents = $state(0);
 
   // --- Stock ---
   let stock = $state<Record<string, number>>({});
@@ -63,6 +90,8 @@
   // --- USB keyboard wedge ---
   let scanBuffer = '';
   let scanBufferTimer = 0;
+  let lastStatsRevenueCents = 0;
+  let statsAnimationTimer = 0;
 
   // --- Derived ---
   const cartLines = $derived.by(() => {
@@ -79,6 +108,43 @@
   const copertoTotal = $derived(people * MENU.coperto.perPersona);
   const total = $derived(itemsTotal + copertoTotal);
   const cartIsEmpty = $derived(cartLines.length === 0);
+  const liveStats = $derived.by(() => {
+    const orderCount = todayOrders.length;
+    const revenueCents = todayOrders.reduce((sum, order) => sum + order.totalCents, 0);
+    const covers = todayOrders.reduce((sum, order) => sum + order.people, 0);
+    const cashCents = todayOrders
+      .filter((order) => order.paymentMethod === 'cash')
+      .reduce((sum, order) => sum + order.totalCents, 0);
+    const cardCents = revenueCents - cashCents;
+    const averageCents = orderCount > 0 ? Math.round(revenueCents / orderCount) : 0;
+
+    const itemMap = new Map<string, { id: string; name: string; qty: number; cents: number }>();
+    for (const order of todayOrders) {
+      for (const line of order.lines) {
+        const current = itemMap.get(line.itemId) ?? {
+          id: line.itemId,
+          name: line.name,
+          qty: 0,
+          cents: 0
+        };
+        current.qty += line.qty;
+        current.cents += line.qty * line.unitPriceCents;
+        itemMap.set(line.itemId, current);
+      }
+    }
+
+    const topItems = Array.from(itemMap.values())
+      .sort((a, b) => b.qty - a.qty || b.cents - a.cents)
+      .slice(0, 3);
+
+    const lowStock = Object.entries(stock)
+      .filter(([, remaining]) => remaining >= 0 && remaining <= LOW_STOCK_LIMIT)
+      .map(([id, remaining]) => ({ id, name: PRICE_INDEX[id]?.name ?? id, remaining }))
+      .sort((a, b) => a.remaining - b.remaining || a.name.localeCompare(b.name, 'it'))
+      .slice(0, 4);
+
+    return { orderCount, revenueCents, covers, cashCents, cardCents, averageCents, topItems, lowStock };
+  });
 
   // --- Cart actions ---
   function addItem(id: string) {
@@ -107,6 +173,56 @@
 
   function setPeople(n: number) {
     people = Math.max(0, Math.min(30, n));
+  }
+
+  function todayRange(): [string, string] {
+    const now = new Date();
+    return [
+      new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(),
+      now.toISOString()
+    ];
+  }
+
+  function formatCents(cents: number): string {
+    return formatEUR(cents / 100);
+  }
+
+  function showStatsIncrease(deltaCents: number) {
+    statsDeltaCents = deltaCents;
+    statsIncreased = true;
+    clearTimeout(statsAnimationTimer);
+    statsAnimationTimer = window.setTimeout(() => {
+      statsIncreased = false;
+      statsDeltaCents = 0;
+    }, 2600);
+  }
+
+  async function refreshLiveStats() {
+    statsLoading = true;
+    statsError = null;
+    const [from, to] = todayRange();
+    try {
+      const result = await window.api.getReports(from, to);
+      if (!result.ok) {
+        statsError = result.error ?? 'Statistiche non disponibili';
+        todayOrders = [];
+        return;
+      }
+      const nextRevenueCents = result.orders.reduce(
+        (sum: number, order: ReportOrder) => sum + order.totalCents,
+        0
+      );
+      if (lastStatsRevenueCents > 0 && nextRevenueCents > lastStatsRevenueCents) {
+        showStatsIncrease(nextRevenueCents - lastStatsRevenueCents);
+      }
+      lastStatsRevenueCents = nextRevenueCents;
+      todayOrders = result.orders;
+    } catch (error) {
+      statsError = error instanceof Error ? error.message : 'Statistiche non disponibili';
+      todayOrders = [];
+    } finally {
+      statsLoading = false;
+    }
   }
 
   // Returns the options for the category that contains this item.
@@ -311,6 +427,7 @@
       }
 
       setTimeout(() => { statusMessage = null; }, 4000);
+      void refreshLiveStats();
     } catch (err) {
       statusMessage = err instanceof Error ? err.message : 'Errore salvataggio.';
     } finally {
@@ -318,28 +435,39 @@
     }
   }
 
-  onMount(async () => {
+  onMount(() => {
+    let liveStatsTimer = 0;
+    let unsubStock: (() => void) | null = null;
+
     window.addEventListener('keydown', handleKeyInput);
 
-    // Load till name + ECR17 flag
-    const [settings, payConfig] = await Promise.all([
-      window.api.getSettings(),
-      window.api.getPaymentConfig(),
-    ]);
-    tillName = settings.tillName || 'Cassa';
-    paymentEnabled = payConfig.enabled;
+    void (async () => {
+      // Load till name + ECR17 flag
+      const [settings, payConfig] = await Promise.all([
+        window.api.getSettings(),
+        window.api.getPaymentConfig(),
+      ]);
+      tillName = settings.tillName || 'Cassa';
+      paymentEnabled = payConfig.enabled;
 
-    // Load initial stock
-    stock = await window.api.getStock();
+      // Load initial stock
+      stock = await window.api.getStock();
+      await refreshLiveStats();
+      liveStatsTimer = window.setInterval(() => {
+        void refreshLiveStats();
+      }, LIVE_STATS_REFRESH_MS);
 
-    // Subscribe to live stock updates (from host broadcast or local changes)
-    const unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+      // Subscribe to live stock updates (from host broadcast or local changes)
+      unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+    })();
 
     return () => {
       stopScan();
       window.removeEventListener('keydown', handleKeyInput);
       clearTimeout(scanBufferTimer);
-      unsubStock();
+      clearTimeout(statsAnimationTimer);
+      if (liveStatsTimer) clearInterval(liveStatsTimer);
+      unsubStock?.();
     };
   });
 </script>
@@ -358,7 +486,110 @@
       <span class="text-red-300 text-sm font-medium">{scanError}</span>
     {/if}
 
+    <div
+      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      class:z-50={liveStatsOpen}
+      class:z-10={!liveStatsOpen}
+    >
+      <button
+        type="button"
+        onclick={() => { liveStatsOpen = !liveStatsOpen; menuOpen = false; }}
+        class="relative px-3 py-1 rounded-full text-xs font-bold border border-green-500 bg-green-950/30 text-green-50 hover:bg-green-800 tabular-nums overflow-visible"
+        class:statsPop={statsIncreased}
+        aria-expanded={liveStatsOpen}
+      >
+        Oggi {formatCents(liveStats.revenueCents)} · {liveStats.covers} coperti
+        {#if statsIncreased && statsDeltaCents > 0}
+          <span class="statsDelta absolute left-1/2 top-0 -translate-x-1/2 rounded-full bg-lime-300 px-2 py-0.5 text-[11px] font-black text-green-950 shadow-lg">
+            +{formatCents(statsDeltaCents)}
+          </span>
+        {/if}
+      </button>
+
+      {#if liveStatsOpen}
+        <button
+          type="button"
+          class="fixed inset-0 z-40 cursor-default"
+          aria-label="Chiudi statistiche"
+          onclick={() => liveStatsOpen = false}
+        ></button>
+
+        <section class="absolute left-1/2 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Oggi</p>
+                <p class="text-2xl font-black tabular-nums text-green-900">{formatCents(liveStats.revenueCents)}</p>
+              </div>
+              <button
+                type="button"
+                onclick={refreshLiveStats}
+                class="px-2 py-1 rounded text-xs font-bold text-green-800 bg-green-50 hover:bg-green-100"
+              >
+                Aggiorna
+              </button>
+            </div>
+            <p class="mt-1 text-sm font-semibold text-gray-700">
+              {liveStats.orderCount} ordini · {liveStats.covers} coperti · {formatCents(liveStats.averageCents)} medio
+            </p>
+            {#if statsLoading}
+              <p class="mt-1 text-xs font-semibold text-gray-400">Aggiornamento…</p>
+            {/if}
+            {#if statsError}
+              <p class="mt-1 text-xs font-semibold text-red-600">{statsError}</p>
+            {/if}
+          </div>
+
+          <div class="grid grid-cols-2 divide-x divide-gray-100 border-b border-gray-100">
+            <div class="px-4 py-3">
+              <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Contanti</p>
+              <p class="text-lg font-black tabular-nums">{formatCents(liveStats.cashCents)}</p>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Carta</p>
+              <p class="text-lg font-black tabular-nums">{formatCents(liveStats.cardCents)}</p>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 border-b border-gray-100">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Più venduti</p>
+            {#if liveStats.topItems.length}
+              <ul class="space-y-1">
+                {#each liveStats.topItems as item (item.id)}
+                  <li class="flex items-center justify-between gap-3 text-sm">
+                    <span class="font-semibold truncate">{item.name}</span>
+                    <span class="font-black tabular-nums text-green-900">{item.qty}</span>
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p class="text-sm font-semibold text-gray-500">Nessun ordine registrato.</p>
+            {/if}
+          </div>
+
+          <div class="px-4 py-3">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Scorte basse</p>
+            {#if liveStats.lowStock.length}
+              <ul class="space-y-1">
+                {#each liveStats.lowStock as item (item.id)}
+                  <li class="flex items-center justify-between gap-3 text-sm">
+                    <span class="font-semibold truncate">{item.name}</span>
+                    <span class="font-black tabular-nums" class:text-red-700={item.remaining === 0} class:text-amber-700={item.remaining > 0}>
+                      {item.remaining}
+                    </span>
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p class="text-sm font-semibold text-gray-500">Nessuna scorta critica.</p>
+            {/if}
+          </div>
+        </section>
+      {/if}
+    </div>
+
     <div class="ml-auto flex items-center gap-2">
+
       <!-- Operational: only shown when relevant -->
       {#if !cartIsEmpty}
         <button type="button" onclick={clearCart}
@@ -366,15 +597,11 @@
           Svuota
         </button>
       {/if}
-      <button type="button" onclick={scanMode ? stopScan : startScan}
-        class="px-3 py-1 rounded text-xs font-bold bg-green-700 hover:bg-green-600 text-white">
-        {scanMode ? 'Chiudi fotocamera' : 'Scansiona QR'}
-      </button>
 
       <!-- Hamburger menu -->
       <button
         type="button"
-        onclick={() => menuOpen = !menuOpen}
+        onclick={() => { menuOpen = !menuOpen; liveStatsOpen = false; }}
         class="w-8 h-8 flex flex-col items-center justify-center gap-1 rounded hover:bg-green-800"
         aria-label="Menu"
       >
@@ -386,8 +613,12 @@
 
     <!-- Dropdown menu -->
     {#if menuOpen}
-      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-      <div class="fixed inset-0 z-40" onclick={() => menuOpen = false}></div>
+      <button
+        type="button"
+        class="fixed inset-0 z-40 cursor-default"
+        aria-label="Chiudi menu"
+        onclick={() => menuOpen = false}
+      ></button>
 
       <div class="absolute top-full right-0 z-50 w-52 bg-white rounded-b-xl shadow-2xl border border-gray-100 overflow-hidden">
         <!-- Operazioni -->
@@ -533,7 +764,10 @@
   <!-- Reports -->
   {#if reportsOpen}
     <Reports
-      onClose={() => reportsOpen = false}
+      onClose={() => {
+        reportsOpen = false;
+        void refreshLiveStats();
+      }}
       onReloadCart={(lines, p) => {
         for (const k of Object.keys(cart)) delete cart[k];
         for (const { id, qty } of lines) cart[id] = qty;
@@ -561,3 +795,42 @@
   {/if}
 
 </div>
+
+<style>
+  .statsPop {
+    animation: stats-pop 1800ms ease-out;
+  }
+
+  .statsDelta {
+    animation: stats-delta-rise 2600ms ease-out forwards;
+  }
+
+  @keyframes stats-pop {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(190, 242, 100, 0);
+    }
+    20% {
+      transform: scale(1.06);
+      box-shadow: 0 0 0 6px rgba(190, 242, 100, 0.18);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 14px rgba(190, 242, 100, 0);
+    }
+  }
+
+  @keyframes stats-delta-rise {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 0) scale(0.92);
+    }
+    16% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -42px) scale(1);
+    }
+  }
+</style>

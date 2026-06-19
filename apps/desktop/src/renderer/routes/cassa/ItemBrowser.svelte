@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { buildStockIdIndex } from '@sagra/shared/utils/stock';
   import type { Menu, MenuItem, MenuOption } from '@sagra/shared/types';
 
   let {
@@ -28,6 +29,12 @@
     menu.categories.find((c) => c.id === activeCategoryId) ?? menu.categories[0]
   );
 
+  const stockIdIndex = $derived(buildStockIdIndex(menu));
+
+  function stockIdFor(itemId: string): string {
+    return stockIdIndex[itemId] ?? itemId;
+  }
+
   // Count all cart entries for this item, including option-combo variants (key = `id||opt1,opt2`).
   function cartQty(item: MenuItem): number {
     const ids = item.variants?.length ? item.variants.map((v) => v.id) : [item.id];
@@ -40,9 +47,31 @@
   // True when the item (or all its variants) are explicitly limited to 0 in stock
   function isSoldOut(item: MenuItem): boolean {
     if (item.variants?.length) {
-      return item.variants.every((v) => v.id in stock && stock[v.id] === 0);
+      const stockId = stockIdFor(item.id);
+      return stockId in stock && stock[stockId] === 0;
     }
-    return item.id in stock && stock[item.id] === 0;
+    const stockId = stockIdFor(item.id);
+    return stockId in stock && stock[stockId] === 0;
+  }
+
+  function stockLabel(item: MenuItem): string | null {
+    const stockId = stockIdFor(item.id);
+    if (!(stockId in stock) || stock[stockId] === 0) return null;
+    return `${stock[stockId]} rimasti`;
+  }
+
+  function pizzaStripeColor(item: MenuItem): string | null {
+    if (activeCategory.id !== 'pizze') return null;
+
+    const label = `${item.id} ${item.name} ${item.description ?? ''}`.toLowerCase();
+    const isBianca =
+      label.includes('bianca') ||
+      label.includes('focaccia') ||
+      label.includes('focaccina') ||
+      label.includes('ciaccino') ||
+      item.id === 'genova';
+
+    return isBianca ? '#f59e0b' : '#dc2626';
   }
 </script>
 
@@ -81,13 +110,17 @@
           {@const qty = cartQty(item)}
           {@const soldOut = isSoldOut(item)}
           {@const hasOptions = (categoryOptions[activeCategory.id]?.length ?? 0) > 0}
+          {@const remainingLabel = stockLabel(item)}
+          {@const stripeColor = pizzaStripeColor(item)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
           <div
             role="button"
             tabindex={soldOut ? -1 : 0}
             onclick={() => !soldOut && onItemTap(item)}
+            style:border-left-color={!soldOut && stripeColor ? stripeColor : undefined}
             class="relative text-left rounded-lg border-2 px-3 py-3 transition-colors select-none"
             class:active:scale-[0.97]={!soldOut}
+            class:border-l-8={stripeColor && !soldOut}
             class:border-green-700={qty > 0 && !soldOut}
             class:bg-green-50={qty > 0 && !soldOut}
             class:border-gray-200={qty === 0 && !soldOut}
@@ -98,7 +131,7 @@
             class:cursor-not-allowed={soldOut}
             class:cursor-pointer={!soldOut}
           >
-            <span class="block font-semibold text-sm leading-tight" class:text-gray-900={!soldOut} class:text-gray-400={soldOut}>{item.name}</span>
+            <span class="block pr-7 text-base font-bold leading-tight" class:text-gray-900={!soldOut} class:text-gray-400={soldOut}>{item.name}</span>
             {#if item.description}
               <span class="block text-xs text-gray-400 mt-0.5 leading-tight">{item.description}</span>
             {/if}
@@ -107,9 +140,15 @@
                 {item.variants.map((v) => v.label).join(' · ')}
               </span>
             {/if}
-            <span class="block text-sm font-bold mt-1" class:text-green-800={!soldOut} class:text-gray-400={soldOut}>
+            <span class="block mt-1 text-xs font-semibold" class:text-gray-500={!soldOut} class:text-gray-400={soldOut}>
               {soldOut ? 'Esaurito' : formatEUR(item.price)}
             </span>
+
+            {#if remainingLabel && !soldOut}
+              <span class="mt-1 inline-block max-w-full whitespace-normal break-words rounded bg-amber-100 px-2 py-0.5 text-xs font-bold leading-tight text-amber-800">
+                {remainingLabel}
+              </span>
+            {/if}
 
             {#if hasOptions && !item.variants?.length && !soldOut}
               <button

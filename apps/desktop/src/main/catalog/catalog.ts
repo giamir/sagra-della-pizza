@@ -3,6 +3,7 @@ import type { Menu } from '@sagra/shared/types';
 import { getSetting, setSetting } from '../db/schema.js';
 import { getStation } from '../printing/station-map.js';
 import { buildPriceIndex } from '@sagra/shared/utils/pricing';
+import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
 
 export function getCatalog(): Menu {
   const raw = getSetting('catalog_json');
@@ -40,4 +41,12 @@ export function resolveStation(itemId: string): string {
 
 export function getLivePriceIndex(): ReturnType<typeof buildPriceIndex> {
   return buildPriceIndex(getCatalog());
+}
+
+export function getLiveStockIdIndex(): ReturnType<typeof buildStockIdIndex> {
+  return buildStockIdIndex(getCatalog());
+}
+
+export function resolveStockItemId(lineId: string): string {
+  return stockIdForCartKey(lineId, getLiveStockIdIndex());
 }

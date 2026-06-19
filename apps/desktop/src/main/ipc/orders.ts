@@ -3,7 +3,7 @@ import { getDb } from '../db/schema.js';
 import { decrementStock } from '../db/stock.js';
 import { loadTillSettings } from './settings.js';
 import { broadcastStock } from '../server/index.js';
-import { getLivePriceIndex, resolveStation } from '../catalog/catalog.js';
+import { getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 
 type SubmitOrderPayload = {
   people: number;
@@ -35,7 +35,7 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
   `);
 
   const result = db.transaction(() => {
-    const oversold = decrementStock(db, payload.lines);
+    const oversold = decrementStock(db, payload.lines, resolveStockItemId);
     if (oversold.length > 0) throw Object.assign(new Error('Esaurito'), { oversold });
 
     const row = insertOrder.run({ tillName, people: payload.people, totalCents: payload.totalCents, source: payload.source ?? 'manual', paymentMethod: payload.paymentMethod ?? 'cash' });

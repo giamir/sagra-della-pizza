@@ -4,7 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { getDb, getSetting } from '../db/schema.js';
 import { getStock, setStock, resetStock, decrementStock } from '../db/stock.js';
 import { queryOrders, voidOrder } from '../db/reports.js';
-import { getCatalog, getLivePriceIndex, resolveStation } from '../catalog/catalog.js';
+import { getCatalog, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 
 let _httpServer: ReturnType<typeof createServer> | null = null;
 let _wss: WebSocketServer | null = null;
@@ -104,7 +104,7 @@ export function startServer(port = 7331): void {
 
     try {
       const result = db.transaction(() => {
-        const oversold = decrementStock(db, lines);
+        const oversold = decrementStock(db, lines, resolveStockItemId);
         if (oversold.length > 0) {
           throw Object.assign(new Error('Esaurito'), { oversold });
         }

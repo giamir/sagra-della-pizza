@@ -21,19 +21,32 @@ export function resetStock(itemId: string): void {
 
 // Atomically decrement stock for all lines in an order.
 // Returns an array of item IDs that were over their limit (order should be rejected).
-export function decrementStock(db: import('better-sqlite3').Database, lines: [string, number][]): string[] {
+export function decrementStock(
+  db: import('better-sqlite3').Database,
+  lines: [string, number][],
+  stockIdForLine: (lineId: string) => string = (lineId) => lineId
+): string[] {
+  const requested = new Map<string, { qty: number; lineIds: string[] }>();
+  for (const [lineId, qty] of lines) {
+    const stockId = stockIdForLine(lineId);
+    const entry = requested.get(stockId) ?? { qty: 0, lineIds: [] };
+    entry.qty += qty;
+    entry.lineIds.push(lineId);
+    requested.set(stockId, entry);
+  }
+
   const oversold: string[] = [];
-  for (const [itemId, qty] of lines) {
-    const row = db.prepare('SELECT remaining_qty FROM stock WHERE item_id = ?').get(itemId) as { remaining_qty: number } | undefined;
+  for (const [stockId, request] of requested) {
+    const row = db.prepare('SELECT remaining_qty FROM stock WHERE item_id = ?').get(stockId) as { remaining_qty: number } | undefined;
     if (!row) continue; // no stock limit for this item
-    if (row.remaining_qty < qty) {
-      oversold.push(itemId);
+    if (row.remaining_qty < request.qty) {
+      oversold.push(...request.lineIds);
     }
   }
   if (oversold.length > 0) return oversold;
 
-  for (const [itemId, qty] of lines) {
-    db.prepare('UPDATE stock SET remaining_qty = remaining_qty - ? WHERE item_id = ?').run(qty, itemId);
+  for (const [stockId, request] of requested) {
+    db.prepare('UPDATE stock SET remaining_qty = remaining_qty - ? WHERE item_id = ?').run(request.qty, stockId);
   }
   return [];
 }

@@ -1,28 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { buildPriceIndex } from '@sagra/shared/utils/pricing';
   import menuData from '@sagra/shared/data/menu.json';
-  import type { Menu, MenuItem } from '@sagra/shared/types';
+  import type { Menu } from '@sagra/shared/types';
 
   let { onClose }: { onClose: () => void } = $props();
 
   const MENU = menuData as Menu;
-  const PRICE_INDEX = buildPriceIndex(MENU);
 
-  // Flat list of all leaf items (variants expanded, parent collapsed)
-  type ItemRow = { id: string; name: string; categoryLabel: string; isVariant: boolean };
+  type ItemRow = { id: string; name: string; categoryLabel: string };
 
   const allItems: ItemRow[] = [];
   for (const cat of MENU.categories) {
     for (const group of cat.groups) {
       for (const item of group.items) {
-        if (item.variants?.length) {
-          for (const v of item.variants) {
-            allItems.push({ id: v.id, name: `${item.name} — ${v.label}`, categoryLabel: cat.label, isVariant: true });
-          }
-        } else {
-          allItems.push({ id: item.id, name: item.name, categoryLabel: cat.label, isVariant: false });
-        }
+        allItems.push({ id: item.id, name: item.name, categoryLabel: cat.label });
       }
     }
   }

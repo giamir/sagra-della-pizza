@@ -1,4 +1,5 @@
 import { getDb } from './schema.js';
+import { resolveStockItemId } from '../catalog/catalog.js';
 
 export type ReportLine = {
   itemId: string;
@@ -84,7 +85,7 @@ export function voidOrder(id: number): ReportOrder | null {
       db.prepare(`
         UPDATE stock SET remaining_qty = MIN(initial_qty, remaining_qty + ?)
         WHERE item_id = ?
-      `).run(line.qty, line.itemId);
+      `).run(line.qty, resolveStockItemId(line.itemId));
     }
   })();
 

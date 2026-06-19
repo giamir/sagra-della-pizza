@@ -7,6 +7,7 @@
     "./types": "./src/types.ts",
     "./utils/payload": "./src/utils/payload.ts",
     "./utils/pricing": "./src/utils/pricing.ts",
+    "./utils/stock": "./src/utils/stock.ts",
     "./utils/currency": "./src/utils/currency.ts",
     "./data/menu.json": "./src/data/menu.json"
   }

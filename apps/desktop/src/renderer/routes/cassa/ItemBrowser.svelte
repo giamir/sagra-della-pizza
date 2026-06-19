@@ -60,19 +60,6 @@
     return `${stock[stockId]} rimasti`;
   }
 
-  function pizzaStripeColor(item: MenuItem): string | null {
-    if (activeCategory.id !== 'pizze') return null;
-
-    const label = `${item.id} ${item.name} ${item.description ?? ''}`.toLowerCase();
-    const isBianca =
-      label.includes('bianca') ||
-      label.includes('focaccia') ||
-      label.includes('focaccina') ||
-      label.includes('ciaccino') ||
-      item.id === 'genova';
-
-    return isBianca ? '#f59e0b' : '#dc2626';
-  }
 </script>
 
 <div class="flex flex-col w-[58%] border-r border-gray-200 bg-white overflow-hidden">
@@ -111,16 +98,13 @@
           {@const soldOut = isSoldOut(item)}
           {@const hasOptions = (categoryOptions[activeCategory.id]?.length ?? 0) > 0}
           {@const remainingLabel = stockLabel(item)}
-          {@const stripeColor = pizzaStripeColor(item)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
           <div
             role="button"
             tabindex={soldOut ? -1 : 0}
             onclick={() => !soldOut && onItemTap(item)}
-            style:border-left-color={!soldOut && stripeColor ? stripeColor : undefined}
             class="relative text-left rounded-lg border-2 px-3 py-3 transition-colors select-none"
             class:active:scale-[0.97]={!soldOut}
-            class:border-l-8={stripeColor && !soldOut}
             class:border-green-700={qty > 0 && !soldOut}
             class:bg-green-50={qty > 0 && !soldOut}
             class:border-gray-200={qty === 0 && !soldOut}

@@ -8,6 +8,7 @@ import { registerStockHandlers } from './ipc/stock.js';
 import { registerPaymentHandlers } from './ipc/payment.js';
 import { registerReportsHandlers } from './ipc/reports.js';
 import { registerCatalogHandlers } from './ipc/catalog.js';
+import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -58,11 +59,13 @@ app.whenReady().then(() => {
   registerPaymentHandlers();
   registerReportsHandlers();
   registerCatalogHandlers();
+  registerUpdateHandlers();
 
   // Start the embedded server if this till is configured as host
   applyServerRole(loadTillSettings());
 
   createWindow();
+  startUpdateChecks();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

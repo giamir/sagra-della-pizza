@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
+import { networkInterfaces } from 'os';
 import WebSocket from 'ws';
 import { getSetting, setSetting } from '../db/schema.js';
 import { startServer, stopServer } from '../server/index.js';
@@ -36,12 +37,36 @@ export type TillSettings = {
   serverPort: number;
 };
 
+export type LocalNetworkAddress = {
+  name: string;
+  address: string;
+};
+
 const DEFAULTS: TillSettings = {
   tillName: 'Cassa 1',
   role: 'host',
   hostUrl: 'http://192.168.1.10:7331',
   serverPort: 7331
 };
+
+function getLocalNetworkAddresses(): LocalNetworkAddress[] {
+  const addresses: LocalNetworkAddress[] = [];
+  const interfaces = networkInterfaces();
+
+  for (const [name, entries] of Object.entries(interfaces)) {
+    for (const entry of entries ?? []) {
+      if (entry.family !== 'IPv4' || entry.internal) continue;
+      addresses.push({ name, address: entry.address });
+    }
+  }
+
+  return addresses.sort((a, b) => {
+    const aWifi = /wi-?fi|wlan|en0/i.test(a.name);
+    const bWifi = /wi-?fi|wlan|en0/i.test(b.name);
+    if (aWifi !== bWifi) return aWifi ? -1 : 1;
+    return a.name.localeCompare(b.name) || a.address.localeCompare(b.address);
+  });
+}
 
 export function loadTillSettings(): TillSettings {
   const raw = getSetting('till_settings');
@@ -66,6 +91,7 @@ export function applyServerRole(settings: TillSettings): void {
 
 export function registerSettingsHandlers(): void {
   ipcMain.handle('settings:get', () => loadTillSettings());
+  ipcMain.handle('settings:network-addresses:get', () => getLocalNetworkAddresses());
 
   ipcMain.handle('settings:save', (_event, s: TillSettings) => {
     saveTillSettings(s);

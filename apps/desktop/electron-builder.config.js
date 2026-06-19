@@ -2,7 +2,14 @@
 const config = {
   appId: 'it.sagra.gestionale',
   productName: 'Sagra della Pizza',
-  publish: null,
+  publish: [
+    {
+      provider: 'github',
+      owner: 'giamir',
+      repo: 'sagra-della-pizza',
+      releaseType: 'release'
+    }
+  ],
   directories: {
     buildResources: 'build',
     output: 'dist'

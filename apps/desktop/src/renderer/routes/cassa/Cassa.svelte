@@ -19,6 +19,7 @@
   import PaymentSettings from '$lib/components/PaymentSettings.svelte';
   import Reports from '$lib/components/Reports.svelte';
   import CatalogAdmin from '$lib/components/CatalogAdmin.svelte';
+  import AboutUpdates from '$lib/components/AboutUpdates.svelte';
 
   const MENU = menuData as Menu;
   const PRICE_INDEX = buildPriceIndex(MENU);
@@ -70,6 +71,7 @@
   let paymentModalOpen = $state(false);
   let paymentEnabled = $state(false);
   let catalogAdminOpen = $state(false);
+  let aboutUpdatesOpen = $state(false);
   let todayOrders = $state<ReportOrder[]>([]);
   let statsLoading = $state(false);
   let statsError = $state<string | null>(null);
@@ -652,6 +654,15 @@
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
           <span class="w-5 text-center text-gray-400">⚙</span> Cassa / Rete
         </button>
+
+        <div class="border-t border-gray-100 my-1"></div>
+
+        <!-- Sistema -->
+        <p class="px-4 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Sistema</p>
+        <button type="button" onclick={() => { aboutUpdatesOpen = true; menuOpen = false; }}
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
+          <span class="w-5 text-center text-gray-400">↻</span> Aggiornamenti
+        </button>
       </div>
     {/if}
   </header>
@@ -792,6 +803,11 @@
   <!-- Catalog admin -->
   {#if catalogAdminOpen}
     <CatalogAdmin onClose={() => catalogAdminOpen = false} />
+  {/if}
+
+  <!-- App version / updates -->
+  {#if aboutUpdatesOpen}
+    <AboutUpdates onClose={() => aboutUpdatesOpen = false} />
   {/if}
 
 </div>

@@ -3,20 +3,42 @@
 
   let { onClose }: { onClose: () => void } = $props();
 
+  type LocalNetworkAddress = {
+    name: string;
+    address: string;
+  };
+
   let tillName = $state('');
   let role = $state<'host' | 'client'>('host');
   let hostUrl = $state('http://192.168.1.10:7331');
   let serverPort = $state(7331);
+  let localAddresses = $state<LocalNetworkAddress[]>([]);
+  let copiedAddress = $state<string | null>(null);
   let saving = $state(false);
   let message = $state<string | null>(null);
 
   onMount(async () => {
-    const s = await window.api.getSettings();
+    const [s, addresses] = await Promise.all([
+      window.api.getSettings(),
+      window.api.getLocalNetworkAddresses()
+    ]);
     tillName = s.tillName;
     role = s.role;
     hostUrl = s.hostUrl;
     serverPort = s.serverPort;
+    localAddresses = addresses as LocalNetworkAddress[];
   });
+
+  async function refreshAddresses() {
+    localAddresses = await window.api.getLocalNetworkAddresses() as LocalNetworkAddress[];
+  }
+
+  async function copyAddress(address: string) {
+    const url = `http://${address}:${serverPort}`;
+    await navigator.clipboard.writeText(url);
+    copiedAddress = address;
+    setTimeout(() => { copiedAddress = null; }, 1600);
+  }
 
   async function save() {
     saving = true;
@@ -46,7 +68,7 @@
   onclick={handleBackdrop}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-5">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 p-6 flex flex-col gap-5">
     <div class="flex items-center justify-between">
       <h2 class="font-bold text-lg text-gray-900">Impostazioni Cassa</h2>
       <button type="button" onclick={onClose} class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
@@ -93,6 +115,45 @@
         </button>
       </div>
     </div>
+
+    <!-- Local IP addresses -->
+    <section class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-bold text-gray-800">IP di questa cassa</p>
+          <p class="text-xs font-semibold text-gray-500">Da usare sulle altre casse quando questa macchina e' Host.</p>
+        </div>
+        <button
+          type="button"
+          onclick={refreshAddresses}
+          class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-100"
+        >
+          Aggiorna
+        </button>
+      </div>
+
+      {#if localAddresses.length}
+        <div class="mt-3 flex flex-col gap-2">
+          {#each localAddresses as item (`${item.name}-${item.address}`)}
+            <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+              <div class="min-w-0">
+                <p class="font-mono text-sm font-bold text-gray-900">{item.address}</p>
+                <p class="text-xs font-semibold text-gray-400 truncate">{item.name} · http://{item.address}:{serverPort}</p>
+              </div>
+              <button
+                type="button"
+                onclick={() => copyAddress(item.address)}
+                class="shrink-0 px-3 py-1.5 rounded-lg bg-green-700 text-xs font-bold text-white hover:bg-green-800"
+              >
+                {copiedAddress === item.address ? 'Copiato' : 'Copia URL'}
+              </button>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <p class="mt-3 text-sm font-semibold text-gray-500">Nessun indirizzo IPv4 di rete trovato.</p>
+      {/if}
+    </section>
 
     {#if role === 'host'}
       <!-- Server port -->

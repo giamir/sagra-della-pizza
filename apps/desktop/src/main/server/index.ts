@@ -40,7 +40,7 @@ export function startServer(port = 7331): void {
     res.setHeader('Access-Control-Allow-Private-Network', 'true');
     next();
   });
-  app.options('*', (_req, res) => { res.sendStatus(204); });
+  app.options(/.*/, (_req, res) => { res.sendStatus(204); });
 
   // --- Health ---
   app.get('/ping', (_req, res) => res.json({ ok: true, role: 'host' }));

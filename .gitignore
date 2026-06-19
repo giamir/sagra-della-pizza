@@ -8,3 +8,6 @@ dist
 !.env.example
 .DS_Store
 .playwright-mcp
+*.tsbuildinfo
+shared/src/**/*.d.ts
+shared/src/**/*.js

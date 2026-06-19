@@ -5,6 +5,19 @@ const api = {
   // Till settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('settings:save', settings),
+  getLocalNetworkAddresses: () => ipcRenderer.invoke('settings:network-addresses:get'),
+
+  // App / updates
+  getAppInfo: () => ipcRenderer.invoke('app:info'),
+  getUpdateStatus: () => ipcRenderer.invoke('updates:status:get'),
+  checkForUpdates: () => ipcRenderer.invoke('updates:check'),
+  installUpdate: () => ipcRenderer.invoke('updates:install'),
+  openReleases: () => ipcRenderer.invoke('updates:open-releases'),
+  onUpdateStatus: (cb: (status: unknown) => void) => {
+    const listener = (_: Electron.IpcRendererEvent, status: unknown) => cb(status);
+    ipcRenderer.on('updates:status', listener);
+    return () => ipcRenderer.removeListener('updates:status', listener);
+  },
 
   // Orders
   submitOrder: (order: unknown) => ipcRenderer.invoke('order:submit', order),

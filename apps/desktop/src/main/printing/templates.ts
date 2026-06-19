@@ -27,6 +27,13 @@ function formatTime(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}  ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function tableAndRowLine(width: number): string {
+  const table = 'Tavolo: ________';
+  const row = 'Fila: ______';
+  const gap = Math.max(2, width - table.length - row.length);
+  return `${table}${' '.repeat(gap)}${row}`;
+}
+
 // One ticket for a single station.
 export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42): Buffer {
   const e = new EscPos(width);
@@ -40,6 +47,9 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     .line(`ORD #${order.id}`)
     .bold(false)
     .line(formatTime(order.createdAt))
+    .feed()
+    .line(tableAndRowLine(width))
+    .feed()
     .separator('=')
     .align('left');
 
@@ -72,6 +82,9 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
     .align('left')
     .line(formatTime(order.createdAt))
     .line(`Ordine #${order.id}`)
+    .feed()
+    .line(tableAndRowLine(width))
+    .feed()
     .separator('-');
 
   for (const l of order.lines) {
@@ -132,6 +145,9 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
       station.toUpperCase(),
       `ORD #${order.id}`,
       formatTime(order.createdAt),
+      '',
+      tableAndRowLine(width),
+      '',
       sep('=')
     ];
     if (station !== 'Bevande') {
@@ -145,7 +161,7 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
   }
 
   const copertoTotal = order.people * 150;
-  const receiptRows: string[] = ['Sagra della Pizza', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
+  const receiptRows: string[] = ['Sagra della Pizza', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, '', tableAndRowLine(width), '', sep('-')];
   for (const l of order.lines) {
     const label = `${l.qty}x ${l.name}`;
     const sub = eur(l.unitPriceCents * l.qty);

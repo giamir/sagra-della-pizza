@@ -396,16 +396,47 @@
       item.cents
     ]);
 
+    const headerCells = headers
+      .map((h, index) => `<th${moneyColumns.includes(index) ? ' style="text-align:right;"' : ''}>${htmlEscape(h)}</th>`)
+      .join('');
+    const bodyHtml = bodyRows
+      .map((row) => {
+        const cells = row
+          .map((cell, index) => {
+            if (moneyColumns.includes(index) && typeof cell === 'number') {
+              // Raw dot-decimal value so Excel parses it as a real number,
+              // then formats it as currency regardless of system locale.
+              return `<td style="mso-number-format:'0.00';text-align:right;">${(cell / 100).toFixed(2)}</td>`;
+            }
+            return `<td>${htmlEscape(cell)}</td>`;
+          })
+          .join('');
+        return `<tr>${cells}</tr>`;
+      })
+      .join('');
+
     const html = `<!doctype html>
-      <html lang="it">
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" lang="it">
         <head>
           <meta charset="utf-8" />
+          <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>Articoli venduti</x:Name>
+                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+          <![endif]-->
           <style>
             body { font-family: Arial, sans-serif; }
             h1 { color: #14532d; }
             p { color: #4b5563; }
             table { border-collapse: collapse; margin-bottom: 18px; }
-            th { background: #e5e7eb; font-weight: bold; }
+            th { background: #e5e7eb; font-weight: bold; text-align: left; }
             th, td { border: 1px solid #9ca3af; padding: 6px 8px; }
           </style>
         </head>
@@ -413,20 +444,8 @@
           <h1>Articoli venduti - ${htmlEscape(rangeLabel)}</h1>
           <p>Generato ${htmlEscape(generatedAt)} \u00B7 ${soldItems.length} articoli \u00B7 ${soldItemsTotalQty} pezzi</p>
           <table>
-            <thead>
-              <tr>${headers.map((h) => `<th>${htmlEscape(h)}</th>`).join('')}</tr>
-            </thead>
-            <tbody>
-              ${bodyRows.map((row) => `
-                <tr>
-                  ${row.map((cell, index) => {
-                    const isMoney = moneyColumns.includes(index);
-                    const value = isMoney && typeof cell === 'number' ? csvEuro(cell) : cell;
-                    return `<td${isMoney ? ' style="mso-number-format:\'0.00\';"' : ''}>${htmlEscape(value)}</td>`;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
+            <thead><tr>${headerCells}</tr></thead>
+            <tbody>${bodyHtml}</tbody>
           </table>
         </body>
       </html>`;

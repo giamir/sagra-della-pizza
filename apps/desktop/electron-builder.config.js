@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('electron-builder').Configuration} */
 const config = {
   appId: 'it.sagra.gestionale',
@@ -17,14 +19,14 @@ const config = {
   extraResources: [{ from: 'resources/', to: '.' }],
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
-    icon: 'resources/icon.ico'
+    icon: path.join(__dirname, 'resources', 'icon.ico')
   },
   nsis: {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     perMachine: false,
-    installerIcon: 'resources/icon.ico',
-    uninstallerIcon: 'resources/icon.ico'
+    installerIcon: path.join(__dirname, 'resources', 'icon.ico'),
+    uninstallerIcon: path.join(__dirname, 'resources', 'icon.ico')
   },
   mac: {
     target: [
@@ -32,7 +34,7 @@ const config = {
       { target: 'zip', arch: ['x64', 'arm64'] }
     ],
     category: 'public.app-category.business',
-    icon: 'resources/icon.icns'
+    icon: path.join(__dirname, 'resources', 'icon.icns')
   }
 }
 

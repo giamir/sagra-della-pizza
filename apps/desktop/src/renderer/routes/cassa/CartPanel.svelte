@@ -59,21 +59,46 @@
 
   <!-- Lines -->
   <div class="flex-1 overflow-y-auto px-3 pt-3 pb-1">
-    {#if isEmpty}
-      <div class="h-full flex flex-col items-center justify-center gap-3 text-gray-400">
-        <span class="text-4xl">🧾</span>
-        <p class="font-semibold text-sm">Carrello vuoto</p>
-        <p class="text-xs text-center">Seleziona articoli dal menu<br>o scansiona il QR del cliente</p>
-        <button
-          type="button"
-          onclick={onScanQr}
-          class="mt-2 px-4 py-2 rounded-full border-2 border-green-700 text-green-800 font-bold text-sm hover:bg-green-50"
-        >
-          Scansiona QR
-        </button>
-      </div>
-    {:else}
-      <div class="space-y-3">
+    <div class="space-y-3">
+
+      <!-- Coperto (always first, before menu groups) -->
+      <ul class="space-y-1">
+        <li class="flex items-center gap-2 bg-white rounded-lg px-2 py-2 border border-gray-100">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold leading-tight truncate">Coperto</p>
+            <p class="text-xs text-gray-500">{formatEUR(copertoPerPerson)} × {people} = {formatEUR(copertoTotal)}</p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onclick={() => onSetPeople(people - 1)}
+              disabled={people <= 0}
+              class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 font-bold text-base leading-none"
+            >−</button>
+            <span class="w-6 text-center text-sm font-bold tabular-nums">{people}</span>
+            <button
+              type="button"
+              onclick={() => onSetPeople(people + 1)}
+              class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold text-base leading-none"
+            >+</button>
+          </div>
+        </li>
+      </ul>
+
+      {#if isEmpty}
+        <div class="flex flex-col items-center justify-center gap-3 pt-10 text-gray-400">
+          <span class="text-4xl">🧾</span>
+          <p class="font-semibold text-sm">Carrello vuoto</p>
+          <p class="text-xs text-center">Seleziona articoli dal menu<br>o scansiona il QR del cliente</p>
+          <button
+            type="button"
+            onclick={onScanQr}
+            class="mt-2 px-4 py-2 rounded-full border-2 border-green-700 text-green-800 font-bold text-sm hover:bg-green-50"
+          >
+            Scansiona QR
+          </button>
+        </div>
+      {:else}
         {#each groupedLines as group}
           <div>
             {#if group.label}
@@ -110,36 +135,12 @@
             </ul>
           </div>
         {/each}
-      </div>
-    {/if}
+      {/if}
+    </div>
   </div>
 
-  <!-- Footer: coperto, total, actions -->
+  <!-- Footer: total, actions -->
   <div class="shrink-0 border-t border-gray-200 bg-white px-3 pb-3 pt-2 space-y-2">
-
-    <!-- Coperto row -->
-    <div class="flex items-center justify-between">
-      <span class="text-sm font-semibold text-gray-700">
-        Coperto · {formatEUR(copertoPerPerson)} × {people}
-      </span>
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          onclick={() => onSetPeople(people - 1)}
-          disabled={people <= 0}
-          class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 font-bold text-base hover:bg-gray-50 disabled:opacity-30"
-        >−</button>
-        <span class="w-6 text-center font-bold tabular-nums text-sm">{people}</span>
-        <button
-          type="button"
-          onclick={() => onSetPeople(people + 1)}
-          class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 font-bold text-base hover:bg-gray-50"
-        >+</button>
-        <span class="w-16 text-right text-sm font-semibold tabular-nums text-gray-700">
-          {formatEUR(copertoTotal)}
-        </span>
-      </div>
-    </div>
 
     <!-- Total -->
     <div class="flex items-center justify-between bg-green-900 text-white rounded-lg px-3 py-2">

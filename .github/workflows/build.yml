@@ -35,9 +35,16 @@ jobs:
         working-directory: apps/desktop
         run: npm run postinstall
 
-      - name: Build and package (macOS)
+      # Keep build and package as SEPARATE steps: chaining them with && lets
+      # a .cmd shim short-circuit the rest of the line on Windows (and pwsh's
+      # $? can short-circuit too), silently skipping electron-builder.
+      - name: Build renderer (macOS)
         working-directory: apps/desktop
-        run: npm run package:mac
+        run: npx electron-vite build
+
+      - name: Package (macOS)
+        working-directory: apps/desktop
+        run: npx electron-builder --mac --publish never
 
       - name: Upload update artifacts (macOS)
         env:
@@ -65,9 +72,13 @@ jobs:
         working-directory: apps/desktop
         run: npm run postinstall
 
-      - name: Build and package (Windows)
+      - name: Build renderer (Windows)
         working-directory: apps/desktop
-        run: npm run package:win
+        run: npx electron-vite build
+
+      - name: Package (Windows)
+        working-directory: apps/desktop
+        run: npx electron-builder --win --publish never
 
       - name: Upload update artifacts (Windows)
         env:

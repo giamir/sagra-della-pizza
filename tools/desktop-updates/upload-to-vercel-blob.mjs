@@ -27,6 +27,7 @@ function shouldUpload(fileName) {
   return (
     fileName === 'latest.yml' ||
     fileName === 'latest-mac.yml' ||
+    fileName === 'win7-latest.yml' ||
     fileName.endsWith('.blockmap') ||
     fileName.endsWith('.exe') ||
     fileName.endsWith('.dmg') ||

@@ -1,6 +1,11 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { autoUpdater, type ProgressInfo, type UpdateInfo } from 'electron-updater';
 
+// Injected by electron.vite.config.ts (define). 'latest' for the normal build,
+// 'win7-latest' for the Windows 7 / Electron 22 build so the two never cross
+// update channels.
+declare const __UPDATE_CHANNEL__: string;
+
 const UPDATE_FEED_URL = 'https://sagradellapizza.it/desktop-updates';
 const DOWNLOAD_PAGE_URL = 'https://sagradellapizza.it/download';
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -176,8 +181,10 @@ export function startUpdateChecks(): void {
   if (supportsAutoInstall) {
     autoUpdater.setFeedURL({
       provider: 'generic',
-      url: UPDATE_FEED_URL
+      url: UPDATE_FEED_URL,
+      channel: __UPDATE_CHANNEL__
     });
+    autoUpdater.channel = __UPDATE_CHANNEL__;
     autoUpdater.autoDownload = true;
     autoUpdater.allowPrerelease = false;
     autoUpdater.allowDowngrade = false;

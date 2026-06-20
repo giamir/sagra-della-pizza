@@ -18,6 +18,16 @@
     pct: number;
     revenuePct: number;
   };
+  type TillSummary = {
+    tillName: string;
+    orders: number;
+    covers: number;
+    totalCents: number;
+    cashCents: number;
+    cardCents: number;
+    cashOrders: number;
+    cardOrders: number;
+  };
 
   let {
     onClose,
@@ -123,6 +133,41 @@
   const totalCovers    = $derived(orders.reduce((s, o) => s + o.people, 0));
   const cashOrders     = $derived(orders.filter((o) => o.paymentMethod === 'cash').length);
   const cardOrders     = $derived(orders.filter((o) => o.paymentMethod === 'card').length);
+  const cashRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'cash' ? o.totalCents : 0), 0));
+  const cardRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'card' ? o.totalCents : 0), 0));
+
+  const byTill = $derived.by((): TillSummary[] => {
+    const map = new Map<string, TillSummary>();
+    for (const o of orders) {
+      const key = o.tillName?.trim() || 'Cassa senza nome';
+      const cur = map.get(key) ?? {
+        tillName: key,
+        orders: 0,
+        covers: 0,
+        totalCents: 0,
+        cashCents: 0,
+        cardCents: 0,
+        cashOrders: 0,
+        cardOrders: 0
+      };
+      cur.orders += 1;
+      cur.covers += o.people;
+      cur.totalCents += o.totalCents;
+      if (o.paymentMethod === 'card') {
+        cur.cardCents += o.totalCents;
+        cur.cardOrders += 1;
+      } else {
+        cur.cashCents += o.totalCents;
+        cur.cashOrders += 1;
+      }
+      map.set(key, cur);
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      b.totalCents - a.totalCents ||
+      b.orders - a.orders ||
+      a.tillName.localeCompare(b.tillName, 'it')
+    );
+  });
 
   const byStation = $derived.by(() => {
     const map = new Map<string, { qty: number; cents: number }>();
@@ -306,6 +351,100 @@
     URL.revokeObjectURL(url);
   }
 
+  function exportReportsExcel() {
+    const generatedAt = new Date().toLocaleString('it-IT');
+    const paymentRows = [
+      ['Metodo', 'Ordini', 'Incasso'],
+      ['Contanti', cashOrders, cashRevenue],
+      ['Carta', cardOrders, cardRevenue],
+      ['Totale', orders.length, totalRevenue]
+    ];
+    const summaryRows = [
+      ['Periodo', rangeLabel],
+      ['Generato', generatedAt],
+      ['Ordini', String(orders.length)],
+      ['Coperti', String(totalCovers)],
+      ['Incasso totale', csvEuro(totalRevenue)],
+      ['Incasso contanti', csvEuro(cashRevenue)],
+      ['Incasso carta', csvEuro(cardRevenue)]
+    ];
+
+    const table = (title: string, headers: string[], rows: (string | number)[][], moneyColumns: number[] = []) => `
+      <h2>${htmlEscape(title)}</h2>
+      <table>
+        <thead>
+          <tr>${headers.map((h) => `<th>${htmlEscape(h)}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr>
+              ${row.map((cell, index) => {
+                const isMoney = moneyColumns.includes(index);
+                const value = isMoney && typeof cell === 'number' ? csvEuro(cell) : cell;
+                return `<td${isMoney ? ' style="mso-number-format:\'0.00\';"' : ''}>${htmlEscape(value)}</td>`;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const html = `<!doctype html>
+      <html lang="it">
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: Arial, sans-serif; }
+            h1 { color: #14532d; }
+            h2 { margin-top: 24px; color: #14532d; }
+            table { border-collapse: collapse; margin-bottom: 18px; }
+            th { background: #e5e7eb; font-weight: bold; }
+            th, td { border: 1px solid #9ca3af; padding: 6px 8px; }
+          </style>
+        </head>
+        <body>
+          <h1>Rapporti - ${htmlEscape(rangeLabel)}</h1>
+          ${table('Totali', ['Voce', 'Valore'], summaryRows)}
+          ${table('Pagamenti', paymentRows[0] as string[], paymentRows.slice(1), [2])}
+          ${table(
+            'Per cassa',
+            ['Cassa', 'Ordini', 'Coperti', 'Incasso totale', 'Contanti', 'Carta', 'Ordini contanti', 'Ordini carta'],
+            byTill.map((t) => [t.tillName, t.orders, t.covers, t.totalCents, t.cashCents, t.cardCents, t.cashOrders, t.cardOrders]),
+            [3, 4, 5]
+          )}
+          ${table(
+            'Articoli venduti',
+            ['ID articolo', 'Articolo', 'Stazione', 'Quantita', 'Prezzo', 'Incasso'],
+            soldItems.map((item) => [item.itemId, item.name, item.station, item.qty, item.unitPriceCents, item.cents]),
+            [4, 5]
+          )}
+          ${table(
+            'Ordini',
+            ['ID', 'Data', 'Ora', 'Cassa', 'Coperti', 'Metodo', 'Origine', 'Totale'],
+            orders.map((order) => [
+              order.id,
+              fmtDate(order.createdAt),
+              fmtTime(order.createdAt),
+              order.tillName,
+              order.people,
+              order.paymentMethod === 'card' ? 'Carta' : 'Contanti',
+              order.source === 'qr' ? 'QR' : 'Manuale',
+              order.totalCents
+            ]),
+            [7]
+          )}
+        </body>
+      </html>`;
+
+    const blob = new Blob([`\uFEFF${html}`], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `rapporti-${exportRangeKey()}.xls`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   function exportSoldItemsPdf() {
     const generatedAt = new Date().toLocaleString('it-IT');
     const rows = soldItems.map((item) => `
@@ -444,6 +583,15 @@
         </div>
 
         <button type="button" onclick={load} class="text-white/60 hover:text-white text-lg" title="Aggiorna">↻</button>
+        <button
+          type="button"
+          onclick={exportReportsExcel}
+          disabled={orders.length === 0}
+          class="ml-auto rounded border border-white/40 px-3 py-1 text-xs font-bold text-white hover:bg-white hover:text-green-900 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white"
+          title="Scarica rapporti in formato Excel"
+        >
+          Excel
+        </button>
     </div>
 
     <!-- Tabs + active range label -->
@@ -490,15 +638,63 @@
           </div>
           <div class="bg-gray-50 rounded-xl p-4 text-center">
             <p class="text-lg font-bold text-gray-800">
-              <span class="text-gray-600">💵 {cashOrders}</span>
+              <span class="text-gray-600">💵 {formatEUR(cashRevenue / 100)}</span>
               <span class="mx-1 text-gray-300">·</span>
-              <span class="text-blue-700">💳 {cardOrders}</span>
+              <span class="text-blue-700">💳 {formatEUR(cardRevenue / 100)}</span>
             </p>
             <p class="text-xs text-gray-500 mt-1 font-medium">Contanti / Carta</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2">
+
+          <!-- By till -->
+          <div class="border border-gray-100 rounded-xl overflow-hidden sm:col-span-2">
+            <div class="flex items-center justify-between bg-gray-50 px-4 py-2">
+              <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Per cassa</p>
+              <p class="text-xs font-semibold text-gray-500">
+                Contanti {formatEUR(cashRevenue / 100)} · Carta {formatEUR(cardRevenue / 100)}
+              </p>
+            </div>
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs text-gray-400 border-b border-gray-100">
+                  <th class="text-left px-4 py-2 font-medium">Cassa</th>
+                  <th class="text-right px-4 py-2 font-medium">Ordini</th>
+                  <th class="text-right px-4 py-2 font-medium">Coperti</th>
+                  <th class="text-right px-4 py-2 font-medium">Contanti</th>
+                  <th class="text-right px-4 py-2 font-medium">Carta</th>
+                  <th class="text-right px-4 py-2 font-medium">Totale</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each byTill as row}
+                  <tr class="border-b border-gray-50 last:border-0">
+                    <td class="px-4 py-2 font-medium text-gray-800">{row.tillName}</td>
+                    <td class="px-4 py-2 text-right text-gray-600">{row.orders}</td>
+                    <td class="px-4 py-2 text-right text-gray-600">{row.covers}</td>
+                    <td class="px-4 py-2 text-right text-gray-700">
+                      <span class="font-semibold">{formatEUR(row.cashCents / 100)}</span>
+                      <span class="ml-1 text-xs text-gray-400">({row.cashOrders})</span>
+                    </td>
+                    <td class="px-4 py-2 text-right text-blue-700">
+                      <span class="font-semibold">{formatEUR(row.cardCents / 100)}</span>
+                      <span class="ml-1 text-xs text-gray-400">({row.cardOrders})</span>
+                    </td>
+                    <td class="px-4 py-2 text-right font-bold text-green-800">{formatEUR(row.totalCents / 100)}</td>
+                  </tr>
+                {/each}
+                <tr class="border-t border-gray-200 bg-green-50 font-bold">
+                  <td class="px-4 py-2 text-green-950">Totale</td>
+                  <td class="px-4 py-2 text-right text-green-950">{orders.length}</td>
+                  <td class="px-4 py-2 text-right text-green-950">{totalCovers}</td>
+                  <td class="px-4 py-2 text-right text-green-950">{formatEUR(cashRevenue / 100)}</td>
+                  <td class="px-4 py-2 text-right text-green-950">{formatEUR(cardRevenue / 100)}</td>
+                  <td class="px-4 py-2 text-right text-green-950">{formatEUR(totalRevenue / 100)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <!-- By station -->
           <div class="border border-gray-100 rounded-xl overflow-hidden">

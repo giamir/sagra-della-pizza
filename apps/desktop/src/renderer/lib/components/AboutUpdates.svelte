@@ -13,6 +13,7 @@
     state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error';
     currentVersion: string;
     isPackaged: boolean;
+    supportsAutoInstall: boolean;
     message: string;
     latestVersion?: string;
     lastCheckedAt?: string;
@@ -35,7 +36,8 @@
     return 'text-gray-700 bg-gray-50 border-gray-200';
   });
 
-  const canInstall = $derived(updateStatus?.state === 'downloaded');
+  const canInstall = $derived(updateStatus?.supportsAutoInstall && updateStatus?.state === 'downloaded');
+  const canOpenDownload = $derived(updateStatus && !updateStatus.supportsAutoInstall && updateStatus.state === 'available');
   const canCheck = $derived(!checking && updateStatus?.state !== 'checking' && updateStatus?.state !== 'downloading');
 
   function formatCheckedAt(value?: string): string {
@@ -145,7 +147,7 @@
         onclick={() => window.api.openReleases()}
         class="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
       >
-        Apri feed
+        Apri download
       </button>
       <div class="flex gap-3">
         <button
@@ -164,6 +166,15 @@
             class="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-bold hover:bg-green-800 disabled:opacity-50"
           >
             {installing ? 'Riavvio...' : 'Riavvia e installa'}
+          </button>
+        {/if}
+        {#if canOpenDownload}
+          <button
+            type="button"
+            onclick={() => window.api.openReleases()}
+            class="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-bold hover:bg-green-800"
+          >
+            Scarica DMG
           </button>
         {/if}
       </div>

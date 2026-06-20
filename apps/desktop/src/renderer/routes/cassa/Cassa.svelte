@@ -299,14 +299,12 @@
 
   // --- Item tap: variant picker or direct add ---
   function handleItemTap(item: MenuItem) {
-    if (item.variants?.length) {
-      if (item.optionalVariants) {
-        const catOptions = categoryOptionsFor(item.id);
-        optionsPicker = { item, options: catOptions, variants: item.variants, baseId: item.id, baseName: item.name };
-      } else {
-        variantItem = item;
-      }
+    if (item.variants?.length && !item.optionalVariants) {
+      // Required variants (e.g. bianca/rossa) must be chosen before adding.
+      variantItem = item;
     } else {
+      // Plain items and optional-variant items add the base directly; the
+      // OptionsPicker is reached only via the explicit "+ opzioni" button.
       addItem(item.id);
     }
   }

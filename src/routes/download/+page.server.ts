@@ -9,7 +9,12 @@ type UpdateInfo = {
 };
 
 async function loadUpdateInfo(fileName: string, fetchFn: typeof fetch): Promise<UpdateInfo> {
-  const response = await fetchFn(`/desktop-updates/${fileName}`);
+  let response = await fetchFn(`/desktop-updates/${fileName}`);
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location');
+    if (location) response = await fetchFn(location);
+  }
+
   if (!response.ok) return { version: null, files: [] };
 
   const text = await response.text();

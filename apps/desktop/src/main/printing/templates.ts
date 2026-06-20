@@ -53,10 +53,6 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     .separator('=')
     .align('left');
 
-  if (station !== 'Bevande') {
-    e.bold(true).line(`COPERTI: ${order.people}`).bold(false).separator('-');
-  }
-
   for (const l of lines) {
     const qtyStr = `${l.qty}x`;
     const maxName = width - qtyStr.length - 2;
@@ -77,14 +73,12 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
     .align('center')
     .bold(true)
     .line('Sagra della Pizza')
+    .line('Copia Cliente')
     .bold(false)
     .separator('=')
     .align('left')
     .line(formatTime(order.createdAt))
     .line(`Ordine #${order.id}`)
-    .feed()
-    .line(tableAndRowLine(width))
-    .feed()
     .separator('-');
 
   for (const l of order.lines) {
@@ -150,9 +144,6 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
       '',
       sep('=')
     ];
-    if (station !== 'Bevande') {
-      rows.push(`COPERTI: ${order.people}`, sep('-'));
-    }
     for (const l of lines) {
       rows.push(`${l.qty}x  ${l.name}`);
     }
@@ -161,7 +152,7 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
   }
 
   const copertoTotal = order.people * 150;
-  const receiptRows: string[] = ['Sagra della Pizza', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, '', tableAndRowLine(width), '', sep('-')];
+  const receiptRows: string[] = ['Sagra della Pizza', 'Copia Cliente', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
   for (const l of order.lines) {
     const label = `${l.qty}x ${l.name}`;
     const sub = eur(l.unitPriceCents * l.qty);

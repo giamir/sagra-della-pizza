@@ -10,7 +10,8 @@ export class EscPos {
   }
 
   // --- Printer control ---
-  init(): this { return this.b(0x1b, 0x40); }
+  // ESC @ reset, then ESC t 19 selects code page PC858 (has the euro sign at 0xD5).
+  init(): this { return this.b(0x1b, 0x40, 0x1b, 0x74, 19); }
 
   // Partial cut with 3-line feed
   cut(): this { return this.b(0x1d, 0x56, 0x42, 0x03); }
@@ -36,7 +37,11 @@ export class EscPos {
   // Strips diacritics so Italian accented chars print correctly on all code pages.
   text(s: string): this {
     const plain = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    for (let i = 0; i < plain.length; i++) this.buf.push(plain.charCodeAt(i) & 0xff);
+    for (let i = 0; i < plain.length; i++) {
+      const code = plain.charCodeAt(i);
+      if (code === 0x20ac) { this.buf.push(0xd5); continue; } // € lives at 0xD5 in PC858
+      this.buf.push(code & 0xff);
+    }
     return this;
   }
 

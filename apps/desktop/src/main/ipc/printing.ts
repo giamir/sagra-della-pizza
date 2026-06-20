@@ -52,14 +52,14 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
     }
   }
 
-  // One ticket per station that has items and is enabled
+  // One ticket per station that has items and is enabled (no logo on kitchen tickets)
   for (const [station, lines] of byStation) {
     if (!enabledStations.has(station)) continue;
     const ticket = buildStationTicket(order, station, lines, width);
-    await send(withLogo(ticket));
+    await send(ticket);
   }
 
-  // Courtesy receipt last
+  // Courtesy receipt last — logo only here
   const receipt = buildReceipt(order, width);
   await send(withLogo(receipt));
 }

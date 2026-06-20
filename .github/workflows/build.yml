@@ -42,9 +42,11 @@ jobs:
         working-directory: apps/desktop
         run: npx electron-vite build
 
+      # Invoke electron-builder directly via node: npx electron-builder is a
+      # silent no-op on the Windows runner, so avoid npx and the .cmd shim.
       - name: Package (macOS)
         working-directory: apps/desktop
-        run: npx electron-builder --mac --publish never
+        run: node ../../node_modules/electron-builder/cli.js --mac --publish never
 
       - name: Upload update artifacts (macOS)
         env:
@@ -78,7 +80,7 @@ jobs:
 
       - name: Package (Windows)
         working-directory: apps/desktop
-        run: npx electron-builder --win --publish never
+        run: node ../../node_modules/electron-builder/cli.js --win --publish never
 
       - name: Upload update artifacts (Windows)
         env:

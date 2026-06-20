@@ -157,15 +157,6 @@
       {completing ? 'Salvataggio…' : 'Completa ordine'}
     </button>
 
-    {#if !isEmpty}
-      <button
-        type="button"
-        onclick={onScanQr}
-        class="w-full py-2 rounded-lg border-2 border-green-700 text-green-800 font-bold text-sm hover:bg-green-50"
-      >
-        Carica da QR (sostituisce ordine)
-      </button>
-    {/if}
   </div>
 
 </div>

@@ -1,6 +1,6 @@
 {
   "name": "@sagra/desktop",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "productName": "Sagra della Pizza",
   "private": true,
   "main": "out/main/index.js",
@@ -10,8 +10,8 @@
     "postinstall": "electron-builder install-app-deps",
     "preview": "electron-vite preview",
     "package": "electron-vite build && electron-builder",
-    "package:win": "electron-vite build && electron-builder --win",
-    "package:mac": "electron-vite build && electron-builder --mac"
+    "package:win": "electron-vite build && electron-builder --win --publish never",
+    "package:mac": "electron-vite build && electron-builder --mac --publish never"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",

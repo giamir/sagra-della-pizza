@@ -10,6 +10,7 @@
   let fieldSeparatorHex = $state('1C');
   let lrcSeedHex = $state('7F');
   let lrcIncludesStx = $state(false);
+  let lrcIncludesEtx = $state(false);
   let terminalId = $state('00000000');
   let cashRegisterId = $state('00000001');
   let purchaseCode = $state('P');
@@ -31,6 +32,7 @@
     fieldSeparatorHex = c.fieldSeparatorHex ?? '1C';
     lrcSeedHex = c.lrcSeedHex ?? '7F';
     lrcIncludesStx = c.lrcIncludesStx ?? false;
+    lrcIncludesEtx = c.lrcIncludesEtx ?? false;
     terminalId = c.terminalId ?? '00000000';
     cashRegisterId = c.cashRegisterId ?? '00000001';
     purchaseCode = c.purchaseCode === 'X' ? 'X' : 'P';
@@ -49,6 +51,7 @@
       fieldSeparatorHex: fieldSeparatorHex.trim().replace(/^0x/i, '').toUpperCase(),
       lrcSeedHex: lrcSeedHex.trim().replace(/^0x/i, '').toUpperCase(),
       lrcIncludesStx,
+      lrcIncludesEtx,
       terminalId: terminalId.replace(/\D/g, '').slice(-8).padStart(8, '0'),
       cashRegisterId: cashRegisterId.replace(/\D/g, '').slice(-8).padStart(8, '0'),
       purchaseCode: purchaseCode.trim().toUpperCase() === 'X' ? 'X' : 'P',
@@ -249,9 +252,18 @@
                   <input type="checkbox" bind:checked={sendAckOnResponse} class="w-4 h-4 accent-green-800 shrink-0" />
                   <span>ACK risposta</span>
                 </label>
+                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" bind:checked={lrcIncludesStx} class="w-4 h-4 accent-green-800 shrink-0" />
+                  <span>LRC include STX</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" bind:checked={lrcIncludesEtx} class="w-4 h-4 accent-green-800 shrink-0" />
+                  <span>LRC include ETX</span>
+                </label>
               </div>
               <p class="mt-3 text-xs text-gray-500">
-                Formato Nexi ECR-LAN ufficiale: importo fisso a 8 cifre, LRC con seed 7F su messaggio + ETX.
+                Formato Nexi ECR-LAN ufficiale: importo fisso a 8 cifre, LRC con seed 7F sul solo messaggio
+                (STX/ETX esclusi). Se il terminale risponde «LRC non corrisponde», prova ad attivare «LRC include ETX».
               </p>
             </div>
           {/if}

@@ -3,7 +3,11 @@
  *
  * Frame format:  STX | fixed-width application message | ETX | LRC
  *   STX = 0x02, ETX = 0x03
- *   LRC = XOR(application message bytes + ETX) with initial value 0x7F.
+ *   LRC = XOR over the application message bytes, with initial value 0x7F.
+ *   Per Nexi Traditional POS docs the STX and ETX framing bytes are NOT part
+ *   of the XOR ("computed by executing an exclusive or any message byte, using
+ *   as base value 0x7F"). Whether STX/ETX are included can be toggled via the
+ *   lrcIncludesStx / lrcIncludesEtx config flags for terminals that differ.
  *
  * Purchase request fields:
  *   Terminal ID       8 chars ("00000000" means no terminal ID check)
@@ -58,6 +62,19 @@ function lrc(data: Buffer, seed: number): number {
   return v;
 }
 
+/**
+ * LRC over an application frame [STX ... ETX]. By default the XOR covers only
+ * the message bytes between STX and ETX (both framing bytes excluded), which
+ * matches the Nexi Traditional POS documentation. The config flags widen the
+ * range to include STX and/or ETX for terminals that expect it.
+ */
+function applicationLrc(frame: Buffer, stxIndex: number, etxIndex: number, config: ECR17Config): number {
+  const seed = normalizeByte(config.lrcSeedHex, 0x7f);
+  const start = config.lrcIncludesStx ? stxIndex : stxIndex + 1;
+  const end = config.lrcIncludesEtx ? etxIndex + 1 : etxIndex; // slice end is exclusive
+  return lrc(frame.slice(start, end), seed);
+}
+
 function digits(value: string | undefined, length: number, fallback: string): string {
   const raw = typeof value === 'string' ? value.replace(/\D/g, '') : '';
   return (raw || fallback).slice(-length).padStart(length, '0');
@@ -84,7 +101,6 @@ function fixedAmount(amountCents: number): string {
 }
 
 function buildApplicationFrame(message: string, config: ECR17Config): Buffer {
-  const seed = normalizeByte(config.lrcSeedHex, 0x7f);
   const body = Buffer.from(message, 'ascii');
   const etxPos = 1 + body.length;   // index of ETX
   const lrcPos = etxPos + 1;        // index of LRC
@@ -93,7 +109,7 @@ function buildApplicationFrame(message: string, config: ECR17Config): Buffer {
   frame[0] = STX;
   body.copy(frame, 1);
   frame[etxPos] = ETX;
-  frame[lrcPos] = lrc(frame.slice(1, lrcPos), seed);
+  frame[lrcPos] = applicationLrc(frame, 0, etxPos, config);
   return frame;
 }
 
@@ -147,7 +163,10 @@ function buildReversalFrame(config: ECR17Config): Buffer {
 function buildConfirmationFrame(kind: typeof ACK | typeof NAK, config: ECR17Config): Buffer {
   const seed = normalizeByte(config.lrcSeedHex, 0x7f);
   const frame = Buffer.from([kind, ETX, 0x00]);
-  frame[2] = lrc(frame.slice(0, 2), seed);
+  // Mirror the application-frame rule: the control byte is always part of the
+  // XOR; ETX is only included when lrcIncludesEtx is set.
+  const end = config.lrcIncludesEtx ? 2 : 1;
+  frame[2] = lrc(frame.slice(0, end), seed);
   return frame;
 }
 
@@ -159,8 +178,7 @@ function parseApplicationFrame(buf: Buffer, config: ECR17Config): string {
   const receivedLrc = buf[etx + 1];
   if (receivedLrc === undefined) throw new Error('Frame incompleto (LRC mancante)');
 
-  const seed = normalizeByte(config.lrcSeedHex, 0x7f);
-  const expectedLrc = lrc(buf.slice(stx + 1, etx + 1), seed);
+  const expectedLrc = applicationLrc(buf, stx, etx, config);
   if (receivedLrc !== expectedLrc) {
     throw new Error(`LRC risposta non valido: atteso ${hex(Buffer.from([expectedLrc]))}, ricevuto ${hex(Buffer.from([receivedLrc]))}`);
   }
@@ -203,6 +221,7 @@ export type ECR17Config = {
   fieldSeparatorHex: string;
   lrcSeedHex: string;
   lrcIncludesStx: boolean;
+  lrcIncludesEtx: boolean;
   terminalId: string;
   cashRegisterId: string;
   purchaseCode: string;
@@ -220,6 +239,7 @@ export const ECR17_DEFAULTS: ECR17Config = {
   fieldSeparatorHex: '1C',
   lrcSeedHex: '7F',
   lrcIncludesStx: false,
+  lrcIncludesEtx: false,
   terminalId: '00000000',
   cashRegisterId: '00000001',
   purchaseCode: 'P',

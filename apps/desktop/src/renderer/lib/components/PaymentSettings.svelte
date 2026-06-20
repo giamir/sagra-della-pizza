@@ -5,14 +5,16 @@
 
   let enabled = $state(false);
   let host = $state('192.168.1.50');
-  let port = $state(7500);
+  let port = $state(8220);
   let timeoutMs = $state(120000);
   let fieldSeparatorHex = $state('1C');
   let lrcSeedHex = $state('7F');
   let lrcIncludesStx = $state(false);
-  let purchaseCode = $state('01');
-  let cancelCode = $state('05');
-  let amountDigits = $state(9);
+  let terminalId = $state('00000000');
+  let cashRegisterId = $state('00000001');
+  let purchaseCode = $state('P');
+  let cancelCode = $state('S');
+  let amountDigits = $state(8);
   let sendAckOnResponse = $state(true);
   let sendAckOnCancel = $state(true);
   let saving = $state(false);
@@ -29,9 +31,11 @@
     fieldSeparatorHex = c.fieldSeparatorHex ?? '1C';
     lrcSeedHex = c.lrcSeedHex ?? '7F';
     lrcIncludesStx = c.lrcIncludesStx ?? false;
-    purchaseCode = c.purchaseCode ?? '01';
-    cancelCode = c.cancelCode ?? '05';
-    amountDigits = c.amountDigits ?? 9;
+    terminalId = c.terminalId ?? '00000000';
+    cashRegisterId = c.cashRegisterId ?? '00000001';
+    purchaseCode = c.purchaseCode === 'X' ? 'X' : 'P';
+    cancelCode = c.cancelCode ?? 'S';
+    amountDigits = c.amountDigits ?? 8;
     sendAckOnResponse = c.sendAckOnResponse ?? true;
     sendAckOnCancel = c.sendAckOnCancel ?? true;
   });
@@ -45,8 +49,10 @@
       fieldSeparatorHex: fieldSeparatorHex.trim().replace(/^0x/i, '').toUpperCase(),
       lrcSeedHex: lrcSeedHex.trim().replace(/^0x/i, '').toUpperCase(),
       lrcIncludesStx,
-      purchaseCode: purchaseCode.trim(),
-      cancelCode: cancelCode.trim(),
+      terminalId: terminalId.replace(/\D/g, '').slice(-8).padStart(8, '0'),
+      cashRegisterId: cashRegisterId.replace(/\D/g, '').slice(-8).padStart(8, '0'),
+      purchaseCode: purchaseCode.trim().toUpperCase() === 'X' ? 'X' : 'P',
+      cancelCode: 'S',
       amountDigits: Number(amountDigits),
       sendAckOnResponse,
       sendAckOnCancel
@@ -62,13 +68,10 @@
     if (!Number.isInteger(config.timeoutMs) || config.timeoutMs < 5000 || config.timeoutMs > 300000) {
       return 'Inserisci un timeout tra 5000 e 300000 ms.';
     }
-    if (!/^[0-9A-F]{1,2}$/.test(config.fieldSeparatorHex)) return 'Separatore campo non valido.';
     if (!/^[0-9A-F]{1,2}$/.test(config.lrcSeedHex)) return 'Seed LRC non valido.';
-    if (!config.purchaseCode) return 'Inserisci il codice vendita.';
-    if (!config.cancelCode) return 'Inserisci il codice annullo.';
-    if (!Number.isInteger(config.amountDigits) || config.amountDigits < 1 || config.amountDigits > 12) {
-      return 'Inserisci un numero cifre importo tra 1 e 12.';
-    }
+    if (!/^\d{8}$/.test(config.terminalId)) return 'Terminal ID deve avere 8 cifre.';
+    if (!/^\d{8}$/.test(config.cashRegisterId)) return 'ID cassa deve avere 8 cifre.';
+    if (!['P', 'X'].includes(config.purchaseCode)) return 'Codice vendita non valido.';
     return null;
   }
 
@@ -177,7 +180,7 @@
             />
           </label>
         </div>
-        <p class="text-xs text-gray-400 -mt-3">Configurata sul terminale (Nexi SmartPOS: 8220)</p>
+        <p class="text-xs text-gray-400 -mt-3">Configurata sul terminale: nella foto è 8220</p>
 
         <div class="rounded-lg border border-gray-200 overflow-hidden">
           <button
@@ -203,21 +206,20 @@
                   />
                 </label>
                 <label class="flex flex-col gap-1">
-                  <span class="text-xs font-semibold text-gray-600">Cifre importo</span>
+                  <span class="text-xs font-semibold text-gray-600">Terminal ID</span>
                   <input
-                    type="number"
-                    bind:value={amountDigits}
-                    min="1"
-                    max="12"
+                    type="text"
+                    bind:value={terminalId}
+                    maxlength="8"
                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
                 <label class="flex flex-col gap-1">
-                  <span class="text-xs font-semibold text-gray-600">Separatore</span>
+                  <span class="text-xs font-semibold text-gray-600">ID cassa</span>
                   <input
                     type="text"
-                    bind:value={fieldSeparatorHex}
-                    placeholder="1C"
+                    bind:value={cashRegisterId}
+                    maxlength="8"
                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
@@ -232,36 +234,25 @@
                 </label>
                 <label class="flex flex-col gap-1">
                   <span class="text-xs font-semibold text-gray-600">Vendita</span>
-                  <input
-                    type="text"
+                  <select
                     bind:value={purchaseCode}
                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
-                  />
-                </label>
-                <label class="flex flex-col gap-1">
-                  <span class="text-xs font-semibold text-gray-600">Annullo</span>
-                  <input
-                    type="text"
-                    bind:value={cancelCode}
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
-                  />
+                  >
+                    <option value="P">P - pagamento</option>
+                    <option value="X">X - risultato esteso</option>
+                  </select>
                 </label>
               </div>
 
-              <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                  <input type="checkbox" bind:checked={lrcIncludesStx} class="w-4 h-4 accent-green-800 shrink-0" />
-                  <span>LRC include STX</span>
-                </label>
+              <div class="mt-3 grid grid-cols-1 gap-2">
                 <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
                   <input type="checkbox" bind:checked={sendAckOnResponse} class="w-4 h-4 accent-green-800 shrink-0" />
                   <span>ACK risposta</span>
                 </label>
-                <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                  <input type="checkbox" bind:checked={sendAckOnCancel} class="w-4 h-4 accent-green-800 shrink-0" />
-                  <span>ACK annullo</span>
-                </label>
               </div>
+              <p class="mt-3 text-xs text-gray-500">
+                Formato Nexi ECR-LAN ufficiale: importo fisso a 8 cifre, LRC con seed 7F su messaggio + ETX.
+              </p>
             </div>
           {/if}
         </div>

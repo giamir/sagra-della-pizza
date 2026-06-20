@@ -17,14 +17,14 @@ const config = {
   extraResources: [{ from: 'resources/', to: '.' }],
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
-    icon: 'resources/logo.png'
+    icon: 'resources/icon.ico'
   },
   nsis: {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     perMachine: false,
-    installerIcon: 'resources/logo.png',
-    uninstallerIcon: 'resources/logo.png'
+    installerIcon: 'resources/icon.ico',
+    uninstallerIcon: 'resources/icon.ico'
   },
   mac: {
     target: [

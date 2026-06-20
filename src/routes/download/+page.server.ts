@@ -1,5 +1,7 @@
 import { list } from '@vercel/blob';
 
+export const prerender = false;
+
 type UpdateFile = {
   url: string;
   size: number | null;
@@ -93,7 +95,11 @@ async function loadPreviousVersions(currentVersion: string | null): Promise<Prev
   }
 }
 
-export const load = async ({ fetch }) => {
+export const load = async ({ fetch, setHeaders }) => {
+  setHeaders({
+    'cache-control': 'no-store, max-age=0'
+  });
+
   const [windows, mac] = await Promise.all([
     loadUpdateInfo('latest.yml', fetch),
     loadUpdateInfo('latest-mac.yml', fetch)

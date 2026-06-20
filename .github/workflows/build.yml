@@ -69,8 +69,21 @@ jobs:
         working-directory: apps/desktop
         shell: bash
         run: |
+          set -x
           npx electron-vite build
-          npx electron-builder --win --publish never
+          echo "=== vite exit: $? ==="
+          echo "=== electron-builder version ==="
+          npx electron-builder --version
+          echo "=== running electron-builder --win ==="
+          set +e
+          npx electron-builder --win --publish never 2>&1 | tee eb.log
+          ebcode=${PIPESTATUS[0]}
+          set -e
+          echo "=== electron-builder exit: $ebcode ==="
+          echo "=== dist listing ==="
+          ls -la dist || echo "NO dist dir"
+          find . -maxdepth 2 -name "*.exe" -o -maxdepth 2 -name "*.yml" || true
+          exit $ebcode
 
       - name: Upload update artifacts (Windows)
         env:

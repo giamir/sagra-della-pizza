@@ -38,6 +38,7 @@ const AMOUNT_LEN = 8;
 const RECEIPT_TEXT_LEN = 128;
 const PAYMENT_REQUEST_LEN = 167;
 const TERMINAL_STATUS_REQUEST_LEN = 10;
+const MAX_SEND_ATTEMPTS = 3;
 
 function hex(buf: Buffer): string {
   return Array.from(buf).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -233,6 +234,8 @@ export function testECR17Connection(config: ECR17Config): Promise<void> {
     const socket = new net.Socket();
     let buf = Buffer.alloc(0);
     let settled = false;
+    let frame: Buffer | null = null;
+    let attempts = 0;
 
     function settle(fn: () => void) {
       if (settled) return;
@@ -242,11 +245,14 @@ export function testECR17Connection(config: ECR17Config): Promise<void> {
     }
 
     socket.setTimeout(Math.min(Math.max(config.timeoutMs || 5000, 1000), 15000));
-    socket.connect(config.port, config.host, () => {
-      const frame = buildTerminalStatusFrame(config);
-      console.log('[ECR17] STATUS SEND:', hex(frame));
+    function sendFrame() {
+      if (!frame) frame = buildTerminalStatusFrame(config);
+      attempts += 1;
+      console.log(`[ECR17] STATUS SEND attempt ${attempts}:`, hex(frame));
       socket.write(frame);
-    });
+    }
+
+    socket.connect(config.port, config.host, sendFrame);
     socket.on('data', (chunk: Buffer) => {
       console.log('[ECR17] STATUS RECV:', hex(chunk));
       buf = Buffer.concat([buf, chunk]);
@@ -256,6 +262,11 @@ export function testECR17Connection(config: ECR17Config): Promise<void> {
         buf = buf.slice(3);
       }
       if (buf[0] === NAK && buf.length >= 3) {
+        buf = buf.slice(3);
+        if (attempts < MAX_SEND_ATTEMPTS) {
+          sendFrame();
+          return;
+        }
         settle(() => reject(new Error('Terminale Nexi ha rifiutato il test ECR-LAN (NAK): verifica Terminal ID e seed LRC')));
         return;
       }
@@ -295,6 +306,8 @@ export function requestPayment(
     const socket = new net.Socket();
     let buf = Buffer.alloc(0);
     let settled = false;
+    let frame: Buffer | null = null;
+    let attempts = 0;
 
     function settle(fn: () => void) {
       if (settled) return;
@@ -305,17 +318,20 @@ export function requestPayment(
 
     socket.setTimeout(config.timeoutMs || ECR17_DEFAULTS.timeoutMs);
 
-    socket.connect(config.port, config.host, () => {
-      const frame = buildPaymentFrame(config, amountCents);
+    function sendFrame() {
+      if (!frame) frame = buildPaymentFrame(config, amountCents);
+      attempts += 1;
       const etxPos = frame.indexOf(ETX);
       const messageLength = Math.max(0, etxPos - 1);
-      console.log('[ECR17] SEND:', hex(frame));
+      console.log(`[ECR17] SEND attempt ${attempts}:`, hex(frame));
       console.log('[ECR17] fixed application message length:', messageLength,
         '| code:', frame.slice(10, 11).toString('ascii'),
         '| amount:', frame.slice(24, 32).toString('ascii'),
         '| LRC:', hex(frame.slice(etxPos + 1, etxPos + 2)));
       socket.write(frame);
-    });
+    }
+
+    socket.connect(config.port, config.host, sendFrame);
 
     socket.on('data', (chunk: Buffer) => {
       console.log('[ECR17] RECV:', hex(chunk));
@@ -326,6 +342,11 @@ export function requestPayment(
         buf = buf.slice(3);
       }
       if (buf[0] === NAK && buf.length >= 3) {
+        buf = buf.slice(3);
+        if (attempts < MAX_SEND_ATTEMPTS) {
+          sendFrame();
+          return;
+        }
         settle(() => reject(new Error('Terminale Nexi ha rifiutato il messaggio (NAK): verifica formato/LRC')));
         return;
       }

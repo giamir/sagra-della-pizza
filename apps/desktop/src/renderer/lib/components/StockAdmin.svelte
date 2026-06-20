@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import menuData from '@sagra/shared/data/menu.json';
   import type { Menu } from '@sagra/shared/types';
 
@@ -30,8 +30,16 @@
   let saving = $state<Record<string, boolean>>({});
   let activeTab = $state(MENU.categories[0].id);
 
+  let unsubStock: (() => void) | null = null;
+
   onMount(async () => {
     stock = await window.api.getStock();
+    // Keep the "rimasti" counts live as orders decrement stock elsewhere.
+    unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+  });
+
+  onDestroy(() => {
+    unsubStock?.();
   });
 
   function stockLabel(id: string): string {

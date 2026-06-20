@@ -45,8 +45,23 @@ function versionFrom(info?: UpdateInfo | null): string | undefined {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === 'string' && error) return error;
+  const raw = error instanceof Error && error.message
+    ? error.message
+    : typeof error === 'string' && error
+      ? error
+      : 'Errore aggiornamento sconosciuto.';
+
+  if (raw.includes('GitHubProvider') || raw.includes('github.com') || raw.includes('<feed')) {
+    return 'Il controllo aggiornamenti sta ancora usando il vecchio feed GitHub. Scarica e reinstalla l’ultima versione da https://sagradellapizza.it/download.';
+  }
+
+  if (raw.includes(UPDATE_FEED_URL) || raw.includes('desktop-updates')) {
+    return 'Feed aggiornamenti non raggiungibile. Verifica la connessione internet e riprova.';
+  }
+
+  const firstLine = raw.replace(/<[^>]+>/g, ' ').split('\n').map((line) => line.trim()).find(Boolean);
+  if (firstLine) return firstLine.slice(0, 240);
+
   return 'Errore aggiornamento sconosciuto.';
 }
 
@@ -102,6 +117,10 @@ export function registerUpdateHandlers(): void {
 }
 
 export function startUpdateChecks(): void {
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: UPDATE_FEED_URL
+  });
   autoUpdater.autoDownload = true;
   autoUpdater.allowPrerelease = false;
   autoUpdater.allowDowngrade = false;

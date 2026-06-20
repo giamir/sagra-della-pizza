@@ -3,7 +3,7 @@ import { getDb } from '../db/schema.js';
 import { loadPrinterConfig, savePrinterConfig, sendToTcpPrinter, sendToUsbPrinter, listUsbPrinters } from '../printing/service.js';
 import { buildStationTicket, buildReceipt, buildPreviewText, groupByStation, type PrintOrder } from '../printing/templates.js';
 import { buildLogoBuf } from '../printing/logo.js';
-import type { PrinterConfig } from '../printing/service.js';
+import type { PrinterConfig, UsbPrinterEntry } from '../printing/service.js';
 
 function loadOrderForPrint(orderId: number | bigint): PrintOrder | null {
   const db = getDb();
@@ -115,7 +115,7 @@ export function registerPrintingHandlers(): void {
   });
 
   ipcMain.handle('printer:list', async () => {
-    const printers = await listUsbPrinters();
+    const printers: UsbPrinterEntry[] = await listUsbPrinters();
     return { printers };
   });
 }

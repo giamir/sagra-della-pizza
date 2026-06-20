@@ -28,7 +28,7 @@
   let testing = $state(false);
   let loadingPrinters = $state(false);
   let advancedOpen = $state(false);
-  let availablePrinters = $state<string[]>([]);
+  let availablePrinters = $state<{ label: string; value: string }[]>([]);
   let message = $state<{ ok: boolean; text: string } | null>(null);
 
   onMount(async () => {
@@ -148,7 +148,7 @@
     loadingPrinters = true;
     try {
       const result = await withTimeout(window.api.listPrinters(), 'Ricerca stampanti scaduta.');
-      availablePrinters = result.printers ?? [];
+      availablePrinters = (result.printers ?? []) as { label: string; value: string }[];
       if (availablePrinters.length === 0) {
         message = { ok: false, text: 'Nessuna stampante trovata. Assicurati che sia collegata e installata nel sistema.' };
       }
@@ -262,21 +262,21 @@
               >
                 <option value="">— seleziona —</option>
                 {#each availablePrinters as p}
-                  <option value={p}>{p}</option>
+                  <option value={p.value}>{p.label}</option>
                 {/each}
               </select>
             {:else}
               <input
                 type="text"
                 bind:value={config.usbTarget}
-                placeholder="Es. NomePrinter oppure /dev/usb/lp0"
+                placeholder="Es. USB001 oppure /dev/usb/lp0"
                 class="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               />
             {/if}
             <p class="text-xs text-gray-400 mt-1">
+              Su Windows: usa "Cerca stampanti" — il valore è la porta (es. <code>USB001</code>).<br>
               Su macOS: nome della stampante installata in Impostazioni di Sistema.<br>
-              Su Linux: nome CUPS o percorso come <code>/dev/usb/lp0</code>.<br>
-              Su Windows: <code>COM3</code> o <code>LPT1:</code>.
+              Su Linux: nome CUPS o percorso come <code>/dev/usb/lp0</code>.
             </p>
           </div>
         {/if}
@@ -287,7 +287,7 @@
           <select bind:value={config.width} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
             <option value={32}>32 col · 58 mm</option>
             <option value={42}>42 col · 80 mm</option>
-            <option value={48}>48 col · 80 mm</option>
+            <option value={48}>48 col · 80 mm (Epson TM-T20III)</option>
           </select>
         </label>
 

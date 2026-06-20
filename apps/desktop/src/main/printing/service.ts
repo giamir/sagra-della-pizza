@@ -56,33 +56,44 @@ export function loadPrinterConfig(): PrinterConfig {
   }
 }
 
-// Returns available printers for the USB picker:
-// - macOS/Linux: CUPS queue names via `lpstat -a`
-// - Windows: a static list of common COM/LPT ports (enumeration requires WMI)
-export async function listUsbPrinters(): Promise<string[]> {
+export type UsbPrinterEntry = { label: string; value: string };
+
+// Returns available printers for the USB picker.
+// macOS/Linux: CUPS queue names via `lpstat -a` → label === value (CUPS name).
+// Windows: queries WMI for Name+PortName; only physical ports (USB*, COM*, LPT*) are
+// included; value is the port name so sendToUsbPrinter can write to \\.\<port>.
+export async function listUsbPrinters(): Promise<UsbPrinterEntry[]> {
   if (process.platform === 'win32') {
     return new Promise((resolve) => {
-      execFile('wmic', ['printer', 'get', 'name'], (err, stdout) => {
-        if (err) {
-          resolve(['COM1', 'COM2', 'COM3', 'LPT1']);
-          return;
+      const fallback: UsbPrinterEntry[] = [
+        { label: 'USB001', value: 'USB001' },
+        { label: 'COM1', value: 'COM1' },
+        { label: 'LPT1', value: 'LPT1' },
+      ];
+      execFile('wmic', ['path', 'Win32_Printer', 'get', 'Name,PortName', '/format:list'], (err, stdout) => {
+        if (err) { resolve(fallback); return; }
+        const entries: UsbPrinterEntry[] = [];
+        // /format:list emits blocks like "Name=...\r\nPortName=...\r\n" separated by blank lines
+        for (const block of stdout.split(/\r?\n\r?\n/)) {
+          const name = block.match(/^Name=(.+)$/m)?.[1]?.trim();
+          const port = block.match(/^PortName=(.+)$/m)?.[1]?.trim();
+          if (name && port && /^(USB|COM|LPT)\d*/i.test(port)) {
+            entries.push({ label: `${name} (${port})`, value: port });
+          }
         }
-        const names = stdout
-          .split('\n')
-          .map((l) => l.trim())
-          .filter((l) => l && l !== 'Name');
-        resolve(names.length ? names : ['COM1', 'COM2', 'COM3', 'LPT1']);
+        resolve(entries.length ? entries : fallback);
       });
     });
   }
   return new Promise((resolve) => {
     execFile('lpstat', ['-a'], (err, stdout) => {
       if (err) { resolve([]); return; }
-      const names = stdout
+      const entries = stdout
         .split('\n')
         .map((l) => l.split(' ')[0].trim())
-        .filter(Boolean);
-      resolve(names);
+        .filter(Boolean)
+        .map((name) => ({ label: name, value: name }));
+      resolve(entries);
     });
   });
 }
@@ -119,7 +130,8 @@ export async function sendToTcpPrinter(
 // Sends raw ESC/POS bytes to a USB-attached printer.
 // On macOS/Linux: if target starts with '/' treat as device path (write directly),
 // otherwise assume it's a CUPS queue name and use `lp -d target -o raw`.
-// On Windows: write directly to the device path (e.g. COM3, LPT1:).
+// On Windows: target is a port name (USB001, COM3, LPT1); we open it as a Win32
+// device path (\\.\USB001) so Node's fs can write raw bytes directly.
 export async function sendToUsbPrinter(
   target: string,
   data: Buffer,
@@ -131,7 +143,11 @@ export async function sendToUsbPrinter(
   const directFile = mode === 'file' || (mode === 'auto' && (process.platform === 'win32' || target.startsWith('/')));
 
   if (directFile) {
-    await writeFile(target, data);
+    // On Windows, port names like USB001/COM3/LPT1 must be opened as \\.\<port>
+    const filePath = (process.platform === 'win32' && !target.startsWith('\\') && !target.startsWith('/'))
+      ? `\\\\.\\${target}`
+      : target;
+    await writeFile(filePath, data);
     return;
   }
 

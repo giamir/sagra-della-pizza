@@ -1,8 +1,10 @@
 // Maps item IDs to kitchen station labels, in print order.
-export const STATION_ORDER = ['Pizza', 'Griglia', 'Crostini', 'Cecina', 'Gastronomia', 'Contorni', 'Bevande'];
+export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande'];
 
 export function normalizeStation(station: string): string {
-  return station === 'Cucina' ? 'Gastronomia' : station;
+  if (station === 'Gastronomia') return 'Cucina';
+  if (station === 'Griglia' || station === 'Contorni') return 'Griglia e contorni';
+  return station;
 }
 
 const MAP: Record<string, string> = {
@@ -25,17 +27,17 @@ const MAP: Record<string, string> = {
   'funghi-cotto-bianca': 'Pizza', 'funghi-cotto-rossa': 'Pizza',
   'funghi-crudo-bianca': 'Pizza', 'funghi-crudo-rossa': 'Pizza',
   'salsiccia-cipolla-bianca': 'Pizza', 'salsiccia-cipolla-rossa': 'Pizza',
-  // Griglia
-  salsicce: 'Griglia', 'bistecca-manzo-normale': 'Griglia', 'bistecca-manzo-al-sangue': 'Griglia',
-  'bistecca-manzo-ben-cotta': 'Griglia', rosticciana: 'Griglia', 'bistecca-maiale': 'Griglia',
+  // Griglia e contorni
+  salsicce: 'Griglia e contorni', 'bistecca-manzo-normale': 'Griglia e contorni', 'bistecca-manzo-al-sangue': 'Griglia e contorni',
+  'bistecca-manzo-ben-cotta': 'Griglia e contorni', rosticciana: 'Griglia e contorni', 'bistecca-maiale': 'Griglia e contorni',
   // Crostini
   'crostini-romana': 'Crostini', 'crostini-alici': 'Crostini', 'crostini-misti': 'Crostini',
   // Cecina
   cecina: 'Cecina',
-  // Gastronomia
-  lasagne: 'Gastronomia', 'antipasto-toscano': 'Gastronomia', 'prosciutto-melone': 'Gastronomia', bruschetta: 'Gastronomia',
+  // Cucina
+  lasagne: 'Cucina', 'antipasto-toscano': 'Cucina', 'prosciutto-melone': 'Cucina', bruschetta: 'Cucina',
   // Contorni
-  fagioli: 'Contorni', insalata: 'Contorni', patatine: 'Contorni', pomodori: 'Contorni',
+  fagioli: 'Griglia e contorni', insalata: 'Griglia e contorni', patatine: 'Griglia e contorni', pomodori: 'Griglia e contorni',
   // Bevande
   'acqua-naturale-litro': 'Bevande', 'acqua-gassata-litro': 'Bevande', 'acqua-frizzante': 'Bevande',
   'acqua-naturale': 'Bevande', 'vino-bicchiere-rosso': 'Bevande', 'vino-bicchiere-bianco': 'Bevande',

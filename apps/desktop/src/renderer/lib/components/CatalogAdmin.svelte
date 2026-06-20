@@ -251,7 +251,7 @@
             <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-4 mb-2 first:mt-0">{group.label}</p>
 
             <!-- Column headers -->
-            <div class="grid grid-cols-[1fr_1fr_7rem_8rem_2rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <div class="grid grid-cols-[1fr_1fr_7rem_11rem_2rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               <span>Nome</span>
               <span>Descrizione</span>
               <span>Prezzo (€)</span>
@@ -262,7 +262,7 @@
             <!-- Item rows -->
             <div class="flex flex-col gap-0.5">
               {#each group.items as item}
-                <div class="grid grid-cols-[1fr_1fr_7rem_8rem_2rem] gap-2 items-center px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                <div class="grid grid-cols-[1fr_1fr_7rem_11rem_2rem] gap-2 items-center px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
                   <!-- Name -->
                   <div>
                     <input

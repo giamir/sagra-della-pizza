@@ -65,7 +65,7 @@
     },
     {
       id: 'griglia',
-      label: 'Griglia',
+      label: 'Griglia e contorni',
       itemIds: [
         'salsicce',
         'bistecca-manzo-normale',
@@ -83,7 +83,7 @@
     { id: 'cecina', label: 'Cecina', itemIds: ['cecina'] },
     {
       id: 'gastronomia',
-      label: 'Gastronomia',
+      label: 'Cucina',
       itemIds: ['lasagne', 'antipasto-toscano', 'prosciutto-melone', 'bruschetta']
     },
     {

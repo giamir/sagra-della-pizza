@@ -14,6 +14,10 @@
       for (const group of cat.groups) {
         for (const item of group.items) {
           if (item.variants?.length) {
+            if (item.optionalVariants) {
+              const qty = order.lines[item.id] ?? 0;
+              if (qty > 0) lines.push({ id: item.id, name: item.name, price: item.price, qty });
+            }
             for (const variant of item.variants) {
               const qty = order.lines[variant.id] ?? 0;
               if (qty > 0) {

@@ -52,7 +52,7 @@
   // --- UI state ---
   let activeCategoryId = $state(MENU.categories[0].id);
   let variantItem = $state<MenuItem | null>(null);
-  type OptionsPickerState = { item: MenuItem; options: MenuOption[]; baseId: string; baseName: string };
+  type OptionsPickerState = { item: MenuItem; options: MenuOption[]; variants?: Array<{ id: string; label: string }>; baseId: string; baseName: string };
   let optionsPicker = $state<OptionsPickerState | null>(null);
   let scanMode = $state(false);
   let scanError = $state<string | null>(null);
@@ -242,7 +242,12 @@
   // --- Item tap: variant picker or direct add ---
   function handleItemTap(item: MenuItem) {
     if (item.variants?.length) {
-      variantItem = item;
+      if (item.optionalVariants) {
+        const catOptions = categoryOptionsFor(item.id);
+        optionsPicker = { item, options: catOptions, variants: item.variants, baseId: item.id, baseName: item.name };
+      } else {
+        variantItem = item;
+      }
     } else {
       addItem(item.id);
     }
@@ -250,9 +255,13 @@
 
   function handleVariantSelect(variantId: string) {
     const item = variantItem;
-    const variant = item?.variants?.find((v) => v.id === variantId);
-    if (!item || !variant) return;
+    if (!item) return;
 
+    const variant = item.variants?.find((v) => v.id === variantId);
+    const isPlain = variantId === item.id; // "Normale" for optionalVariants items
+    if (!variant && !isPlain) return;
+
+    const selectedName = isPlain ? item.name : `${item.name} - ${variant!.label}`;
     const catOptions = categoryOptionsFor(variantId);
     variantItem = null;
     if (catOptions.length > 0) {
@@ -260,7 +269,7 @@
         item,
         options: catOptions,
         baseId: variantId,
-        baseName: `${item.name} - ${variant.label}`
+        baseName: selectedName
       };
     } else {
       addItem(variantId);
@@ -270,9 +279,13 @@
   // Called when cashier explicitly requests options for an item (e.g. celiaci / s/lattosio).
   function handleOptionsRequest(item: MenuItem) {
     const catOptions = categoryOptionsFor(item.id);
-    if (catOptions.length > 0) {
-      optionsPicker = { item, options: catOptions, baseId: item.id, baseName: item.name };
-    }
+    optionsPicker = {
+      item,
+      options: catOptions,
+      variants: item.optionalVariants ? item.variants : undefined,
+      baseId: item.id,
+      baseName: item.name
+    };
   }
 
   // --- QR / keyboard wedge ---
@@ -755,11 +768,12 @@
     />
   {/if}
 
-  <!-- Options picker modal (impasto celiaci / s/lattosio, etc.) -->
+  <!-- Options picker modal (impasto celiaci / s/lattosio, bianca/rossa, etc.) -->
   {#if optionsPicker}
     <OptionsPicker
       item={optionsPicker.item}
       options={optionsPicker.options}
+      variants={optionsPicker.variants}
       baseId={optionsPicker.baseId}
       baseName={optionsPicker.baseName}
       onAdd={(key) => { addItem(key); optionsPicker = null; }}

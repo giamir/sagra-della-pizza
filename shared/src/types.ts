@@ -7,6 +7,7 @@ export type MenuItem = {
     id: string;
     label: string;
   }>;
+  optionalVariants?: boolean; // when true, the base item is orderable alongside its variants
 };
 
 export type MenuGroup = {

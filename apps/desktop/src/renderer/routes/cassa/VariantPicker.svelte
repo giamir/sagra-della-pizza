@@ -28,8 +28,19 @@
     {#if item.description}
       <p class="text-sm text-gray-500 mb-4">{item.description}</p>
     {/if}
-    <p class="text-sm font-semibold text-gray-600 mb-3">Scegli la variante · {formatEUR(item.price)}</p>
+    <p class="text-sm font-semibold text-gray-600 mb-3">
+      {item.optionalVariants ? 'Base o specifica · ' : 'Scegli la variante · '}{formatEUR(item.price)}
+    </p>
     <div class="space-y-2">
+      {#if item.optionalVariants}
+        <button
+          type="button"
+          onclick={() => onSelect(item.id)}
+          class="w-full py-3 px-4 rounded-xl border-2 border-gray-200 hover:border-green-700 hover:bg-green-50 text-left font-semibold text-gray-900 transition-colors"
+        >
+          Normale
+        </button>
+      {/if}
       {#each item.variants ?? [] as variant}
         <button
           type="button"

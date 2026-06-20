@@ -37,7 +37,9 @@
 
   // Count all cart entries for this item, including option-combo variants (key = `id||opt1,opt2`).
   function cartQty(item: MenuItem): number {
-    const ids = item.variants?.length ? item.variants.map((v) => v.id) : [item.id];
+    const ids = item.variants?.length
+      ? [...(item.optionalVariants ? [item.id] : []), ...item.variants.map((v) => v.id)]
+      : [item.id];
     return Object.entries(cart).reduce((sum, [key, qty]) => {
       const base = key.includes('||') ? key.slice(0, key.indexOf('||')) : key;
       return ids.includes(base) ? sum + qty : sum;
@@ -119,7 +121,7 @@
             {#if item.description}
               <span class="block text-xs text-gray-400 mt-0.5 leading-tight">{item.description}</span>
             {/if}
-            {#if item.variants?.length}
+            {#if item.variants?.length && !item.optionalVariants}
               <span class="block text-xs text-gray-400 mt-1">
                 {item.variants.map((v) => v.label).join(' · ')}
               </span>
@@ -134,7 +136,7 @@
               </span>
             {/if}
 
-            {#if hasOptions && !item.variants?.length && !soldOut}
+            {#if hasOptions && (!item.variants?.length || item.optionalVariants) && !soldOut}
               <button
                 type="button"
                 onclick={(e) => { e.stopPropagation(); onOptionsRequest?.(item); }}

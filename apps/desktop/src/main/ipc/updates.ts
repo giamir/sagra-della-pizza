@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { autoUpdater, type ProgressInfo, type UpdateInfo } from 'electron-updater';
 
-const RELEASES_URL = 'https://github.com/giamir/sagra-della-pizza/releases';
+const UPDATE_FEED_URL = 'https://sagradellapizza.it/desktop-updates';
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 export type UpdateStatus = {
@@ -96,7 +96,7 @@ export function registerUpdateHandlers(): void {
     return { ok: true };
   });
   ipcMain.handle('updates:open-releases', async () => {
-    await shell.openExternal(RELEASES_URL);
+    await shell.openExternal(UPDATE_FEED_URL);
     return { ok: true };
   });
 }

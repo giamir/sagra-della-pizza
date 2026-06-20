@@ -27,15 +27,16 @@ Per distribuire una nuova versione:
 2. Creare un tag con la stessa versione
 3. Fare push del tag
 
-GitHub costruisce automaticamente il DMG (su macOS) e l'installer NSIS (su Windows) in parallelo, poi pubblica gli asset nella GitHub Release:
+GitHub costruisce automaticamente il DMG (su macOS) e l'installer NSIS (su Windows) in parallelo, poi carica gli asset pubblici nel feed aggiornamenti su Vercel Blob:
 
 ```bash
 git tag v1.0.0
 git push --tags
 ```
 
-Gli installer pronti si scaricano dalla scheda **Releases** su GitHub.
-La release deve contenere anche i file di aggiornamento generati da Electron Builder (`latest.yml`, `latest-mac.yml`, `.blockmap`, ZIP macOS e installer Windows): l'app installata usa questi file per trovare e scaricare automaticamente la versione più recente.
+Gli installer e i metadati vengono serviti da `https://sagradellapizza.it/desktop-updates/`.
+Il workflow richiede il secret `BLOB_READ_WRITE_TOKEN` configurato su GitHub Actions.
+Il feed contiene i file generati da Electron Builder (`latest.yml`, `latest-mac.yml`, `.blockmap`, ZIP macOS, DMG e installer Windows): l'app installata usa questi file per trovare e scaricare automaticamente la versione più recente.
 
 > **Perché non si può compilare il pacchetto Windows su Mac?**  
 > `better-sqlite3` contiene codice nativo (`.node`) che deve essere compilato per la piattaforma di destinazione. Un Mac non può compilare binari Windows senza una toolchain completa, quindi il risultato crasherebbe all'avvio. GitHub Actions usa runner nativi per ciascuna piattaforma e risolve il problema automaticamente.
@@ -84,7 +85,7 @@ Il pacchetto finito si trova in `apps/desktop/dist/`:
 
 ## Aggiornamenti automatici
 
-L'app desktop controlla periodicamente le GitHub Releases stabili del repository.
+L'app desktop controlla periodicamente il feed pubblico `https://sagradellapizza.it/desktop-updates/`.
 Il controllo avviene all'avvio della versione installata e poi circa ogni 6 ore.
 
 Dal menu hamburger aprire **Aggiornamenti** per vedere:
@@ -96,9 +97,7 @@ Dal menu hamburger aprire **Aggiornamenti** per vedere:
 
 In sviluppo (`npm run dev`) il controllo automatico non scarica aggiornamenti; mostra solo la versione corrente e un messaggio informativo.
 
-> Nota repository privato: GitHub Releases private richiedono autenticazione anche per scaricare gli asset. Non inserire un token GitHub nell'app distribuita. Per aggiornamenti automatici su casse reali usare un repository/feed pubblico per gli asset di release, oppure un proxy/feed autenticato controllato da noi.
-
-> Nota macOS: l'app attuale non e' firmata/notarizzata. Se macOS blocca l'aggiornamento automatico, usare il pulsante **Apri releases** e installare manualmente il DMG. Per aggiornamenti macOS affidabili e' consigliato configurare firma e notarizzazione Apple.
+> Nota macOS: l'app attuale non e' firmata/notarizzata. Se macOS blocca l'aggiornamento automatico, usare il pulsante **Apri feed** e installare manualmente il DMG. Per aggiornamenti macOS affidabili e' consigliato configurare firma e notarizzazione Apple.
 
 ---
 

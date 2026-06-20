@@ -135,7 +135,7 @@
 
     {#if appInfo && !appInfo.isPackaged}
       <p class="text-xs font-semibold text-gray-500">
-        Il controllo automatico funziona solo dopo aver installato un pacchetto distribuito da GitHub Releases.
+        Il controllo automatico funziona solo dopo aver installato un pacchetto distribuito dal feed pubblico.
       </p>
     {/if}
 
@@ -145,7 +145,7 @@
         onclick={() => window.api.openReleases()}
         class="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
       >
-        Apri releases
+        Apri feed
       </button>
       <div class="flex gap-3">
         <button

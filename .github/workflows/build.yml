@@ -8,9 +8,6 @@ on:
   # Also runnable manually from the GitHub Actions tab
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
 
   build-mac:
@@ -36,9 +33,12 @@ jobs:
 
       - name: Build and package (macOS)
         working-directory: apps/desktop
+        run: npx electron-vite build && npx electron-builder --mac --publish never
+
+      - name: Upload update artifacts (macOS)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-vite build && npx electron-builder --mac --publish always
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist
 
   build-win:
     name: Windows (NSIS)
@@ -63,6 +63,9 @@ jobs:
 
       - name: Build and package (Windows)
         working-directory: apps/desktop
+        run: npx electron-vite build && npx electron-builder --win --publish never
+
+      - name: Upload update artifacts (Windows)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-vite build && npx electron-builder --win --publish always
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist

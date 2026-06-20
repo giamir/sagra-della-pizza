@@ -4,10 +4,8 @@ const config = {
   productName: 'Sagra della Pizza',
   publish: [
     {
-      provider: 'github',
-      owner: 'giamir',
-      repo: 'sagra-della-pizza',
-      releaseType: 'release'
+      provider: 'generic',
+      url: 'https://sagradellapizza.it/desktop-updates'
     }
   ],
   directories: {
@@ -30,7 +28,8 @@ const config = {
   },
   mac: {
     target: [
-      { target: 'dmg', arch: ['x64', 'arm64'] }
+      { target: 'dmg', arch: ['x64', 'arm64'] },
+      { target: 'zip', arch: ['x64', 'arm64'] }
     ],
     category: 'public.app-category.business',
     icon: 'resources/icon.icns'

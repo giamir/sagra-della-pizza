@@ -67,5 +67,9 @@
     <p class="mt-10 text-sm text-ink/70">
       Una volta confermato, mostra il QR all'addetto della cassa per pagare.
     </p>
+
+    <a href="/download" class="mt-6 inline-block text-sm font-semibold text-leaf underline underline-offset-4">
+      Scarica gestionale cassa
+    </a>
   </div>
 </div>

@@ -516,7 +516,7 @@
           people: payload.p,
           totalCents: payload.t,
           lines: payload.l,
-          source: 'qr_scan',
+          source: 'qr',
           tillName: config.tillName,
           paymentMethod: 'cash'
         })

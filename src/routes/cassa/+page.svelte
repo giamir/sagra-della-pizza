@@ -509,25 +509,18 @@
       }
 
       sendMessage = 'Invio ordine alla cassa…';
-      const response = await fetch(`http://${config.host}:${config.port}/orders`, {
+      const response = await fetch(`http://${config.host}:${config.port}/pending-order`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          people: payload.p,
-          totalCents: payload.t,
-          lines: payload.l,
-          source: 'qr',
-          tillName: config.tillName,
-          paymentMethod: 'cash'
-        })
+        body: JSON.stringify({ payload })
       });
-      const data = (await response.json()) as { ok?: boolean; orderId?: string; error?: string };
+      const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !data.ok) {
         sendMessage = data.error ?? `La cassa ha risposto con HTTP ${response.status}.`;
         return false;
       }
       sendSuccess = true;
-      sendMessage = `Ordine #${data.orderId ?? '?'} registrato in cassa.`;
+      sendMessage = 'Ordine inviato alla cassa. Verifica e incasso in corso.';
       return true;
     } catch (err) {
       sendMessage = err instanceof Error ? err.message : 'Invio alla cassa non riuscito.';

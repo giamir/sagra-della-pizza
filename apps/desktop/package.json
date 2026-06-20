@@ -1,6 +1,6 @@
 {
   "name": "@sagra/desktop",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "productName": "Sagra della Pizza",
   "private": true,
   "main": "out/main/index.js",

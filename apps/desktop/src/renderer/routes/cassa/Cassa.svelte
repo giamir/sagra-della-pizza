@@ -313,6 +313,19 @@
     setTimeout(() => { statusMessage = null; }, 3000);
   }
 
+  // Order pushed from the phone QR scanner over the LAN. Load it into the cart
+  // for review unless the cashier already has an order in progress.
+  function handleIncomingOrder(payload: Payload) {
+    if (!cartIsEmpty || completing) {
+      statusMessage = 'Ordine telefono in attesa — svuota il carrello per caricarlo';
+      setTimeout(() => { statusMessage = null; }, 5000);
+      return;
+    }
+    loadFromPayload(payload);
+    statusMessage = `Ordine dal telefono · ${formatEUR(payload.t / 100)} — verifica e incassa`;
+    setTimeout(() => { statusMessage = null; }, 4000);
+  }
+
   async function startScan() {
     scanError = null;
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -440,6 +453,7 @@
   onMount(() => {
     let liveStatsTimer = 0;
     let unsubStock: (() => void) | null = null;
+    let unsubIncoming: (() => void) | null = null;
 
     window.addEventListener('keydown', handleKeyInput);
 
@@ -461,6 +475,11 @@
 
       // Subscribe to live stock updates (from host broadcast or local changes)
       unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+
+      // Orders pushed from the phone QR scanner
+      unsubIncoming = window.api.onIncomingOrder((payload) => {
+        handleIncomingOrder(payload as Payload);
+      });
     })();
 
     return () => {
@@ -470,6 +489,7 @@
       clearTimeout(statsAnimationTimer);
       if (liveStatsTimer) clearInterval(liveStatsTimer);
       unsubStock?.();
+      unsubIncoming?.();
     };
   });
 </script>

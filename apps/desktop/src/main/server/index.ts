@@ -25,6 +25,15 @@ export function broadcastStock(): void {
   }
 }
 
+export function broadcastIncomingOrder(payload: { v?: number; p: number; l: [string, number][]; t: number }): void {
+  // Push the scanned order to the host till's renderer so the cashier can
+  // review it and take payment — it is NOT persisted here.
+  const { BrowserWindow } = require('electron') as typeof import('electron');
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('order:incoming', payload);
+  }
+}
+
 export function startServer(port = 7331): void {
   if (_httpServer) return;
 
@@ -83,6 +92,23 @@ export function startServer(port = 7331): void {
     const { itemId } = req.params;
     resetStock(itemId);
     broadcastStock();
+    res.json({ ok: true });
+  });
+
+  // --- Pending order from the phone QR scanner ---
+  // Does NOT persist. Loads the order into the host till's cart so the cashier
+  // can verify it and take payment (same flow as scanning with the till camera).
+  app.post('/pending-order', (req, res) => {
+    const { payload } = req.body as {
+      payload?: { v?: number; p?: number; l?: [string, number][]; t?: number };
+    };
+
+    if (!payload || typeof payload.p !== 'number' || !Array.isArray(payload.l) || typeof payload.t !== 'number') {
+      res.status(400).json({ ok: false, error: 'Payload non valido' });
+      return;
+    }
+
+    broadcastIncomingOrder(payload as { v?: number; p: number; l: [string, number][]; t: number });
     res.json({ ok: true });
   });
 

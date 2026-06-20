@@ -21,6 +21,16 @@ const api = {
 
   // Orders
   submitOrder: (order: unknown) => ipcRenderer.invoke('order:submit', order),
+  onIncomingOrder: (
+    cb: (payload: { v?: number; p: number; l: [string, number][]; t: number }) => void
+  ) => {
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      payload: { v?: number; p: number; l: [string, number][]; t: number }
+    ) => cb(payload);
+    ipcRenderer.on('order:incoming', listener);
+    return () => ipcRenderer.removeListener('order:incoming', listener);
+  },
 
   // Printing
   printOrder: (orderId: number | bigint) => ipcRenderer.invoke('print:order', orderId),

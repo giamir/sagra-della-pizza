@@ -165,8 +165,6 @@
   // --- Summary computations ---
   const totalRevenue   = $derived(orders.reduce((s, o) => s + o.totalCents, 0));
   const totalCovers    = $derived(orders.reduce((s, o) => s + o.people, 0));
-  const cashOrders     = $derived(orders.filter((o) => o.paymentMethod === 'cash').length);
-  const cardOrders     = $derived(orders.filter((o) => o.paymentMethod === 'card').length);
   const cashRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'cash' ? o.totalCents : 0), 0));
   const cardRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'card' ? o.totalCents : 0), 0));
 
@@ -385,43 +383,18 @@
     URL.revokeObjectURL(url);
   }
 
-  function exportReportsExcel() {
+  function exportSoldItemsExcel() {
     const generatedAt = new Date().toLocaleString('it-IT');
-    const paymentRows = [
-      ['Metodo', 'Ordini', 'Incasso'],
-      ['Contanti', cashOrders, cashRevenue],
-      ['Carta', cardOrders, cardRevenue],
-      ['Totale', orders.length, totalRevenue]
-    ];
-    const summaryRows = [
-      ['Periodo', rangeLabel],
-      ['Generato', generatedAt],
-      ['Ordini', String(orders.length)],
-      ['Coperti', String(totalCovers)],
-      ['Incasso totale', csvEuro(totalRevenue)],
-      ['Incasso contanti', csvEuro(cashRevenue)],
-      ['Incasso carta', csvEuro(cardRevenue)]
-    ];
-
-    const table = (title: string, headers: string[], rows: (string | number)[][], moneyColumns: number[] = []) => `
-      <h2>${htmlEscape(title)}</h2>
-      <table>
-        <thead>
-          <tr>${headers.map((h) => `<th>${htmlEscape(h)}</th>`).join('')}</tr>
-        </thead>
-        <tbody>
-          ${rows.map((row) => `
-            <tr>
-              ${row.map((cell, index) => {
-                const isMoney = moneyColumns.includes(index);
-                const value = isMoney && typeof cell === 'number' ? csvEuro(cell) : cell;
-                return `<td${isMoney ? ' style="mso-number-format:\'0.00\';"' : ''}>${htmlEscape(value)}</td>`;
-              }).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+    const headers = ['ID articolo', 'Articolo', 'Stazione', 'Quantita', 'Prezzo', 'Incasso'];
+    const moneyColumns = [4, 5];
+    const bodyRows = soldItems.map((item) => [
+      item.itemId,
+      item.name,
+      item.station,
+      item.qty,
+      item.unitPriceCents,
+      item.cents
+    ]);
 
     const html = `<!doctype html>
       <html lang="it">
@@ -430,43 +403,31 @@
           <style>
             body { font-family: Arial, sans-serif; }
             h1 { color: #14532d; }
-            h2 { margin-top: 24px; color: #14532d; }
+            p { color: #4b5563; }
             table { border-collapse: collapse; margin-bottom: 18px; }
             th { background: #e5e7eb; font-weight: bold; }
             th, td { border: 1px solid #9ca3af; padding: 6px 8px; }
           </style>
         </head>
         <body>
-          <h1>Rapporti - ${htmlEscape(rangeLabel)}</h1>
-          ${table('Totali', ['Voce', 'Valore'], summaryRows)}
-          ${table('Pagamenti', paymentRows[0] as string[], paymentRows.slice(1), [2])}
-          ${table(
-            'Per cassa',
-            ['Cassa', 'Ordini', 'Coperti', 'Incasso totale', 'Contanti', 'Carta', 'Ordini contanti', 'Ordini carta'],
-            byTill.map((t) => [t.tillName, t.orders, t.covers, t.totalCents, t.cashCents, t.cardCents, t.cashOrders, t.cardOrders]),
-            [3, 4, 5]
-          )}
-          ${table(
-            'Articoli venduti',
-            ['ID articolo', 'Articolo', 'Stazione', 'Quantita', 'Prezzo', 'Incasso'],
-            soldItems.map((item) => [item.itemId, item.name, item.station, item.qty, item.unitPriceCents, item.cents]),
-            [4, 5]
-          )}
-          ${table(
-            'Ordini',
-            ['ID', 'Data', 'Ora', 'Cassa', 'Coperti', 'Metodo', 'Origine', 'Totale'],
-            orders.map((order) => [
-              order.id,
-              fmtDate(order.createdAt),
-              fmtTime(order.createdAt),
-              order.tillName,
-              order.people,
-              order.paymentMethod === 'card' ? 'Carta' : 'Contanti',
-              order.source === 'qr' ? 'QR' : 'Manuale',
-              order.totalCents
-            ]),
-            [7]
-          )}
+          <h1>Articoli venduti - ${htmlEscape(rangeLabel)}</h1>
+          <p>Generato ${htmlEscape(generatedAt)} \u00B7 ${soldItems.length} articoli \u00B7 ${soldItemsTotalQty} pezzi</p>
+          <table>
+            <thead>
+              <tr>${headers.map((h) => `<th>${htmlEscape(h)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${bodyRows.map((row) => `
+                <tr>
+                  ${row.map((cell, index) => {
+                    const isMoney = moneyColumns.includes(index);
+                    const value = isMoney && typeof cell === 'number' ? csvEuro(cell) : cell;
+                    return `<td${isMoney ? ' style="mso-number-format:\'0.00\';"' : ''}>${htmlEscape(value)}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </body>
       </html>`;
 
@@ -474,7 +435,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `rapporti-${exportRangeKey()}.xls`;
+    link.download = `articoli-venduti-${exportRangeKey()}.xls`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -616,16 +577,7 @@
           {/if}
         </div>
 
-        <button type="button" onclick={load} class="text-white/60 hover:text-white text-lg" title="Aggiorna">↻</button>
-        <button
-          type="button"
-          onclick={exportReportsExcel}
-          disabled={orders.length === 0}
-          class="ml-auto rounded border border-white/40 px-3 py-1 text-xs font-bold text-white hover:bg-white hover:text-green-900 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white"
-          title="Scarica rapporti in formato Excel"
-        >
-          Excel
-        </button>
+        <button type="button" onclick={load} class="ml-auto text-white/60 hover:text-white text-lg" title="Aggiorna">↻</button>
     </div>
 
     <!-- Tabs + active range label -->
@@ -936,6 +888,14 @@
                   class="rounded-lg border border-green-800 px-4 py-2 text-sm font-bold text-green-900 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent"
                 >
                   PDF
+                </button>
+                <button
+                  type="button"
+                  onclick={exportSoldItemsExcel}
+                  disabled={soldItems.length === 0}
+                  class="rounded-lg border border-green-800 px-4 py-2 text-sm font-bold text-green-900 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent"
+                >
+                  Excel
                 </button>
               </div>
             </div>

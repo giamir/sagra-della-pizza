@@ -3,6 +3,7 @@
   import jsQR from 'jsqr';
   import { decodeOrder } from '@sagra/shared/utils/payload';
   import { buildPriceIndex } from '@sagra/shared/utils/pricing';
+  import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
   import { formatEUR } from '@sagra/shared/utils/currency';
   import type { Payload, MenuItem, MenuOption } from '@sagra/shared/types';
   import menuData from '@sagra/shared/data/menu.json';
@@ -23,8 +24,12 @@
 
   const MENU = menuData as Menu;
   const PRICE_INDEX = buildPriceIndex(MENU);
+  const STOCK_INDEX = buildStockIdIndex(MENU);
   const LIVE_STATS_REFRESH_MS = 15000;
   const LOW_STOCK_LIMIT = 5;
+  // Re-publish our cart hold periodically so the host doesn't drop it as stale
+  // (host TTL is ~2 min). Also covers a brief earlier push that failed.
+  const RESERVATION_HEARTBEAT_MS = 20000;
 
   type ReportLine = {
     itemId: string;
@@ -80,6 +85,9 @@
 
   // --- Stock ---
   let stock = $state<Record<string, number>>({});
+  // Units held in carts across all tills (keyed by stock id). Effective
+  // remaining = stock − reserved; that is what drives "rimasti" / esaurito.
+  let reserved = $state<Record<string, number>>({});
 
   // --- Camera ---
   let video = $state<HTMLVideoElement | null>(null);
@@ -148,12 +156,41 @@
     return { orderCount, revenueCents, covers, cashCents, cardCents, averageCents, topItems, lowStock };
   });
 
+  // --- Stock helpers ---
+  // Units of a stock id sitting in our own cart right now (across variants/opts).
+  function cartHeldForStock(stockId: string): number {
+    let sum = 0;
+    for (const [key, qty] of Object.entries(cart)) {
+      if (qty > 0 && stockIdForCartKey(key, STOCK_INDEX) === stockId) sum += qty;
+    }
+    return sum;
+  }
+
+  // Effective remaining for a cart key: Infinity when the item has no stock
+  // limit, otherwise persisted remaining minus units held in carts. We take the
+  // max of the broadcast hold and our local cart so a burst of clicks before the
+  // hold round-trips can't push us past zero (checkout stays the hard backstop).
+  function effectiveRemaining(key: string): number {
+    const stockId = stockIdForCartKey(key, STOCK_INDEX);
+    if (!(stockId in stock)) return Infinity;
+    const held = Math.max(reserved[stockId] ?? 0, cartHeldForStock(stockId));
+    return stock[stockId] - held;
+  }
+
+  function flashEsaurito(id: string) {
+    const name = PRICE_INDEX[id]?.name ?? id;
+    statusMessage = `${name} esaurito — non aggiunto`;
+    setTimeout(() => { statusMessage = null; }, 3000);
+  }
+
   // --- Cart actions ---
   function addItem(id: string) {
+    if (effectiveRemaining(id) <= 0) { flashEsaurito(id); return; }
     cart[id] = (cart[id] ?? 0) + 1;
   }
 
   function incLine(id: string) {
+    if (effectiveRemaining(id) <= 0) { flashEsaurito(id); return; }
     cart[id] = (cart[id] ?? 0) + 1;
   }
 
@@ -176,6 +213,27 @@
   function setPeople(n: number) {
     people = Math.max(0, Math.min(30, n));
   }
+
+  // --- Cart hold (reservation) publishing ---
+  // Whenever the cart changes we publish it to the host (debounced) so its items
+  // count against the live "rimasti" every till sees. An empty cart clears it.
+  let reservationPushTimer = 0;
+
+  async function pushReservation() {
+    const lines = Object.entries(cart).filter(([, q]) => q > 0) as [string, number][];
+    try { await window.api.setReservation(lines); } catch { /* best-effort */ }
+  }
+
+  function scheduleReservationPush() {
+    clearTimeout(reservationPushTimer);
+    reservationPushTimer = window.setTimeout(pushReservation, 150);
+  }
+
+  // React to any cart mutation and (debounced) re-publish the hold.
+  $effect(() => {
+    void cartLines; // track cart contents
+    scheduleReservationPush();
+  });
 
   function todayRange(): [string, string] {
     const now = new Date();
@@ -330,14 +388,47 @@
     }
   }
 
-  function loadFromPayload(payload: Payload) {
+  // Loads a scanned/incoming order into the cart, skipping items that are now
+  // esaurito and capping those with fewer units left than requested. Returns
+  // true when something had to be dropped/reduced (so callers keep the warning).
+  function loadFromPayload(payload: Payload): boolean {
     for (const k of Object.keys(cart)) delete cart[k];
-    for (const [id, qty] of payload.l) cart[id] = qty;
+
+    const dropped: string[] = [];
+    const reduced: string[] = [];
+    const usedByStock: Record<string, number> = {};
+
+    for (const [id, qty] of payload.l) {
+      const stockId = stockIdForCartKey(id, STOCK_INDEX);
+      if (!(stockId in stock)) { cart[id] = qty; continue; } // no limit
+      const available = stock[stockId] - (reserved[stockId] ?? 0) - (usedByStock[stockId] ?? 0);
+      const add = Math.max(0, Math.min(qty, available));
+      if (add > 0) {
+        cart[id] = add;
+        usedByStock[stockId] = (usedByStock[stockId] ?? 0) + add;
+      }
+      if (add < qty) {
+        const name = PRICE_INDEX[id]?.name ?? id;
+        (add === 0 ? dropped : reduced).push(name);
+      }
+    }
+
     people = payload.p;
     orderSource = 'qr';
     stopScan();
+
+    if (dropped.length || reduced.length) {
+      const parts: string[] = [];
+      if (dropped.length) parts.push(`Esauriti, non aggiunti: ${dropped.join(', ')}`);
+      if (reduced.length) parts.push(`Ridotti per scorte: ${reduced.join(', ')}`);
+      statusMessage = parts.join(' · ');
+      setTimeout(() => { statusMessage = null; }, 6000);
+      return true;
+    }
+
     statusMessage = `Ordine QR caricato · ${formatEUR(payload.t / 100)}`;
     setTimeout(() => { statusMessage = null; }, 3000);
+    return false;
   }
 
   // Order pushed from the phone QR scanner over the LAN. Load it into the cart
@@ -348,9 +439,11 @@
       setTimeout(() => { statusMessage = null; }, 5000);
       return;
     }
-    loadFromPayload(payload);
-    statusMessage = `Ordine dal telefono · ${formatEUR(payload.t / 100)} — verifica e incassa`;
-    setTimeout(() => { statusMessage = null; }, 4000);
+    const hadIssues = loadFromPayload(payload);
+    if (!hadIssues) {
+      statusMessage = `Ordine dal telefono · ${formatEUR(payload.t / 100)} — verifica e incassa`;
+      setTimeout(() => { statusMessage = null; }, 4000);
+    }
   }
 
   async function startScan() {
@@ -479,6 +572,7 @@
 
   onMount(() => {
     let liveStatsTimer = 0;
+    let heartbeatTimer = 0;
     let unsubStock: (() => void) | null = null;
     let unsubIncoming: (() => void) | null = null;
 
@@ -493,15 +587,24 @@
       tillName = settings.tillName || 'Cassa';
       paymentEnabled = payConfig.enabled;
 
-      // Load initial stock
+      // Load initial stock + current cart holds
       stock = await window.api.getStock();
+      reserved = await window.api.getReservations();
       await refreshLiveStats();
       liveStatsTimer = window.setInterval(() => {
         void refreshLiveStats();
       }, LIVE_STATS_REFRESH_MS);
 
-      // Subscribe to live stock updates (from host broadcast or local changes)
-      unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+      // Keep our hold alive so the host doesn't expire it mid-order.
+      heartbeatTimer = window.setInterval(() => {
+        if (!cartIsEmpty) void pushReservation();
+      }, RESERVATION_HEARTBEAT_MS);
+
+      // Subscribe to live stock + reservation updates (host broadcast / local).
+      unsubStock = window.api.onStockUpdate(({ stock: s, reserved: r }) => {
+        stock = s;
+        reserved = r;
+      });
 
       // Orders pushed from the phone QR scanner
       unsubIncoming = window.api.onIncomingOrder((payload) => {
@@ -514,7 +617,10 @@
       window.removeEventListener('keydown', handleKeyInput);
       clearTimeout(scanBufferTimer);
       clearTimeout(statsAnimationTimer);
+      clearTimeout(reservationPushTimer);
       if (liveStatsTimer) clearInterval(liveStatsTimer);
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      void window.api.setReservation([]); // release our hold on close
       unsubStock?.();
       unsubIncoming?.();
     };
@@ -738,6 +844,7 @@
       menu={MENU}
       {cart}
       {stock}
+      {reserved}
       {activeCategoryId}
       onCategoryChange={(id) => activeCategoryId = id}
       onItemTap={handleItemTap}

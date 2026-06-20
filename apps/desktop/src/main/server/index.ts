@@ -5,15 +5,23 @@ import { getDb, getSetting } from '../db/schema.js';
 import { getStock, setStock, resetStock, decrementStock } from '../db/stock.js';
 import { queryOrders, voidOrder } from '../db/reports.js';
 import { getCatalog, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
+import { getReservedTotals, setReservation, clearReservation } from './reservations.js';
 
 let _httpServer: ReturnType<typeof createServer> | null = null;
 let _wss: WebSocketServer | null = null;
 
+// The payload every till consumes to render live "rimasti": the persisted
+// remaining (raw) plus the soft-holds currently in carts. Effective remaining
+// is computed client-side as stock − reserved so the admin can still see raw.
+function stockPayload(): { stock: Record<string, number>; reserved: Record<string, number> } {
+  return { stock: getStock(), reserved: getReservedTotals() };
+}
+
 export function broadcastStock(): void {
-  const stock = getStock();
+  const payload = stockPayload();
   // Push to LAN clients over WebSocket
   if (_wss) {
-    const msg = JSON.stringify({ type: 'stock', stock });
+    const msg = JSON.stringify({ type: 'stock', ...payload });
     for (const client of _wss.clients) {
       if (client.readyState === WebSocket.OPEN) client.send(msg);
     }
@@ -21,7 +29,7 @@ export function broadcastStock(): void {
   // Push to local renderer windows
   const { BrowserWindow } = require('electron') as typeof import('electron');
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('stock:update', stock);
+    win.webContents.send('stock:update', payload);
   }
 }
 
@@ -91,6 +99,23 @@ export function startServer(port = 7331): void {
   app.delete('/stock/:itemId', (req, res) => {
     const { itemId } = req.params;
     resetStock(itemId);
+    broadcastStock();
+    res.json({ ok: true });
+  });
+
+  // --- Reservations (soft cart holds) ---
+  app.get('/reservations', (_req, res) => res.json({ reserved: getReservedTotals() }));
+
+  // A client till publishes its current cart so its items count against the
+  // live "rimasti" everyone sees. An empty cart clears that till's hold.
+  app.put('/reservations/:tillName', (req, res) => {
+    const { tillName } = req.params;
+    const { lines } = req.body as { lines?: [string, number][] };
+    if (!Array.isArray(lines)) {
+      res.status(400).json({ ok: false, error: 'lines non valido' });
+      return;
+    }
+    setReservation(tillName, lines);
     broadcastStock();
     res.json({ ok: true });
   });
@@ -171,6 +196,9 @@ export function startServer(port = 7331): void {
         return orderId;
       })();
 
+      // Items just moved from held-in-cart to sold: drop this till's hold so it
+      // isn't subtracted twice. Real stock was already decremented above.
+      clearReservation(tillName ?? getSetting('till_name') ?? 'default');
       broadcastStock();
       res.json({ ok: true, orderId: String(result) });
     } catch (err: unknown) {
@@ -186,8 +214,8 @@ export function startServer(port = 7331): void {
   const wss = new WebSocketServer({ server: httpServer });
 
   wss.on('connection', (ws) => {
-    // Send current stock immediately on connect
-    ws.send(JSON.stringify({ type: 'stock', stock: getStock() }));
+    // Send current stock + reservations immediately on connect
+    ws.send(JSON.stringify({ type: 'stock', ...stockPayload() }));
   });
 
   httpServer.listen(port, '0.0.0.0', () => {

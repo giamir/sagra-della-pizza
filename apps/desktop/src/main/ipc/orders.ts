@@ -3,6 +3,7 @@ import { getDb } from '../db/schema.js';
 import { decrementStock } from '../db/stock.js';
 import { loadTillSettings } from './settings.js';
 import { broadcastStock } from '../server/index.js';
+import { clearReservation } from '../server/reservations.js';
 import { getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 
 type SubmitOrderPayload = {
@@ -55,6 +56,8 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
     return orderId;
   })();
 
+  // Sold now, so release this till's hold — avoids double-subtracting.
+  clearReservation(tillName);
   broadcastStock();
   return { ok: true, orderId: result };
 }

@@ -54,11 +54,20 @@ const api = {
   getStock: () => ipcRenderer.invoke('stock:get'),
   setStock: (itemId: string, qty: number) => ipcRenderer.invoke('stock:set', itemId, qty),
   resetStock: (itemId: string) => ipcRenderer.invoke('stock:reset', itemId),
-  onStockUpdate: (cb: (stock: Record<string, number>) => void) => {
-    const listener = (_: Electron.IpcRendererEvent, stock: Record<string, number>) => cb(stock);
+  onStockUpdate: (
+    cb: (data: { stock: Record<string, number>; reserved: Record<string, number> }) => void
+  ) => {
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      data: { stock: Record<string, number>; reserved: Record<string, number> }
+    ) => cb(data);
     ipcRenderer.on('stock:update', listener);
     return () => ipcRenderer.removeListener('stock:update', listener);
   },
+
+  // Reservations (soft cart holds — live "rimasti" across tills)
+  getReservations: () => ipcRenderer.invoke('reservations:get'),
+  setReservation: (lines: [string, number][]) => ipcRenderer.invoke('reservations:set', lines),
 
   // Catalog admin
   getCatalog: () => ipcRenderer.invoke('catalog:get'),

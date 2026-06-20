@@ -34,8 +34,9 @@
 
   onMount(async () => {
     stock = await window.api.getStock();
-    // Keep the "rimasti" counts live as orders decrement stock elsewhere.
-    unsubStock = window.api.onStockUpdate((s) => { stock = s; });
+    // Keep the raw "rimasti" counts live as orders decrement stock elsewhere.
+    // Admin shows the persisted remaining, not the cart-hold-netted figure.
+    unsubStock = window.api.onStockUpdate(({ stock: s }) => { stock = s; });
   });
 
   onDestroy(() => {

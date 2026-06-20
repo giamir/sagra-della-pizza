@@ -7,6 +7,7 @@
     menu,
     cart,
     stock,
+    reserved,
     activeCategoryId,
     onCategoryChange,
     onItemTap,
@@ -15,6 +16,7 @@
     menu: Menu;
     cart: Record<string, number>;
     stock: Record<string, number>;
+    reserved: Record<string, number>;
     activeCategoryId: string;
     onCategoryChange: (id: string) => void;
     onItemTap: (item: MenuItem) => void;
@@ -46,20 +48,24 @@
     }, 0);
   }
 
-  // True when the item (or all its variants) are explicitly limited to 0 in stock
-  function isSoldOut(item: MenuItem): boolean {
-    if (item.variants?.length) {
-      const stockId = stockIdFor(item.id);
-      return stockId in stock && stock[stockId] === 0;
-    }
+  // Effective remaining = persisted remaining − units held in carts across all
+  // tills. -1 means "no stock limit". Clamped at 0 so a brief over-hold (lag)
+  // never shows a negative count.
+  function effectiveRemaining(item: MenuItem): number {
     const stockId = stockIdFor(item.id);
-    return stockId in stock && stock[stockId] === 0;
+    if (!(stockId in stock)) return -1;
+    return Math.max(0, stock[stockId] - (reserved[stockId] ?? 0));
+  }
+
+  // Esaurito once every remaining unit is either sold or already held in a cart.
+  function isSoldOut(item: MenuItem): boolean {
+    return effectiveRemaining(item) === 0;
   }
 
   function stockLabel(item: MenuItem): string | null {
-    const stockId = stockIdFor(item.id);
-    if (!(stockId in stock) || stock[stockId] === 0) return null;
-    return `${stock[stockId]} rimasti`;
+    const remaining = effectiveRemaining(item);
+    if (remaining <= 0) return null;
+    return `${remaining} rimasti`;
   }
 
 </script>

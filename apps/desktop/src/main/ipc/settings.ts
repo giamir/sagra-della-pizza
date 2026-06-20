@@ -12,10 +12,15 @@ function startWsClient(hostUrl: string): void {
   const ws = new WebSocket(wsUrl);
   ws.on('message', (data) => {
     try {
-      const msg = JSON.parse(data.toString()) as { type: string; stock: Record<string, number> };
+      const msg = JSON.parse(data.toString()) as {
+        type: string;
+        stock: Record<string, number>;
+        reserved?: Record<string, number>;
+      };
       if (msg.type === 'stock') {
+        const payload = { stock: msg.stock, reserved: msg.reserved ?? {} };
         for (const win of BrowserWindow.getAllWindows()) {
-          win.webContents.send('stock:update', msg.stock);
+          win.webContents.send('stock:update', payload);
         }
       }
     } catch { /* ignore malformed messages */ }

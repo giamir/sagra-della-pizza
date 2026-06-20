@@ -2,6 +2,55 @@
   "coperto": { "perPersona": 1.50 },
   "categories": [
     {
+      "id": "bevande",
+      "label": "Bevande",
+      "groups": [
+        {
+          "label": "Analcoliche",
+          "items": [
+            { "id": "acqua-naturale", "name": "Acqua Naturale Piccola", "price": 1.00 },
+            { "id": "acqua-naturale-litro", "name": "Acqua Naturale 1 L", "price": 1.50 },
+            { "id": "acqua-frizzante", "name": "Acqua Gassata Piccola", "price": 1.00 },
+            { "id": "acqua-gassata-litro", "name": "Acqua Gassata 1 L", "price": 1.50 },
+            { "id": "coca-cola", "name": "Coca-Cola (lattina)", "price": 2.50 },
+            { "id": "coca-cola-zero", "name": "Coca-Cola Zero (lattina)", "price": 2.50 },
+            { "id": "fanta", "name": "Fanta (lattina)", "price": 2.50 },
+            { "id": "sprite", "name": "Sprite (lattina)", "price": 2.50 },
+            { "id": "the-limone", "name": "Tè al Limone (lattina)", "price": 2.50 },
+            { "id": "the-pesca", "name": "Tè alla Pesca (lattina)", "price": 2.50 }
+          ]
+        },
+        {
+          "label": "Birra",
+          "items": [
+            { "id": "birra-spina-piccola", "name": "Birra alla Spina Piccola", "price": 3.50 },
+            { "id": "birra-spina-grande", "name": "Birra alla Spina Grande", "price": 5.00 },
+            { "id": "ipa", "name": "Birra Artigianale IPA", "price": 6.00 }
+          ]
+        },
+        {
+          "label": "Vino",
+          "items": [
+            { "id": "vino-bicchiere-rosso", "name": "Vino Rosso (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-bottiglia-rosso", "name": "Vino Rosso (bottiglia 0,75 L)", "price": 7.00 },
+            { "id": "vino-bicchiere-bianco", "name": "Vino Bianco (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-bottiglia-bianco", "name": "Vino Bianco (bottiglia 0,75 L)", "price": 7.00 },
+            { "id": "vino-frizzante", "name": "Vino Frizzante (bicchiere 200 cc)", "price": 2.50 },
+            { "id": "vino-bottiglia-frizzante", "name": "Vino Frizzante (bottiglia 0,75 L)", "price": 7.00 }
+          ]
+        },
+        {
+          "label": "Bar",
+          "items": [
+            { "id": "caffe", "name": "Caffè", "price": 1.00 },
+            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 1.50 },
+            { "id": "spumante", "name": "Spumante (bicchiere)", "price": 2.00 },
+            { "id": "spumante-bottiglia", "name": "Spumante (bottiglia)", "price": 9.00 }
+          ]
+        }
+      ]
+    },
+    {
       "id": "antipasti",
       "label": "Antipasti",
       "groups": [
@@ -244,55 +293,6 @@
           "label": "",
           "items": [
             { "id": "dolce-sagra", "name": "Dolce", "price": 4.00 }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "bevande",
-      "label": "Bevande",
-      "groups": [
-        {
-          "label": "Vino",
-          "items": [
-            { "id": "vino-bicchiere-rosso", "name": "Vino Rosso (bicchiere 200 cc)", "price": 2.50 },
-            { "id": "vino-bottiglia-rosso", "name": "Vino Rosso (bottiglia 0,75 L)", "price": 7.00 },
-            { "id": "vino-bicchiere-bianco", "name": "Vino Bianco (bicchiere 200 cc)", "price": 2.50 },
-            { "id": "vino-bottiglia-bianco", "name": "Vino Bianco (bottiglia 0,75 L)", "price": 7.00 },
-            { "id": "vino-frizzante", "name": "Vino Frizzante (bicchiere 200 cc)", "price": 2.50 },
-            { "id": "vino-bottiglia-frizzante", "name": "Vino Frizzante (bottiglia 0,75 L)", "price": 7.00 }
-          ]
-        },
-        {
-          "label": "Birra",
-          "items": [
-            { "id": "birra-spina-piccola", "name": "Birra alla Spina Piccola", "price": 3.50 },
-            { "id": "birra-spina-grande", "name": "Birra alla Spina Grande", "price": 5.00 },
-            { "id": "ipa", "name": "Birra Artigianale IPA", "price": 6.00 }
-          ]
-        },
-        {
-          "label": "Analcoliche",
-          "items": [
-            { "id": "acqua-naturale", "name": "Acqua Naturale Piccola", "price": 1.00 },
-            { "id": "acqua-naturale-litro", "name": "Acqua Naturale 1 L", "price": 1.50 },
-            { "id": "acqua-frizzante", "name": "Acqua Gassata Piccola", "price": 1.00 },
-            { "id": "acqua-gassata-litro", "name": "Acqua Gassata 1 L", "price": 1.50 },
-            { "id": "coca-cola", "name": "Coca-Cola (lattina)", "price": 2.50 },
-            { "id": "coca-cola-zero", "name": "Coca-Cola Zero (lattina)", "price": 2.50 },
-            { "id": "fanta", "name": "Fanta (lattina)", "price": 2.50 },
-            { "id": "sprite", "name": "Sprite (lattina)", "price": 2.50 },
-            { "id": "the-limone", "name": "Tè al Limone (lattina)", "price": 2.50 },
-            { "id": "the-pesca", "name": "Tè alla Pesca (lattina)", "price": 2.50 }
-          ]
-        },
-        {
-          "label": "Bar",
-          "items": [
-            { "id": "caffe", "name": "Caffè", "price": 1.00 },
-            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 1.50 },
-            { "id": "spumante", "name": "Spumante (bicchiere)", "price": 2.00 },
-            { "id": "spumante-bottiglia", "name": "Spumante (bottiglia)", "price": 9.00 }
           ]
         }
       ]

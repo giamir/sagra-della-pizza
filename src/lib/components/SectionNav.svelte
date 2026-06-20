@@ -3,12 +3,12 @@
 
   const sections = [
     { href: '/ordina/persone', label: 'Persone' },
+    { href: '/ordina/bevande', label: 'Bevande' },
     { href: '/ordina/antipasti', label: 'Antipasti' },
     { href: '/ordina/pizze', label: 'Pizze' },
     { href: '/ordina/griglia', label: 'Griglia' },
     { href: '/ordina/contorni', label: 'Contorni' },
     { href: '/ordina/dolci', label: 'Dolci' },
-    { href: '/ordina/bevande', label: 'Bevande' },
     { href: '/ordina/riepilogo', label: 'Riepilogo' }
   ];
 </script>

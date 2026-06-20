@@ -5,12 +5,12 @@
 
   const order = [
     '/ordina/persone',
+    '/ordina/bevande',
     '/ordina/antipasti',
     '/ordina/pizze',
     '/ordina/griglia',
     '/ordina/contorni',
     '/ordina/dolci',
-    '/ordina/bevande',
     '/ordina/riepilogo'
   ];
 
@@ -20,7 +20,7 @@
     return order[idx + 1];
   });
   const nextLabel = $derived(
-    page.url.pathname === '/ordina/bevande' ? 'Vai al riepilogo' : 'Avanti'
+    page.url.pathname === '/ordina/dolci' ? 'Vai al riepilogo' : 'Avanti'
   );
 
   let { children } = $props();

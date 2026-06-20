@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
+  import PrintPreview from './PrintPreview.svelte';
 
   type ReportLine = { itemId: string; name: string; qty: number; unitPriceCents: number; station: string };
   type ReportOrder = {
@@ -58,6 +59,10 @@
   let expandedId = $state<string | null>(null);
   let voidingId = $state<string | null>(null);
   let voidError = $state<string | null>(null);
+  let printingId = $state<string | null>(null);
+  let printError = $state<{ id: string; message: string } | null>(null);
+  let printSuccessId = $state<string | null>(null);
+  let printPreview = $state<{ stations: { name: string; text: string }[]; receipt: string; error: string } | null>(null);
 
   // Label shown above the orders list to tell the user what range is active
   const rangeLabel = $derived.by(() => {
@@ -88,6 +93,35 @@
       voidError = e instanceof Error ? e.message : 'Errore';
     } finally {
       voidingId = null;
+    }
+  }
+
+  async function handleReprint(order: ReportOrder) {
+    printingId = order.id;
+    printError = null;
+    printSuccessId = null;
+    try {
+      const orderId = Number(order.id);
+      if (!Number.isSafeInteger(orderId)) throw new Error(`ID ordine non valido: ${order.id}`);
+
+      const result = await window.api.printOrder(orderId);
+      if (result.ok) {
+        printSuccessId = order.id;
+        return;
+      }
+      const errorMessage = result.error ?? 'Errore stampa';
+      if (result.preview) {
+        printPreview = {
+          stations: result.preview.stations,
+          receipt: result.preview.receipt,
+          error: errorMessage
+        };
+      }
+      printError = { id: order.id, message: errorMessage };
+    } catch (e) {
+      printError = { id: order.id, message: e instanceof Error ? e.message : 'Errore stampa' };
+    } finally {
+      printingId = null;
     }
   }
 
@@ -983,10 +1017,23 @@
                   {/each}
 
                   <!-- Void actions -->
-                  <div class="flex items-center gap-2 pt-2 pb-1">
+                  <div class="flex flex-wrap items-center gap-2 pt-2 pb-1">
                     {#if voidError && voidingId === order.id}
-                      <span class="text-xs text-red-600 flex-1">{voidError}</span>
+                      <span class="basis-full text-xs text-red-600">{voidError}</span>
                     {/if}
+                    {#if printError?.id === order.id}
+                      <span class="basis-full text-xs text-red-600">{printError.message}</span>
+                    {:else if printSuccessId === order.id}
+                      <span class="basis-full text-xs text-green-700">Ordine ristampato.</span>
+                    {/if}
+                    <button
+                      type="button"
+                      onclick={() => handleReprint(order)}
+                      disabled={printingId === order.id}
+                      class="px-3 py-1 rounded text-xs font-semibold bg-green-50 text-green-800 hover:bg-green-100 disabled:opacity-40"
+                    >
+                      {printingId === order.id ? '…' : 'Ristampa'}
+                    </button>
                     <button
                       type="button"
                       onclick={() => handleVoid(order, false)}
@@ -1015,4 +1062,13 @@
     </div>
 
   </div>
+
+  {#if printPreview}
+    <PrintPreview
+      stations={printPreview.stations}
+      receipt={printPreview.receipt}
+      error={printPreview.error}
+      onClose={() => printPreview = null}
+    />
+  {/if}
 </div>

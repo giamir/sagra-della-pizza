@@ -10,7 +10,10 @@ const base = require('./electron-builder')
  *     pull a modern-Electron release they can't run;
  *   - distinct artifact names so files don't collide with the default build in
  *     the same update folder;
- *   - 32-bit (ia32) target added — many surviving Windows 7 tills are 32-bit.
+ *
+ * x64-only: the GitHub runner's node-gyp can't locate an x86 VS toolchain, so
+ * a 32-bit (ia32) rebuild of better-sqlite3 fails. Add ia32 back only if a real
+ * 32-bit Windows 7 till turns up (needs the x86 build tools on the runner).
  *
  * @type {import('electron-builder').Configuration}
  */
@@ -29,7 +32,7 @@ const config = {
   ],
   win: {
     ...base.win,
-    target: [{ target: 'nsis', arch: ['ia32', 'x64'] }]
+    target: [{ target: 'nsis', arch: ['x64'] }]
   },
   nsis: {
     ...base.nsis,

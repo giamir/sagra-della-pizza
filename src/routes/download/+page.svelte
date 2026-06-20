@@ -108,9 +108,11 @@
             </a>
           {/if}
         </div>
-        <p class="mt-3 text-xs text-ink/60">
-          Non sai se è 32 o 64 bit? Scegli 64-bit; se l'installazione dà errore, usa 32-bit.
-        </p>
+        {#if data.windows7.ia32}
+          <p class="mt-3 text-xs text-ink/60">
+            Non sai se è 32 o 64 bit? Scegli 64-bit; se l'installazione dà errore, usa 32-bit.
+          </p>
+        {/if}
       </section>
     {/if}
 

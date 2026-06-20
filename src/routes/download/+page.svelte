@@ -82,6 +82,38 @@
       </section>
     </div>
 
+    {#if data.windows7.x64 || data.windows7.ia32}
+      <section class="rounded-lg border-2 border-amber-300/40 bg-amber-50/60 p-5 shadow-sm">
+        <p class="text-sm font-bold uppercase tracking-wide text-amber-700">Windows 7 / 8</p>
+        <h2 class="mt-1 text-2xl font-bold text-ink">Installer per PC vecchi</h2>
+        <p class="mt-2 text-sm text-ink/70">
+          Solo per casse con Windows 7, 8 o 8.1. Sui PC più recenti usa l'installer Windows qui sopra.
+          Versione {data.windows7.version ?? 'non disponibile'}
+        </p>
+        <div class="mt-5 flex flex-wrap gap-3">
+          {#if data.windows7.x64}
+            <a
+              href={data.windows7.x64.href}
+              class="inline-flex min-h-14 flex-1 items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-center text-lg font-bold text-white shadow-lg hover:bg-amber-700"
+            >
+              Windows 7 (64-bit){#if data.windows7.x64.size}&nbsp;· {formatSize(data.windows7.x64.size)}{/if}
+            </a>
+          {/if}
+          {#if data.windows7.ia32}
+            <a
+              href={data.windows7.ia32.href}
+              class="inline-flex min-h-14 flex-1 items-center justify-center rounded-full bg-white px-6 py-3 text-center text-lg font-bold text-amber-700 shadow-sm ring-2 ring-amber-300 hover:bg-amber-50"
+            >
+              Windows 7 (32-bit){#if data.windows7.ia32.size}&nbsp;· {formatSize(data.windows7.ia32.size)}{/if}
+            </a>
+          {/if}
+        </div>
+        <p class="mt-3 text-xs text-ink/60">
+          Non sai se è 32 o 64 bit? Scegli 64-bit; se l'installazione dà errore, usa 32-bit.
+        </p>
+      </section>
+    {/if}
+
     <p class="text-center text-sm text-ink/70">
       L'app installata controlla automaticamente gli aggiornamenti.
     </p>

@@ -86,3 +86,49 @@ jobs:
         env:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
         run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist
+
+  build-win7:
+    name: Windows 7 (legacy, Electron 22)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Pin the desktop app to the last Electron that supports Windows 7/8/8.1
+      # and a better-sqlite3 that still builds against its Node 16 ABI. These
+      # edits are CI-only (not committed) — the default build stays on Electron 35.
+      - name: Pin Electron 22 + compatible better-sqlite3
+        working-directory: apps/desktop
+        run: |
+          npm pkg set devDependencies.electron=22.3.27
+          npm pkg set dependencies.better-sqlite3=8.7.0
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare SvelteKit config
+        run: npx svelte-kit sync
+
+      # Rebuilds better-sqlite3 from source against the pinned Electron 22 ABI.
+      - name: Rebuild better-sqlite3 for Electron (Windows 7)
+        working-directory: apps/desktop
+        run: npm run postinstall
+
+      - name: Build renderer (Windows 7)
+        working-directory: apps/desktop
+        env:
+          SAGRA_UPDATE_CHANNEL: win7-latest
+        run: npx electron-vite build
+
+      - name: Package (Windows 7)
+        working-directory: apps/desktop
+        run: node ../../node_modules/electron-builder/cli.js --win --config electron-builder.legacy.js --publish never
+
+      - name: Upload update artifacts (Windows 7)
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist

@@ -100,13 +100,18 @@ export const load = async ({ fetch, setHeaders }) => {
     'cache-control': 'no-store, max-age=0'
   });
 
-  const [windows, mac] = await Promise.all([
+  const [windows, mac, windows7] = await Promise.all([
     loadUpdateInfo('latest.yml', fetch),
-    loadUpdateInfo('latest-mac.yml', fetch)
+    loadUpdateInfo('latest-mac.yml', fetch),
+    loadUpdateInfo('win7-latest.yml', fetch)
   ]);
 
   const windowsInstaller = windows.files.find((file) => file.url.endsWith('.exe')) ?? null;
   const macDmg = mac.files.find((file) => file.url.endsWith('.dmg')) ?? null;
+
+  const win7Exes = windows7.files.filter((file) => file.url.endsWith('.exe'));
+  const win7x64 = win7Exes.find((file) => file.url.includes('x64')) ?? win7Exes[0] ?? null;
+  const win7ia32 = win7Exes.find((file) => file.url.includes('ia32')) ?? null;
 
   const latestVersion = windows.version ?? mac.version;
 
@@ -115,6 +120,11 @@ export const load = async ({ fetch, setHeaders }) => {
       version: windows.version,
       href: windowsInstaller ? `/desktop-updates/${windowsInstaller.url}` : null,
       size: windowsInstaller?.size ?? null
+    },
+    windows7: {
+      version: windows7.version,
+      x64: win7x64 ? { href: `/desktop-updates/${win7x64.url}`, size: win7x64.size } : null,
+      ia32: win7ia32 ? { href: `/desktop-updates/${win7ia32.url}`, size: win7ia32.size } : null
     },
     mac: {
       version: mac.version,

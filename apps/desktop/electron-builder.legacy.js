@@ -19,10 +19,12 @@ const base = require('./electron-builder')
  */
 const config = {
   ...base,
-  // Rebuild native modules (better-sqlite3) from source against the pinned
-  // Electron 22 ABI rather than reusing prebuilt binaries.
-  npmRebuild: true,
-  buildDependenciesFromSource: true,
+  // Don't rebuild native modules during packaging. The CI postinstall step
+  // (electron-builder install-app-deps) already fetched a better-sqlite3 binary
+  // for the pinned Electron 22 x64 ABI. Recompiling here would force node-gyp,
+  // and the runner's bundled node-gyp can't detect VS2022 ("Could not find any
+  // Visual Studio installation"). Reuse the working binary instead.
+  npmRebuild: false,
   publish: [
     {
       provider: 'generic',

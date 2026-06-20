@@ -269,12 +269,12 @@
               <input
                 type="text"
                 bind:value={config.usbTarget}
-                placeholder="Es. USB001 oppure /dev/usb/lp0"
+                placeholder="Es. EPSON TM-T20III oppure /dev/usb/lp0"
                 class="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               />
             {/if}
             <p class="text-xs text-gray-400 mt-1">
-              Su Windows: usa "Cerca stampanti" — il valore è la porta (es. <code>USB001</code>).<br>
+              Su Windows: usa "Cerca stampanti" e seleziona la stampante per nome (es. <code>EPSON TM-T20III</code>); la stampa passa dallo spooler di Windows.<br>
               Su macOS: nome della stampante installata in Impostazioni di Sistema.<br>
               Su Linux: nome CUPS o percorso come <code>/dev/usb/lp0</code>.
             </p>
@@ -330,9 +330,9 @@
                 <label class="block">
                   <span class="text-xs font-semibold text-gray-600">Modalità invio USB</span>
                   <select bind:value={config.usbWriteMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white">
-                    <option value="auto">Automatica</option>
+                    <option value="auto">Automatica (spooler Windows / CUPS)</option>
                     <option value="cups">Forza CUPS</option>
-                    <option value="file">Scrittura diretta</option>
+                    <option value="file">Scrittura diretta (solo porte COM/LPT)</option>
                   </select>
                 </label>
                 <div class="grid grid-cols-2 gap-2">

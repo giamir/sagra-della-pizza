@@ -78,5 +78,49 @@
     <p class="text-center text-sm text-ink/70">
       L'app installata controlla automaticamente gli aggiornamenti. Su macOS potrebbe essere necessario aprire il DMG con clic destro se l'app non e' firmata.
     </p>
+
+    {#if data.previousVersions.length}
+      <section class="rounded-lg border border-leaf/15 bg-cream-100/70 p-5">
+        <h2 class="text-2xl font-bold text-ink">Versioni precedenti</h2>
+        <div class="mt-4 flex flex-col divide-y divide-leaf/10">
+          {#each data.previousVersions as release (release.version)}
+            <div class="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-lg font-bold text-ink">Versione {release.version}</p>
+                <p class="text-sm text-ink/70">
+                  {#if release.windows}
+                    Windows {formatSize(release.windows.size)}
+                  {/if}
+                  {#if release.windows && release.mac}
+                    ·
+                  {/if}
+                  {#if release.mac}
+                    macOS {formatSize(release.mac.size)}
+                  {/if}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {#if release.windows}
+                  <a
+                    href={release.windows.href}
+                    class="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-bold text-tomato shadow-sm hover:bg-cream-50"
+                  >
+                    Windows
+                  </a>
+                {/if}
+                {#if release.mac}
+                  <a
+                    href={release.mac.href}
+                    class="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-bold text-leaf shadow-sm hover:bg-cream-50"
+                  >
+                    macOS
+                  </a>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      </section>
+    {/if}
   </div>
 </div>

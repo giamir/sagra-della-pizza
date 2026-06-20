@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { put } from '@vercel/blob';
 
@@ -51,13 +51,17 @@ if (files.length === 0) {
 
 async function uploadFileAs(file, uploadName) {
   const pathname = `${prefix}/${uploadName}`;
-  const blob = await put(pathname, createReadStream(file.path), {
+  const MULTIPART_THRESHOLD = 100 * 1024 * 1024;
+  const body = file.size > MULTIPART_THRESHOLD
+    ? createReadStream(file.path)
+    : await readFile(file.path);
+  const blob = await put(pathname, body, {
     access: 'public',
     addRandomSuffix: false,
     allowOverwrite: true,
     cacheControlMaxAge: cacheSeconds,
     contentType: contentTypeFor(file.name),
-    multipart: file.size > 100 * 1024 * 1024
+    multipart: file.size > MULTIPART_THRESHOLD
   });
 
   console.log(`Uploaded ${file.name} as ${uploadName} -> ${blob.url}`);

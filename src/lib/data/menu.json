@@ -32,15 +32,87 @@
           "label": "Le Classiche",
           "items": [
             { "id": "marinara", "name": "Marinara", "price": 4.50 },
-            { "id": "margherita", "name": "Margherita", "price": 5.50 },
-            { "id": "napoli", "name": "Napoli", "price": 6.00 },
-            { "id": "salsiccia", "name": "Salsiccia", "price": 6.00 },
-            { "id": "cipolla", "name": "Cipolla", "price": 6.00 },
-            { "id": "prosciutto-cotto", "name": "Prosciutto Cotto", "price": 6.00 },
-            { "id": "prosciutto-crudo", "name": "Prosciutto Crudo", "price": 6.50 },
-            { "id": "funghi", "name": "Funghi", "price": 6.00 },
-            { "id": "wurstel", "name": "Wurstel", "price": 6.00 },
-            { "id": "salame-piccante", "name": "Salamino Piccante", "price": 6.00 }
+            {
+              "id": "margherita",
+              "name": "Margherita",
+              "price": 5.50,
+              "variants": [
+                { "id": "margherita-bianca", "label": "Bianca" },
+                { "id": "margherita-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "napoli",
+              "name": "Napoli",
+              "price": 6.00,
+              "variants": [
+                { "id": "napoli-bianca", "label": "Bianca" },
+                { "id": "napoli-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "salsiccia",
+              "name": "Salsiccia",
+              "price": 6.00,
+              "variants": [
+                { "id": "salsiccia-bianca", "label": "Bianca" },
+                { "id": "salsiccia-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "cipolla",
+              "name": "Cipolla",
+              "price": 6.00,
+              "variants": [
+                { "id": "cipolla-bianca", "label": "Bianca" },
+                { "id": "cipolla-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "prosciutto-cotto",
+              "name": "Prosciutto Cotto",
+              "price": 6.00,
+              "variants": [
+                { "id": "prosciutto-cotto-bianca", "label": "Bianca" },
+                { "id": "prosciutto-cotto-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "prosciutto-crudo",
+              "name": "Prosciutto Crudo",
+              "price": 6.50,
+              "variants": [
+                { "id": "prosciutto-crudo-bianca", "label": "Bianca" },
+                { "id": "prosciutto-crudo-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "funghi",
+              "name": "Funghi",
+              "price": 6.00,
+              "variants": [
+                { "id": "funghi-bianca", "label": "Bianca" },
+                { "id": "funghi-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "wurstel",
+              "name": "Wurstel",
+              "price": 6.00,
+              "variants": [
+                { "id": "wurstel-bianca", "label": "Bianca" },
+                { "id": "wurstel-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "salame-piccante",
+              "name": "Salamino Piccante",
+              "price": 6.00,
+              "variants": [
+                { "id": "salame-piccante-bianca", "label": "Bianca" },
+                { "id": "salame-piccante-rossa", "label": "Rossa" }
+              ]
+            }
           ]
         },
         {
@@ -63,10 +135,42 @@
         {
           "label": "I Grandi Abbinamenti",
           "items": [
-            { "id": "funghi-salsiccia", "name": "Funghi e Salsiccia", "price": 6.50 },
-            { "id": "funghi-cotto", "name": "Funghi e Cotto", "price": 6.50 },
-            { "id": "funghi-crudo", "name": "Funghi e Crudo", "price": 7.00 },
-            { "id": "salsiccia-cipolla", "name": "Salsiccia e Cipolla", "price": 6.50 }
+            {
+              "id": "funghi-salsiccia",
+              "name": "Funghi e Salsiccia",
+              "price": 6.50,
+              "variants": [
+                { "id": "funghi-salsiccia-bianca", "label": "Bianca" },
+                { "id": "funghi-salsiccia-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "funghi-cotto",
+              "name": "Funghi e Cotto",
+              "price": 6.50,
+              "variants": [
+                { "id": "funghi-cotto-bianca", "label": "Bianca" },
+                { "id": "funghi-cotto-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "funghi-crudo",
+              "name": "Funghi e Crudo",
+              "price": 7.00,
+              "variants": [
+                { "id": "funghi-crudo-bianca", "label": "Bianca" },
+                { "id": "funghi-crudo-rossa", "label": "Rossa" }
+              ]
+            },
+            {
+              "id": "salsiccia-cipolla",
+              "name": "Salsiccia e Cipolla",
+              "price": 6.50,
+              "variants": [
+                { "id": "salsiccia-cipolla-bianca", "label": "Bianca" },
+                { "id": "salsiccia-cipolla-rossa", "label": "Rossa" }
+              ]
+            }
           ]
         },
         {

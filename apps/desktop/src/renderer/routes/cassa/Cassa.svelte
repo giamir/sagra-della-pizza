@@ -249,8 +249,22 @@
   }
 
   function handleVariantSelect(variantId: string) {
-    addItem(variantId);
+    const item = variantItem;
+    const variant = item?.variants?.find((v) => v.id === variantId);
+    if (!item || !variant) return;
+
+    const catOptions = categoryOptionsFor(variantId);
     variantItem = null;
+    if (catOptions.length > 0) {
+      optionsPicker = {
+        item,
+        options: catOptions,
+        baseId: variantId,
+        baseName: `${item.name} - ${variant.label}`
+      };
+    } else {
+      addItem(variantId);
+    }
   }
 
   // Called when cashier explicitly requests options for an item (e.g. celiaci / s/lattosio).

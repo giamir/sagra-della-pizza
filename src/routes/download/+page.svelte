@@ -67,6 +67,13 @@
           >
             Scarica per macOS
           </a>
+          <div class="mt-4 rounded-lg bg-cream-100 px-4 py-3 text-sm text-ink">
+            <p class="font-semibold">Se macOS dice che l'app e' danneggiata:</p>
+            <p class="mt-1">trascina l'app in Applicazioni, poi esegui nel Terminale:</p>
+            <code class="mt-2 block overflow-x-auto rounded bg-white px-3 py-2 text-xs font-bold text-leaf">
+              xattr -dr com.apple.quarantine "/Applications/Sagra della Pizza.app"
+            </code>
+          </div>
         {:else}
           <p class="mt-5 rounded-lg bg-cream-100 px-4 py-3 text-sm font-semibold text-ink">
             DMG macOS non disponibile.
@@ -76,7 +83,7 @@
     </div>
 
     <p class="text-center text-sm text-ink/70">
-      L'app installata controlla automaticamente gli aggiornamenti. Su macOS potrebbe essere necessario aprire il DMG con clic destro se l'app non e' firmata.
+      L'app installata controlla automaticamente gli aggiornamenti.
     </p>
 
     {#if data.previousVersions.length}

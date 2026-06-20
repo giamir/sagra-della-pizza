@@ -67,7 +67,10 @@ jobs:
 
       - name: Build and package (Windows)
         working-directory: apps/desktop
-        run: npx electron-vite build && npx electron-builder --win --publish never
+        shell: bash
+        run: |
+          npx electron-vite build
+          npx electron-builder --win --publish never
 
       - name: Upload update artifacts (Windows)
         env:

@@ -16,7 +16,9 @@ const config = {
   },
   files: ['out/**'],
   asarUnpack: ['**/*.node'],
-  extraResources: [{ from: 'resources/', to: '.' }],
+  // Ship only the runtime logo; icon.icns/icon.ico are build-time only and
+  // would collide with the app icon electron-builder writes to Resources/.
+  extraResources: [{ from: 'resources/', to: '.', filter: ['**/*', '!icon.icns', '!icon.ico'] }],
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
     icon: path.join(__dirname, 'resources', 'icon.ico')

@@ -376,6 +376,22 @@
   }
 
   function loadFromRaw(raw: string) {
+    // Don't clobber an order that's being submitted/printed.
+    if (completing) {
+      scanError = 'Ordine in corso — attendi il completamento.';
+      setTimeout(() => { scanError = null; }, 3000);
+      stopScan();
+      return;
+    }
+    // Don't silently wipe a cart the cashier is already working on. Same rule
+    // the phone-push path applies (handleIncomingOrder): clear it first.
+    if (!cartIsEmpty) {
+      scanError = 'Carrello non vuoto — svuotalo per caricare il QR.';
+      setTimeout(() => { scanError = null; }, 4000);
+      stopScan();
+      return;
+    }
+
     try {
       let value = raw.trim();
       const hashIndex = value.indexOf('#p=');
@@ -385,6 +401,9 @@
       const payload = decodeOrder(value);
       loadFromPayload(payload);
     } catch {
+      // Surfaces keyboard-wedge layout problems on Windows: the raw string lets
+      // you see whether characters (e.g. - _ # /) came through mistranslated.
+      console.warn('[cassa] scan decode failed; raw input was:', JSON.stringify(raw));
       scanError = 'QR non valido — ordine non modificato.';
       setTimeout(() => { scanError = null; }, 3000);
     }

@@ -147,9 +147,21 @@
               <button
                 type="button"
                 onclick={(e) => { e.stopPropagation(); onOptionsRequest?.(item); }}
-                class="mt-1 text-xs font-semibold text-green-700 hover:underline"
+                aria-label="Opzioni"
+                title="Opzioni"
+                class="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 bg-green-50 text-green-700 transition-colors hover:bg-green-100 active:bg-green-200"
               >
-                + opzioni
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="21" x2="14" y1="4" y2="4" />
+                  <line x1="10" x2="3" y1="4" y2="4" />
+                  <line x1="21" x2="12" y1="12" y2="12" />
+                  <line x1="8" x2="3" y1="12" y2="12" />
+                  <line x1="21" x2="16" y1="20" y2="20" />
+                  <line x1="12" x2="3" y1="20" y2="20" />
+                  <line x1="14" x2="14" y1="2" y2="6" />
+                  <line x1="8" x2="8" y1="10" y2="14" />
+                  <line x1="16" x2="16" y1="18" y2="22" />
+                </svg>
               </button>
             {/if}
 

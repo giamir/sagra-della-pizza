@@ -126,7 +126,7 @@
                     <button
                       type="button"
                       onclick={() => onRemove(line.id)}
-                      class="w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 ml-1 text-lg leading-none"
+                      class="w-7 h-7 flex items-center justify-center rounded border border-red-200 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 ml-1 text-lg leading-none"
                       aria-label="Rimuovi"
                     >×</button>
                   </div>

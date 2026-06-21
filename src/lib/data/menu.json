@@ -38,15 +38,6 @@
             { "id": "vino-frizzante", "name": "Vino Frizzante (bicchiere 200 cc)", "price": 2.50 },
             { "id": "vino-bottiglia-frizzante", "name": "Vino Frizzante (bottiglia 0,75 L)", "price": 7.00 }
           ]
-        },
-        {
-          "label": "Bar",
-          "items": [
-            { "id": "caffe", "name": "Caffè", "price": 1.00 },
-            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 1.50 },
-            { "id": "spumante", "name": "Spumante (bicchiere)", "price": 2.00 },
-            { "id": "spumante-bottiglia", "name": "Spumante (bottiglia)", "price": 9.00 }
-          ]
         }
       ]
     },
@@ -171,11 +162,20 @@
       ]
     },
     {
-      "id": "dolci",
-      "label": "Dolci",
+      "id": "bar",
+      "label": "Bar",
       "groups": [
         {
-          "label": "",
+          "label": "Bar",
+          "items": [
+            { "id": "caffe", "name": "Caffè", "price": 1.00 },
+            { "id": "caffe-corretto", "name": "Caffè Corretto", "price": 1.50 },
+            { "id": "spumante", "name": "Spumante (bicchiere)", "price": 2.00 },
+            { "id": "spumante-bottiglia", "name": "Spumante (bottiglia)", "price": 9.00 }
+          ]
+        },
+        {
+          "label": "Dolci",
           "items": [
             { "id": "dolce-sagra", "name": "Dolce", "price": 4.00 }
           ]

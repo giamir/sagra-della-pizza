@@ -10,7 +10,7 @@
     '/ordina/pizze',
     '/ordina/griglia',
     '/ordina/contorni',
-    '/ordina/dolci',
+    '/ordina/bar',
     '/ordina/riepilogo'
   ];
 
@@ -20,7 +20,7 @@
     return order[idx + 1];
   });
   const nextLabel = $derived(
-    page.url.pathname === '/ordina/dolci' ? 'Vai al riepilogo' : 'Avanti'
+    page.url.pathname === '/ordina/bar' ? 'Vai al riepilogo' : 'Avanti'
   );
 
   let { children } = $props();

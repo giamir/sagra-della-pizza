@@ -1,5 +1,5 @@
 // Maps item IDs to kitchen station labels, in print order.
-export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande'];
+export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande', 'Bar'];
 
 export function normalizeStation(station: string): string {
   if (station === 'Gastronomia') return 'Cucina';
@@ -32,9 +32,9 @@ const MAP: Record<string, string> = {
   'vino-bottiglia-frizzante': 'Bevande', 'coca-cola-zero': 'Bevande', 'coca-cola': 'Bevande',
   fanta: 'Bevande', sprite: 'Bevande', 'the-limone': 'Bevande', 'the-pesca': 'Bevande',
   'birra-spina-grande': 'Bevande', 'birra-spina-piccola': 'Bevande', ipa: 'Bevande',
-  // Bar (same station as Bevande)
-  caffe: 'Bevande', 'dolce-sagra': 'Bevande', 'caffe-corretto': 'Bevande',
-  'spumante-bottiglia': 'Bevande', spumante: 'Bevande',
+  // Bar (includes dolci)
+  caffe: 'Bar', 'dolce-sagra': 'Bar', 'caffe-corretto': 'Bar',
+  'spumante-bottiglia': 'Bar', spumante: 'Bar',
 };
 
 export function getStation(itemId: string): string {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import CategoryPage from '$lib/components/CategoryPage.svelte';
   import { MENU } from '$lib/stores/order.svelte';
-  const category = MENU.categories.find((c) => c.id === 'dolci')!;
+  const category = MENU.categories.find((c) => c.id === 'bar')!;
 </script>
 
-<CategoryPage {category} subtitle="Per finire in dolcezza" />
+<CategoryPage {category} subtitle="Caffè, spumante e dolci" />

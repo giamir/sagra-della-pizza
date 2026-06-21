@@ -8,7 +8,7 @@
     { href: '/ordina/pizze', label: 'Pizze' },
     { href: '/ordina/griglia', label: 'Griglia' },
     { href: '/ordina/contorni', label: 'Contorni' },
-    { href: '/ordina/dolci', label: 'Dolci' },
+    { href: '/ordina/bar', label: 'Bar' },
     { href: '/ordina/riepilogo', label: 'Riepilogo' }
   ];
 </script>

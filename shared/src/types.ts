@@ -8,6 +8,8 @@ export type MenuItem = {
     label: string;
   }>;
   optionalVariants?: boolean; // when true, the base item is orderable alongside its variants
+  customizable?: boolean; // when true, this item exposes its category's add-on options
+  excludeOptions?: string[]; // category option ids that don't apply to this item
 };
 
 export type MenuGroup = {
@@ -19,6 +21,7 @@ export type MenuOption = {
   id: string;
   label: string;
   priceDelta: number; // added to item price, e.g. 1.50 for celiaci dough
+  customizableOnly?: boolean; // when true, only offered on items marked customizable
 };
 
 export type MenuCategory = {

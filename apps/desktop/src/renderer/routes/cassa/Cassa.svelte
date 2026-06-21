@@ -2,7 +2,7 @@
   import { onMount, tick } from 'svelte';
   import jsQR from 'jsqr';
   import { decodeOrder } from '@sagra/shared/utils/payload';
-  import { buildPriceIndex } from '@sagra/shared/utils/pricing';
+  import { buildPriceIndex, optionsForItem } from '@sagra/shared/utils/pricing';
   import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
   import { formatEUR } from '@sagra/shared/utils/currency';
   import type { Payload, MenuItem, MenuOption } from '@sagra/shared/types';
@@ -318,7 +318,7 @@
     if (!variant && !isPlain) return;
 
     const selectedName = isPlain ? item.name : `${item.name} - ${variant!.label}`;
-    const catOptions = categoryOptionsFor(variantId);
+    const catOptions = optionsForItem(item, categoryOptionsFor(variantId));
     variantItem = null;
     if (catOptions.length > 0) {
       optionsPicker = {
@@ -334,7 +334,7 @@
 
   // Called when cashier explicitly requests options for an item (e.g. celiaci / s/lattosio).
   function handleOptionsRequest(item: MenuItem) {
-    const catOptions = categoryOptionsFor(item.id);
+    const catOptions = optionsForItem(item, categoryOptionsFor(item.id));
     optionsPicker = {
       item,
       options: catOptions,

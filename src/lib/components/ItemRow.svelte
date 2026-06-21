@@ -2,12 +2,17 @@
   import { dec, getQty, inc, order } from '$lib/stores/order.svelte';
   import type { MenuItem, MenuOption } from '$lib/types';
   import { formatEUR } from '$lib/utils/currency';
-  import { encodeCartKey, decodeCartKey } from '@sagra/shared/utils/pricing';
+  import { encodeCartKey, decodeCartKey, optionsForItem } from '@sagra/shared/utils/pricing';
 
   type Props = { item: MenuItem; categoryOptions?: MenuOption[] };
   let { item, categoryOptions = [] }: Props = $props();
 
-  const usesModal = $derived(!!item.optionalVariants && !!item.variants?.length);
+  // Options this specific item offers (drops customizableOnly ones unless customizable).
+  const itemOptions = $derived(optionsForItem(item, categoryOptions));
+
+  const usesModal = $derived(
+    itemOptions.length > 0 || (!!item.optionalVariants && !!item.variants?.length)
+  );
 
   // All non-plain entries in the cart that belong to this item (added via modal)
   const modalLines = $derived.by(() => {
@@ -149,34 +154,36 @@
       <h2 class="text-xl font-bold text-ink mb-1">{item.name}</h2>
       <p class="text-base text-leaf font-semibold mb-5">{formatEUR(item.price + extraPrice)}</p>
 
-      <p class="text-xs font-bold uppercase tracking-wider text-ink/40 mb-2">Base</p>
-      <div class="space-y-2 mb-5">
-        {#each [{ id: null, label: 'Normale' }, ...(item.variants ?? []).map(v => ({ id: v.id, label: v.label }))] as opt}
-          {@const active = selectedVariantId === opt.id}
-          <button
-            type="button"
-            onclick={() => { selectedVariantId = opt.id; }}
-            class="w-full py-3 px-4 rounded-xl border-2 text-left flex items-center gap-3 transition-colors"
-            class:border-leaf={active}
-            class:bg-leaf={active}
-            class:border-cream-200={!active}
-            class:hover:border-leaf={!active}
-          >
-            <span
-              class="w-4 h-4 rounded-full border-2 shrink-0"
-              class:bg-white={active}
-              class:border-white={active}
-              class:border-cream-300={!active}
-            ></span>
-            <span class="font-semibold" class:text-white={active} class:text-ink={!active}>{opt.label}</span>
-          </button>
-        {/each}
-      </div>
+      {#if item.variants?.length}
+        <p class="text-xs font-bold uppercase tracking-wider text-ink/40 mb-2">Base</p>
+        <div class="space-y-2 mb-5">
+          {#each [{ id: null, label: 'Normale' }, ...item.variants.map(v => ({ id: v.id, label: v.label }))] as opt}
+            {@const active = selectedVariantId === opt.id}
+            <button
+              type="button"
+              onclick={() => { selectedVariantId = opt.id; }}
+              class="w-full py-3 px-4 rounded-xl border-2 text-left flex items-center gap-3 transition-colors"
+              class:border-leaf={active}
+              class:bg-leaf={active}
+              class:border-cream-200={!active}
+              class:hover:border-leaf={!active}
+            >
+              <span
+                class="w-4 h-4 rounded-full border-2 shrink-0"
+                class:bg-white={active}
+                class:border-white={active}
+                class:border-cream-300={!active}
+              ></span>
+              <span class="font-semibold" class:text-white={active} class:text-ink={!active}>{opt.label}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
 
-      {#if categoryOptions.length > 0}
+      {#if itemOptions.length > 0}
         <p class="text-xs font-bold uppercase tracking-wider text-ink/40 mb-2">Opzioni</p>
         <div class="space-y-2 mb-5">
-          {#each categoryOptions as opt}
+          {#each itemOptions as opt}
             {@const checked = selectedOptions.has(opt.id)}
             <button
               type="button"

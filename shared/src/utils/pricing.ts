@@ -1,4 +1,4 @@
-import type { Menu, MenuOption, OrderState } from '../types.js';
+import type { Menu, MenuItem, MenuOption, OrderState } from '../types.js';
 
 // Composite cart key separator.  Item IDs are kebab-case so '||' never appears naturally.
 const SEP = '||';
@@ -24,6 +24,16 @@ function subsets<T>(arr: T[]): T[][] {
   return result;
 }
 
+// The category options actually offered for a given item. Options flagged
+// customizableOnly (e.g. s/mozzarella) are dropped unless the item is
+// customizable; universal options (celiaci, s/lattosio) apply to every item.
+export function optionsForItem(item: MenuItem, categoryOptions: MenuOption[]): MenuOption[] {
+  const excluded = new Set(item.excludeOptions ?? []);
+  return categoryOptions.filter(
+    (o) => !excluded.has(o.id) && (!o.customizableOnly || item.customizable)
+  );
+}
+
 export function buildPriceIndex(menu: Menu): Record<string, { name: string; price: number; categoryLabel: string }> {
   const idx: Record<string, { name: string; price: number; categoryLabel: string }> = {};
 
@@ -41,9 +51,12 @@ export function buildPriceIndex(menu: Menu): Record<string, { name: string; pric
           idx[item.id] = { name: item.name, price: item.price, categoryLabel: cat.label };
         }
 
-        // Generate composite key entries for every non-empty option combination.
-        if (catOptions.length > 0) {
-          for (const combo of subsets(catOptions)) {
+        // Generate composite key entries for every non-empty option combination
+        // the item actually offers (customizableOnly options are filtered out for
+        // non-customizable items).
+        const itemOptions = optionsForItem(item, catOptions);
+        if (itemOptions.length > 0) {
+          for (const combo of subsets(itemOptions)) {
             const optionIds = combo.map((o) => o.id);
             const optLabel = combo.map((o) => o.label).join(', ');
             const extraPrice = combo.reduce((s, o) => s + o.priceDelta, 0);

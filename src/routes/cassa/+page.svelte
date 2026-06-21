@@ -2,6 +2,7 @@
   import { MENU } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
   import { decodeOrder } from '$lib/utils/payload';
+  import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
   import type { Payload } from '$lib/types';
   import jsQR from 'jsqr';
   import { onMount, tick } from 'svelte';
@@ -97,46 +98,20 @@
       itemIds: [
         'marinara',
         'margherita',
-        'margherita-bianca',
-        'margherita-rossa',
         'napoli',
-        'napoli-bianca',
-        'napoli-rossa',
         'salsiccia',
-        'salsiccia-bianca',
-        'salsiccia-rossa',
         'cipolla',
-        'cipolla-bianca',
-        'cipolla-rossa',
         'prosciutto-cotto',
-        'prosciutto-cotto-bianca',
-        'prosciutto-cotto-rossa',
         'prosciutto-crudo',
-        'prosciutto-crudo-bianca',
-        'prosciutto-crudo-rossa',
         'funghi',
-        'funghi-bianca',
-        'funghi-rossa',
         'wurstel',
-        'wurstel-bianca',
-        'wurstel-rossa',
         'salame-piccante',
-        'salame-piccante-bianca',
-        'salame-piccante-rossa',
         'pisana',
         'genova',
         'funghi-salsiccia',
-        'funghi-salsiccia-bianca',
-        'funghi-salsiccia-rossa',
         'funghi-cotto',
-        'funghi-cotto-bianca',
-        'funghi-cotto-rossa',
         'funghi-crudo',
-        'funghi-crudo-bianca',
-        'funghi-crudo-rossa',
         'salsiccia-cipolla',
-        'salsiccia-cipolla-bianca',
-        'salsiccia-cipolla-rossa',
         'focaccina-sale-olio',
         'focaccia-cotto',
         'focaccia-crudo'
@@ -187,47 +162,10 @@
     return 'Cassa ?';
   });
 
-  const menuLines = $derived.by(() => {
-    const index: Record<string, CashierLine> = {};
-    for (const category of MENU.categories) {
-      for (const group of category.groups) {
-        for (const item of group.items) {
-          if (item.variants?.length) {
-            if (item.optionalVariants) {
-              index[item.id] = {
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                qty: 0,
-                subtotal: 0,
-                known: true
-              };
-            }
-            for (const variant of item.variants) {
-              index[variant.id] = {
-                id: variant.id,
-                name: `${item.name} - ${variant.label}`,
-                price: item.price,
-                qty: 0,
-                subtotal: 0,
-                known: true
-              };
-            }
-          } else {
-            index[item.id] = {
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              qty: 0,
-              subtotal: 0,
-              known: true
-            };
-          }
-        }
-      }
-    }
-    return index;
-  });
+  // Resolves name/price for every cart key, including option combos
+  // (e.g. `margherita||senza-mozzarella`), so scanned orders with options
+  // are recognised rather than landing in "Articoli non riconosciuti".
+  const priceIndex = $derived(buildPriceIndex(MENU));
 
   function loadConfig(): CassaConfig {
     if (typeof localStorage === 'undefined') return { ...DEFAULT_CONFIG };
@@ -265,8 +203,8 @@
 
   function summarizePayload(value: Payload): string {
     const names = value.l.slice(0, 3).map(([id, qty]) => {
-      const line = menuLines[id];
-      return `${qty}x ${line?.name ?? id}`;
+      const entry = priceIndex[id];
+      return `${qty}x ${entry?.name ?? id}`;
     });
     const remaining = value.l.length - names.length;
     if (remaining > 0) names.push(`+${remaining}`);
@@ -441,36 +379,40 @@
     stream = null;
   }
 
+  // Maps a base item id to its section position + rank, so option combos
+  // (`margherita||...`) group under the same section as the plain item.
+  const sectionOf = $derived.by(() => {
+    const map = new Map<string, { pos: number; rank: number }>();
+    CASHIER_SECTIONS.forEach((section, pos) => {
+      section.itemIds.forEach((itemId, rank) => map.set(itemId, { pos, rank }));
+    });
+    return map;
+  });
+
   const categories = $derived.by(() => {
     if (!payload) return [];
 
-    const payloadLines = new Map(payload.l);
+    const buckets: { line: CashierLine; rank: number }[][] = CASHIER_SECTIONS.map(() => []);
     const unknownLines: CashierLine[] = [];
 
-    for (const [id] of payload.l) {
-      if (!menuLines[id]) {
-        unknownLines.push({ id, name: id, price: 0, qty: payloadLines.get(id) ?? 0, subtotal: 0, known: false });
+    for (const [id, qty] of payload.l) {
+      const entry = priceIndex[id];
+      const { itemId: baseId } = decodeCartKey(id);
+      const where = sectionOf.get(baseId);
+      if (entry && where) {
+        const line = { id, name: entry.name, price: entry.price, qty, subtotal: entry.price * qty, known: true };
+        buckets[where.pos].push({ line, rank: where.rank });
+      } else {
+        unknownLines.push({ id, name: entry?.name ?? id, price: entry?.price ?? 0, qty, subtotal: (entry?.price ?? 0) * qty, known: false });
       }
     }
 
-    const ordered: CashierCategory[] = CASHIER_SECTIONS.flatMap((section) => {
-      const sectionLines = section.itemIds.flatMap((id) => {
-        const qty = payloadLines.get(id);
-        const menuLine = menuLines[id];
-        if (!qty || !menuLine) return [];
-        return [{ id, name: menuLine.name, price: menuLine.price, qty, subtotal: menuLine.price * qty, known: true }];
-      });
-      if (!sectionLines.length) return [];
+    const ordered: CashierCategory[] = CASHIER_SECTIONS.flatMap((section, pos) => {
+      const bucket = buckets[pos];
+      if (!bucket.length) return [];
+      const sectionLines = bucket.sort((a, b) => a.rank - b.rank).map((b) => b.line);
       return [{ id: section.id, label: section.label, lines: sectionLines }];
     });
-
-    const orderedIds = new Set<string>(CASHIER_SECTIONS.flatMap((section) => section.itemIds));
-    for (const [id, qty] of payload.l) {
-      const menuLine = menuLines[id];
-      if (menuLine && !orderedIds.has(id)) {
-        unknownLines.push({ id, name: menuLine.name, price: menuLine.price, qty, subtotal: menuLine.price * qty, known: false });
-      }
-    }
 
     if (unknownLines.length) {
       ordered.push({ id: 'unknown', label: 'Articoli non riconosciuti', lines: unknownLines });

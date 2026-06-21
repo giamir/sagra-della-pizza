@@ -4,6 +4,7 @@ import { getSetting, setSetting } from '../db/schema.js';
 import { getStation, normalizeStation } from '../printing/station-map.js';
 import { buildPriceIndex } from '@sagra/shared/utils/pricing';
 import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
+import { decodeCartKey } from '@sagra/shared/utils/pricing';
 
 export function getCatalog(): Menu {
   const raw = getSetting('catalog_json');
@@ -35,8 +36,11 @@ export function saveStationOverrides(overrides: Record<string, string>): void {
   setSetting('station_overrides', JSON.stringify(normalized));
 }
 
-// Resolves station for an item, checking overrides first then the hardcoded map.
-export function resolveStation(itemId: string): string {
+// Resolves station for a cart key, checking overrides first then the hardcoded
+// map. Composite option keys (e.g. `margherita||senza-mozzarella`) are decoded
+// to their base item id so options don't fall through to the "Altro" station.
+export function resolveStation(cartKey: string): string {
+  const { itemId } = decodeCartKey(cartKey);
   const overrides = getStationOverrides();
   return normalizeStation(overrides[itemId] ?? getStation(itemId));
 }

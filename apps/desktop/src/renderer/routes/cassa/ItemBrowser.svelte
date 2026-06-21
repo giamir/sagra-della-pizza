@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { optionsForItem } from '@sagra/shared/utils/pricing';
   import { buildStockIdIndex } from '@sagra/shared/utils/stock';
   import type { Menu, MenuItem, MenuOption } from '@sagra/shared/types';
 
@@ -104,7 +105,7 @@
         {#each group.items as item}
           {@const qty = cartQty(item)}
           {@const soldOut = isSoldOut(item)}
-          {@const hasOptions = (categoryOptions[activeCategory.id]?.length ?? 0) > 0}
+          {@const itemOpts = optionsForItem(item, categoryOptions[activeCategory.id] ?? [])}
           {@const remainingLabel = stockLabel(item)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
           <div
@@ -142,7 +143,7 @@
               </span>
             {/if}
 
-            {#if hasOptions && (!item.variants?.length || item.optionalVariants) && !soldOut}
+            {#if (itemOpts.length > 0 || item.optionalVariants) && !soldOut}
               <button
                 type="button"
                 onclick={(e) => { e.stopPropagation(); onOptionsRequest?.(item); }}

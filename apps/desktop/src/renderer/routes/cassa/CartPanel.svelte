@@ -10,6 +10,8 @@
     copertoPerPerson,
     total,
     completing,
+    orderSource,
+    qrLoadTick,
     onInc,
     onDec,
     onRemove,
@@ -23,6 +25,8 @@
     copertoPerPerson: number;
     total: number;
     completing: boolean;
+    orderSource: 'manual' | 'qr';
+    qrLoadTick: number;
     onInc: (id: string) => void;
     onDec: (id: string) => void;
     onRemove: (id: string) => void;
@@ -30,6 +34,20 @@
     onComplete: () => void;
     onScanQr: () => void;
   } = $props();
+
+  // One-shot pulse on the panel whenever a QR/phone order lands. The parent
+  // bumps qrLoadTick each time loadFromPayload runs, so a back-to-back QR load
+  // re-triggers the flash even though orderSource stays 'qr'.
+  let flashing = $state(false);
+  let flashTimer = 0;
+  $effect(() => {
+    void qrLoadTick; // track
+    if (qrLoadTick > 0) {
+      flashing = true;
+      clearTimeout(flashTimer);
+      flashTimer = window.setTimeout(() => { flashing = false; }, 1200);
+    }
+  });
 
   const isEmpty = $derived(cartLines.length === 0);
   const copertoTotal = $derived(people * copertoPerPerson);
@@ -55,7 +73,15 @@
   });
 </script>
 
-<div class="flex flex-col w-[42%] bg-gray-50 overflow-hidden">
+<div class="flex flex-col w-[42%] bg-gray-50 overflow-hidden" class:qrFlash={flashing}>
+
+  <!-- QR origin badge: persists for the whole life of a QR-loaded order -->
+  {#if orderSource === 'qr'}
+    <div class="shrink-0 flex items-center gap-2 bg-green-100 border-b border-green-300 text-green-900 px-3 py-2 text-sm font-bold">
+      <span class="text-lg leading-none">📷</span>
+      <span>Ordine dal QR cliente — verifica e incassa</span>
+    </div>
+  {/if}
 
   <!-- Lines -->
   <div class="flex-1 overflow-y-auto px-3 pt-3 pb-1">
@@ -161,3 +187,13 @@
   </div>
 
 </div>
+
+<style>
+  @keyframes qrFlash {
+    0%   { box-shadow: inset 0 0 0 4px rgba(21, 128, 61, 0.9); }
+    100% { box-shadow: inset 0 0 0 4px rgba(21, 128, 61, 0); }
+  }
+  .qrFlash {
+    animation: qrFlash 1.2s ease-out;
+  }
+</style>

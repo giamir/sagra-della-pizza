@@ -64,6 +64,9 @@
   let completing = $state(false);
   let statusMessage = $state<string | null>(null);
   let orderSource = $state<'manual' | 'qr'>('manual');
+  // Bumped each time a QR/phone order is loaded, so the cart panel can flash
+  // even on back-to-back QR loads (where orderSource stays 'qr').
+  let qrLoadTick = $state(0);
   let printPreview = $state<{ stations: { name: string; text: string }[]; receipt: string; error: string } | null>(null);
   let settingsOpen = $state(false);
   let tillSettingsOpen = $state(false);
@@ -207,6 +210,7 @@
   function clearCart() {
     for (const k of Object.keys(cart)) delete cart[k];
     people = 1;
+    orderSource = 'manual';
     statusMessage = null;
   }
 
@@ -413,6 +417,7 @@
 
     people = payload.p;
     orderSource = 'qr';
+    qrLoadTick++;
     stopScan();
 
     if (dropped.length || reduced.length) {
@@ -546,7 +551,6 @@
       }
 
       clearCart();
-      orderSource = 'manual';
       statusMessage = 'Ordine salvato — stampa in corso…';
 
       const printResult = await window.api.printOrder(result.orderId);
@@ -855,6 +859,8 @@
       copertoPerPerson={MENU.coperto.perPersona}
       {total}
       {completing}
+      {orderSource}
+      {qrLoadTick}
       onInc={incLine}
       onDec={decLine}
       onRemove={removeLine}

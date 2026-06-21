@@ -168,6 +168,88 @@
   const cashRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'cash' ? o.totalCents : 0), 0));
   const cardRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'card' ? o.totalCents : 0), 0));
 
+  // --- Cash float (fondo cassa) per till ---
+  // Editable euro strings keyed by till name; cents are derived on the fly.
+  let cashByTill = $state<Record<string, { fondo: string; counted: string }>>({});
+  let cashError = $state<string | null>(null);
+
+  function localDateKey(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // The single day the closing applies to, or null for multi-day views ("Tutto").
+  const businessDate = $derived.by((): string | null => {
+    if (customDate) return customDate;
+    if (period === 'all') return null;
+    return localDateKey(new Date());
+  });
+
+  function parseEuro(s: string): number {
+    const cleaned = s.replace(/[^0-9.,-]/g, '').replace(',', '.');
+    const n = Number.parseFloat(cleaned);
+    return Number.isFinite(n) ? Math.round(n * 100) : 0;
+  }
+  function centsToInput(cents: number | null): string {
+    if (cents == null) return '';
+    return (cents / 100).toFixed(2).replace('.', ',');
+  }
+  function fondoCentsOf(till: string): number {
+    return parseEuro(cashByTill[till]?.fondo ?? '');
+  }
+  function countedCentsOf(till: string): number | null {
+    const c = cashByTill[till]?.counted ?? '';
+    return c.trim() === '' ? null : parseEuro(c);
+  }
+
+  function updateCashField(till: string, field: 'fondo' | 'counted', value: string) {
+    const cur = cashByTill[till] ?? { fondo: '', counted: '' };
+    cashByTill = { ...cashByTill, [till]: { ...cur, [field]: value } };
+  }
+
+  async function loadCash() {
+    const date = businessDate;
+    if (!date) { cashByTill = {}; return; }
+    try {
+      const result = await window.api.getCashFloats(date);
+      if (!result.ok) { cashError = result.error ?? 'Errore'; return; }
+      const map: Record<string, { fondo: string; counted: string }> = {};
+      for (const f of result.floats) {
+        map[f.tillName] = { fondo: centsToInput(f.fondoCents), counted: centsToInput(f.countedCents) };
+      }
+      cashByTill = map;
+      cashError = null;
+    } catch (e) {
+      cashError = e instanceof Error ? e.message : 'Errore';
+    }
+  }
+
+  async function saveCash(till: string) {
+    const date = businessDate;
+    if (!date) return;
+    const fondoCents = fondoCentsOf(till);
+    const countedCents = countedCentsOf(till);
+    // Normalize the displayed values once persisted.
+    cashByTill = {
+      ...cashByTill,
+      [till]: {
+        fondo: fondoCents ? centsToInput(fondoCents) : '',
+        counted: countedCents == null ? '' : centsToInput(countedCents)
+      }
+    };
+    try {
+      const result = await window.api.setCashFloat(till, date, fondoCents, countedCents);
+      cashError = result.ok ? null : (result.error ?? 'Errore salvataggio');
+    } catch (e) {
+      cashError = e instanceof Error ? e.message : 'Errore salvataggio';
+    }
+  }
+
+  // Reload the fondo values whenever the active day changes.
+  $effect(() => { businessDate; loadCash(); });
+
   const byTill = $derived.by((): TillSummary[] => {
     const map = new Map<string, TillSummary>();
     for (const o of orders) {
@@ -650,6 +732,84 @@
             <p class="text-xs text-gray-500 mt-1 font-medium">Contanti / Carta</p>
           </div>
         </div>
+
+        <!-- Cash closing (fondo cassa per till) -->
+        {#if businessDate}
+          <div class="px-4 pb-2">
+            <div class="border border-gray-100 rounded-xl overflow-hidden">
+              <div class="flex items-center justify-between bg-gray-50 px-4 py-2">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Chiusura cassa</p>
+                {#if cashError}
+                  <p class="text-xs text-red-600">{cashError}</p>
+                {:else}
+                  <p class="text-xs text-gray-400">Fondo cassa + contanti = atteso in cassa</p>
+                {/if}
+              </div>
+              {#if byTill.length === 0}
+                <p class="px-4 py-6 text-center text-sm text-gray-400">Nessuna cassa con ordini in questo giorno</p>
+              {:else}
+                <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {#each byTill as row}
+                    {@const expected = fondoCentsOf(row.tillName) + row.cashCents}
+                    {@const counted = countedCentsOf(row.tillName)}
+                    {@const diff = counted == null ? null : counted - expected}
+                    <div class="rounded-xl border border-gray-200 p-4">
+                      <p class="mb-3 font-bold text-gray-800">{row.tillName}</p>
+                      <div class="space-y-2 text-sm">
+                        <label class="flex items-center justify-between gap-2">
+                          <span class="text-gray-500">Fondo cassa</span>
+                          <span class="relative">
+                            <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                            <input
+                              inputmode="decimal"
+                              value={cashByTill[row.tillName]?.fondo ?? ''}
+                              oninput={(e) => updateCashField(row.tillName, 'fondo', e.currentTarget.value)}
+                              onblur={() => saveCash(row.tillName)}
+                              placeholder="0,00"
+                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                            />
+                          </span>
+                        </label>
+                        <div class="flex items-center justify-between text-gray-600">
+                          <span>+ Incasso contanti</span>
+                          <span class="tabular-nums">{formatEUR(row.cashCents / 100)}</span>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-200 pt-2">
+                          <span class="font-semibold text-gray-700">= Attesi in cassa</span>
+                          <span class="text-lg font-black tabular-nums text-green-800">{formatEUR(expected / 100)}</span>
+                        </div>
+                        <label class="flex items-center justify-between gap-2 pt-1">
+                          <span class="text-gray-500">Contanti contati</span>
+                          <span class="relative">
+                            <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                            <input
+                              inputmode="decimal"
+                              value={cashByTill[row.tillName]?.counted ?? ''}
+                              oninput={(e) => updateCashField(row.tillName, 'counted', e.currentTarget.value)}
+                              onblur={() => saveCash(row.tillName)}
+                              placeholder="—"
+                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                            />
+                          </span>
+                        </label>
+                        {#if diff != null}
+                          <div class="flex items-center justify-between">
+                            <span class="text-gray-500">Differenza</span>
+                            <span
+                              class="font-bold tabular-nums"
+                              class:text-green-700={diff === 0}
+                              class:text-red-600={diff !== 0}
+                            >{diff > 0 ? '+' : ''}{formatEUR(diff / 100)}</span>
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
 
         <div class="grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2">
 

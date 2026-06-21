@@ -7,6 +7,7 @@ import { registerSettingsHandlers, loadTillSettings, applyServerRole } from './i
 import { registerStockHandlers } from './ipc/stock.js';
 import { registerPaymentHandlers } from './ipc/payment.js';
 import { registerReportsHandlers } from './ipc/reports.js';
+import { registerCashHandlers } from './ipc/cash.js';
 import { registerCatalogHandlers } from './ipc/catalog.js';
 import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
 
@@ -58,6 +59,7 @@ app.whenReady().then(() => {
   registerStockHandlers();
   registerPaymentHandlers();
   registerReportsHandlers();
+  registerCashHandlers();
   registerCatalogHandlers();
   registerUpdateHandlers();
 

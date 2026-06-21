@@ -66,6 +66,22 @@ function migrate(db: Database.Database): void {
     try { db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'cash'`); } catch { /* already exists */ }
     db.pragma('user_version = 2');
   }
+
+  if (version < 3) {
+    // Per-till cash float (fondo cassa) and end-of-day count, keyed by
+    // calendar day. Expected cash = fondo + cash takings for that till/day.
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS cash_floats (
+        till_name     TEXT NOT NULL,
+        business_date TEXT NOT NULL,
+        fondo_cents   INTEGER NOT NULL DEFAULT 0,
+        counted_cents INTEGER,
+        updated_at    TEXT NOT NULL,
+        PRIMARY KEY (till_name, business_date)
+      )
+    `);
+    db.pragma('user_version = 3');
+  }
 }
 
 export function getSetting(key: string): string | null {

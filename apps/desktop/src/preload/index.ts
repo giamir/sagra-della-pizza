@@ -44,6 +44,11 @@ const api = {
   getReports: (from: string, to: string) => ipcRenderer.invoke('reports:get', from, to),
   voidOrder: (orderId: string) => ipcRenderer.invoke('order:void', orderId),
 
+  // Cash floats (fondo cassa per till)
+  getCashFloats: (date: string) => ipcRenderer.invoke('cash:get', date),
+  setCashFloat: (tillName: string, date: string, fondoCents: number, countedCents: number | null) =>
+    ipcRenderer.invoke('cash:set', tillName, date, fondoCents, countedCents),
+
   // Payment terminal (ECR17 / Nexi Ingenico)
   getPaymentConfig: () => ipcRenderer.invoke('payment:config:get'),
   savePaymentConfig: (config: unknown) => ipcRenderer.invoke('payment:config:save', config),

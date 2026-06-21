@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { getDb, getSetting } from '../db/schema.js';
 import { getStock, setStock, resetStock, decrementStock } from '../db/stock.js';
 import { queryOrders, voidOrder } from '../db/reports.js';
+import { getCashFloats, setCashFloat } from '../db/cash.js';
 import { getCatalog, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 import { getReservedTotals, setReservation, clearReservation } from './reservations.js';
 
@@ -79,6 +80,27 @@ export function startServer(port = 7331): void {
     if (!order) { res.status(404).json({ ok: false, error: 'Ordine non trovato' }); return; }
     broadcastStock();
     res.json({ ok: true, order });
+  });
+
+  // --- Cash floats (fondo cassa per till) ---
+  app.get('/cash-floats', (req, res) => {
+    const date = String(req.query.date ?? '');
+    res.json({ floats: getCashFloats(date) });
+  });
+
+  app.post('/cash-floats', (req, res) => {
+    const { tillName, date, fondoCents, countedCents } = req.body as {
+      tillName?: string;
+      date?: string;
+      fondoCents?: number;
+      countedCents?: number | null;
+    };
+    if (!tillName || !date || typeof fondoCents !== 'number') {
+      res.status(400).json({ ok: false, error: 'Payload non valido' });
+      return;
+    }
+    setCashFloat(tillName, date, fondoCents, typeof countedCents === 'number' ? countedCents : null);
+    res.json({ ok: true });
   });
 
   // --- Stock ---

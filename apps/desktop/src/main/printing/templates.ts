@@ -28,10 +28,10 @@ function formatTime(iso: string): string {
 }
 
 function tableAndRowLine(width: number): string {
-  const table = 'Tavolo: ________';
   const row = 'Fila: ______';
-  const gap = Math.max(2, width - table.length - row.length);
-  return `${table}${' '.repeat(gap)}${row}`;
+  const table = 'Tavolo: ________';
+  const gap = Math.max(2, width - row.length - table.length);
+  return `${row}${' '.repeat(gap)}${table}`;
 }
 
 // One ticket for a single station.
@@ -58,6 +58,10 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     const maxName = width - qtyStr.length - 2;
     const name = l.name.length > maxName ? l.name.slice(0, maxName - 1) + '…' : l.name;
     e.bold(true).text(`${qtyStr}  `).bold(false).line(name);
+  }
+
+  if (normalizeStation(station) === 'Bevande' && order.people > 0) {
+    e.bold(true).text(`${order.people}x  `).bold(false).line('Coperti');
   }
 
   e.feed().separator('=').feed(3).cut();
@@ -146,6 +150,9 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
     ];
     for (const l of lines) {
       rows.push(`${l.qty}x  ${l.name}`);
+    }
+    if (normalizeStation(station) === 'Bevande' && order.people > 0) {
+      rows.push(`${order.people}x  Coperti`);
     }
     rows.push('', sep('='));
     stations.push({ name: station, text: rows.join('\n') });

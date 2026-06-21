@@ -181,26 +181,33 @@ export function startServer(port = 7331): void {
         const orderId = row.lastInsertRowid;
 
         const priceIndex = getLivePriceIndex();
+        const printLines = [] as { itemId: string; qty: number; unitPriceCents: number; name: string; station: string }[];
         for (const [itemId, qty] of lines) {
           const entry = priceIndex[itemId];
-          insertLine.run({
-            orderId,
-            itemId,
-            qty,
-            unitPriceCents: entry ? Math.round(entry.price * 100) : 0,
-            nameSnapshot: entry?.name ?? itemId,
-            station: resolveStation(itemId)
-          });
+          const unitPriceCents = entry ? Math.round(entry.price * 100) : 0;
+          const nameSnapshot = entry?.name ?? itemId;
+          const station = resolveStation(itemId);
+          insertLine.run({ orderId, itemId, qty, unitPriceCents, nameSnapshot, station });
+          printLines.push({ itemId, qty, unitPriceCents, name: nameSnapshot, station });
         }
 
-        return orderId;
+        return { orderId, printLines };
       })();
 
       // Items just moved from held-in-cart to sold: drop this till's hold so it
       // isn't subtracted twice. Real stock was already decremented above.
       clearReservation(tillName ?? getSetting('till_name') ?? 'default');
       broadcastStock();
-      res.json({ ok: true, orderId: String(result) });
+      // Return the fully-built order so the submitting client can print it
+      // locally — the client cannot re-load this id from its own db.
+      const order = {
+        id: Number(result.orderId),
+        createdAt: new Date().toISOString(),
+        people,
+        totalCents,
+        lines: result.printLines
+      };
+      res.json({ ok: true, orderId: String(result.orderId), order });
     } catch (err: unknown) {
       if (err instanceof Error && 'oversold' in err) {
         res.status(409).json({ ok: false, error: err.message, oversold: (err as any).oversold });

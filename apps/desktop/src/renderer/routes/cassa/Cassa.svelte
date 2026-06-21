@@ -572,7 +572,11 @@
       clearCart();
       statusMessage = 'Ordine salvato — stampa in corso…';
 
-      const printResult = await window.api.printOrder(result.orderId);
+      // Print the order the host returned (its lines/stations), NOT a re-load by
+      // id — a client till's order does not exist in its own local db.
+      const printResult = result.order
+        ? await window.api.printOrderData(result.order)
+        : await window.api.printOrder(result.orderId);
       if (printResult.ok) {
         statusMessage = 'Ordine completato ✓';
       } else if (printResult.preview) {

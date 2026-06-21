@@ -14,16 +14,24 @@ type SubmitOrderPayload = {
   paymentMethod?: 'cash' | 'card';
 };
 
-async function submitToHost(hostUrl: string, tillName: string, payload: SubmitOrderPayload): Promise<{ ok: boolean; orderId?: string; error?: string; oversold?: string[] }> {
+type PrintOrderPayload = {
+  id: number | bigint;
+  createdAt: string;
+  people: number;
+  totalCents: number;
+  lines: { itemId: string; qty: number; unitPriceCents: number; name: string; station: string }[];
+};
+
+async function submitToHost(hostUrl: string, tillName: string, payload: SubmitOrderPayload): Promise<{ ok: boolean; orderId?: string; order?: PrintOrderPayload; error?: string; oversold?: string[] }> {
   const res = await fetch(`${hostUrl}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...payload, tillName })
   });
-  return res.json() as Promise<{ ok: boolean; orderId?: string; error?: string; oversold?: string[] }>;
+  return res.json() as Promise<{ ok: boolean; orderId?: string; order?: PrintOrderPayload; error?: string; oversold?: string[] }>;
 }
 
-function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boolean; orderId: bigint | number; error?: string; oversold?: string[] } {
+function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boolean; orderId: bigint | number; order?: PrintOrderPayload; error?: string; oversold?: string[] } {
   const db = getDb();
 
   const insertOrder = db.prepare(`
@@ -42,24 +50,31 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
     const row = insertOrder.run({ tillName, people: payload.people, totalCents: payload.totalCents, source: payload.source ?? 'manual', paymentMethod: payload.paymentMethod ?? 'cash' });
     const orderId = row.lastInsertRowid;
     const priceIndex = getLivePriceIndex();
+    const printLines: PrintOrderPayload['lines'] = [];
 
     for (const [itemId, qty] of payload.lines) {
       const entry = priceIndex[itemId];
-      insertLine.run({
-        orderId, itemId, qty,
-        unitPriceCents: entry ? Math.round(entry.price * 100) : 0,
-        nameSnapshot: entry?.name ?? itemId,
-        station: resolveStation(itemId)
-      });
+      const unitPriceCents = entry ? Math.round(entry.price * 100) : 0;
+      const nameSnapshot = entry?.name ?? itemId;
+      const station = resolveStation(itemId);
+      insertLine.run({ orderId, itemId, qty, unitPriceCents, nameSnapshot, station });
+      printLines.push({ itemId, qty, unitPriceCents, name: nameSnapshot, station });
     }
 
-    return orderId;
+    return { orderId, printLines };
   })();
 
   // Sold now, so release this till's hold — avoids double-subtracting.
   clearReservation(tillName);
   broadcastStock();
-  return { ok: true, orderId: result };
+  const order: PrintOrderPayload = {
+    id: Number(result.orderId),
+    createdAt: new Date().toISOString(),
+    people: payload.people,
+    totalCents: payload.totalCents,
+    lines: result.printLines
+  };
+  return { ok: true, orderId: result.orderId, order };
 }
 
 export function registerOrderHandlers(): void {
@@ -70,7 +85,7 @@ export function registerOrderHandlers(): void {
       if (settings.role === 'client') {
         const result = await submitToHost(settings.hostUrl, settings.tillName, payload);
         if (!result.ok) return { ok: false, error: result.error, oversold: result.oversold };
-        return { ok: true, orderId: result.orderId };
+        return { ok: true, orderId: result.orderId, order: result.order };
       } else {
         return submitLocal(payload, settings.tillName);
       }

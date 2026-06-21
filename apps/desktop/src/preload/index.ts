@@ -34,6 +34,7 @@ const api = {
 
   // Printing
   printOrder: (orderId: number | bigint) => ipcRenderer.invoke('print:order', orderId),
+  printOrderData: (order: unknown) => ipcRenderer.invoke('print:orderData', order),
   printTest: () => ipcRenderer.invoke('print:test'),
   getPrinterConfig: () => ipcRenderer.invoke('printer:config:get'),
   savePrinterConfig: (config: unknown) => ipcRenderer.invoke('printer:config:save', config),

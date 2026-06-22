@@ -11,6 +11,7 @@ import { registerCashHandlers } from './ipc/cash.js';
 import { registerCatalogHandlers } from './ipc/catalog.js';
 import { registerBackupHandlers } from './ipc/backup.js';
 import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
+import { snapshotDb, pruneSnapshots } from './db/auto-backup.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -66,7 +67,15 @@ app.whenReady().then(() => {
   registerUpdateHandlers();
 
   // Start the embedded server if this till is configured as host
-  applyServerRole(loadTillSettings());
+  const tillSettings = loadTillSettings();
+  applyServerRole(tillSettings);
+
+  // Only the host holds live data, so only the host keeps snapshots. Take a
+  // routine copy of the pre-session DB and trim old ones.
+  if (tillSettings.role === 'host') {
+    snapshotDb('startup');
+    pruneSnapshots();
+  }
 
   createWindow();
   startUpdateChecks();

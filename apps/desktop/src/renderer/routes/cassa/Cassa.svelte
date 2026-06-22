@@ -654,7 +654,7 @@
   });
 </script>
 
-<div class="h-screen flex flex-col bg-gray-100 select-none overflow-hidden">
+<div class="h-full flex flex-col bg-gray-100 select-none overflow-hidden">
 
   <!-- Header -->
   <header class="shrink-0 h-12 bg-green-900 text-white flex items-center px-4 gap-4 relative">

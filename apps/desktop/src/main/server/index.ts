@@ -1,3 +1,4 @@
+import { app as electronApp } from 'electron';
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -61,7 +62,7 @@ export function startServer(port = 7331): void {
   app.options(/.*/, (_req, res) => { res.sendStatus(204); });
 
   // --- Health ---
-  app.get('/ping', (_req, res) => res.json({ ok: true, role: 'host' }));
+  app.get('/ping', (_req, res) => res.json({ ok: true, role: 'host', version: electronApp.getVersion() }));
 
   // --- Catalog ---
   app.get('/catalog', (_req, res) => res.json({ menu: getCatalog() }));

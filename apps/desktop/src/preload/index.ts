@@ -18,6 +18,16 @@ const api = {
     ipcRenderer.on('updates:status', listener);
     return () => ipcRenderer.removeListener('updates:status', listener);
   },
+  onVersionMismatch: (
+    cb: (info: { mismatch: boolean; hostVersion: string; localVersion: string }) => void
+  ) => {
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      info: { mismatch: boolean; hostVersion: string; localVersion: string }
+    ) => cb(info);
+    ipcRenderer.on('version:mismatch', listener);
+    return () => ipcRenderer.removeListener('version:mismatch', listener);
+  },
 
   // Orders
   submitOrder: (order: unknown) => ipcRenderer.invoke('order:submit', order),

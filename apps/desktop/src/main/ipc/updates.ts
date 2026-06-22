@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { autoUpdater, type ProgressInfo, type UpdateInfo } from 'electron-updater';
+import { loadTillSettings } from './settings.js';
+import { snapshotDb } from '../db/auto-backup.js';
 
 // Injected by electron.vite.config.ts (define). 'latest' for the normal build,
 // 'win7-latest' for the Windows 7 / Electron 22 build so the two never cross
@@ -168,6 +170,10 @@ export function registerUpdateHandlers(): void {
       return { ok: true };
     }
     if (status.state !== 'downloaded') return { ok: false, error: 'Nessun aggiornamento pronto da installare.' };
+    // The old version is still running here — take the authoritative
+    // pre-upgrade, pre-migration snapshot of the host DB before the new
+    // version boots and migrates. Host-only: clients hold no master data.
+    if (loadTillSettings().role === 'host') snapshotDb('pre-update');
     autoUpdater.quitAndInstall();
     return { ok: true };
   });

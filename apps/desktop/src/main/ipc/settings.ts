@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { app, ipcMain, BrowserWindow } from 'electron';
 import { networkInterfaces } from 'os';
 import WebSocket from 'ws';
 import { getSetting, setSetting } from '../db/schema.js';
@@ -6,10 +6,42 @@ import { startServer, stopServer } from '../server/index.js';
 
 let _wsClient: WebSocket | null = null;
 
+function compareVersions(a: string, b: string): number {
+  const aParts = a.split('.').map(Number);
+  const bParts = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i += 1) {
+    const diff = (aParts[i] ?? 0) - (bParts[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+// Compare this client's app version against the host's (from /ping) and tell
+// the renderer so it can warn the operator about a drifted fleet. Non-fatal:
+// any failure just leaves the banner untouched.
+async function checkHostVersion(hostUrl: string): Promise<void> {
+  try {
+    const res = await fetch(`${hostUrl}/ping`, { headers: { 'cache-control': 'no-cache' } });
+    const data = (await res.json()) as { version?: string };
+    const hostVersion = data.version;
+    if (!hostVersion) return;
+    const localVersion = app.getVersion();
+    const payload = {
+      mismatch: compareVersions(hostVersion, localVersion) !== 0,
+      hostVersion,
+      localVersion
+    };
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('version:mismatch', payload);
+    }
+  } catch { /* host unreachable — leave banner as-is */ }
+}
+
 function startWsClient(hostUrl: string): void {
   if (_wsClient) { _wsClient.close(); _wsClient = null; }
   const wsUrl = hostUrl.replace(/^https?/, 'ws');
   const ws = new WebSocket(wsUrl);
+  ws.on('open', () => { void checkHostVersion(hostUrl); });
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data.toString()) as {

@@ -9,6 +9,7 @@ import { registerPaymentHandlers } from './ipc/payment.js';
 import { registerReportsHandlers } from './ipc/reports.js';
 import { registerCashHandlers } from './ipc/cash.js';
 import { registerCatalogHandlers } from './ipc/catalog.js';
+import { registerBackupHandlers } from './ipc/backup.js';
 import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
 
 let mainWindow: BrowserWindow | null = null;
@@ -61,6 +62,7 @@ app.whenReady().then(() => {
   registerReportsHandlers();
   registerCashHandlers();
   registerCatalogHandlers();
+  registerBackupHandlers();
   registerUpdateHandlers();
 
   // Start the embedded server if this till is configured as host

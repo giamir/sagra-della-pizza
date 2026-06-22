@@ -78,7 +78,11 @@ const api = {
   // Catalog admin
   getCatalog: () => ipcRenderer.invoke('catalog:get'),
   saveCatalog: (catalog: unknown, stations: unknown) => ipcRenderer.invoke('catalog:save', catalog, stations),
-  exportCatalog: () => ipcRenderer.invoke('catalog:export')
+  exportCatalog: () => ipcRenderer.invoke('catalog:export'),
+
+  // Database backup / restore
+  exportDatabase: () => ipcRenderer.invoke('database:export'),
+  importDatabase: () => ipcRenderer.invoke('database:import')
 };
 
 if (process.contextIsolated) {

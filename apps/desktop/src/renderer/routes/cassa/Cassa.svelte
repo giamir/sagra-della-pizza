@@ -20,6 +20,7 @@
   import PaymentSettings from '$lib/components/PaymentSettings.svelte';
   import Reports from '$lib/components/Reports.svelte';
   import CatalogAdmin from '$lib/components/CatalogAdmin.svelte';
+  import BackupRestore from '$lib/components/BackupRestore.svelte';
   import AboutUpdates from '$lib/components/AboutUpdates.svelte';
 
   const MENU = menuData as Menu;
@@ -79,6 +80,7 @@
   let paymentModalOpen = $state(false);
   let paymentEnabled = $state(false);
   let catalogAdminOpen = $state(false);
+  let backupOpen = $state(false);
   let aboutUpdatesOpen = $state(false);
   let todayOrders = $state<ReportOrder[]>([]);
   let statsLoading = $state(false);
@@ -837,6 +839,10 @@
 
         <!-- Sistema -->
         <p class="px-4 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Sistema</p>
+        <button type="button" onclick={() => { backupOpen = true; menuOpen = false; }}
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
+          <span class="w-5 text-center text-gray-400">⛁</span> Backup / Ripristino
+        </button>
         <button type="button" onclick={() => { aboutUpdatesOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
           <span class="w-5 text-center text-gray-400">↻</span> Aggiornamenti
@@ -985,6 +991,11 @@
   <!-- Catalog admin -->
   {#if catalogAdminOpen}
     <CatalogAdmin onClose={() => catalogAdminOpen = false} />
+  {/if}
+
+  <!-- Database backup / restore -->
+  {#if backupOpen}
+    <BackupRestore onClose={() => backupOpen = false} />
   {/if}
 
   <!-- App version / updates -->

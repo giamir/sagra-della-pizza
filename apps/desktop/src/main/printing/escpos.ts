@@ -33,6 +33,12 @@ export class EscPos {
     return on ? this.b(0x1d, 0x21, 0x11) : this.b(0x1d, 0x21, 0x00);
   }
 
+  // Double height only — taller text without changing chars-per-line,
+  // so column/width layout stays intact. Used for station item lines.
+  doubleHeight(on: boolean): this {
+    return on ? this.b(0x1d, 0x21, 0x01) : this.b(0x1d, 0x21, 0x00);
+  }
+
   // --- Text output ---
   // Strips diacritics so Italian accented chars print correctly on all code pages.
   text(s: string): this {

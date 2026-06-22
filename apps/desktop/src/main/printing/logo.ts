@@ -34,10 +34,13 @@ export async function buildLogoBuf(maxWidthDots = 384): Promise<Buffer | null> {
       }
     }
 
-    // GS v 0: normal scale raster image
+    // Center the image (ESC a 1), print it (GS v 0 normal-scale raster),
+    // then feed and reset alignment back to left (ESC a 0).
     return Buffer.concat([
+      Buffer.from([0x1b, 0x61, 0x01]),
       Buffer.from([0x1d, 0x76, 0x30, 0x00, bytesPerRow & 0xff, bytesPerRow >> 8, h & 0xff, h >> 8]),
-      raster
+      raster,
+      Buffer.from([0x0a, 0x1b, 0x61, 0x00])
     ]);
   } catch {
     return null;

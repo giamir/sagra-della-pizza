@@ -1,3 +1,6 @@
 out/
 dist/
 dist-electron/
+
+# Generated ticket preview
+scripts/ticket-preview.html

@@ -39,9 +39,10 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
   const enabledStations = new Set(config.stations.filter((s) => s.enabled).map((s) => s.name));
   const byStation = groupByStation(order.lines, stationOrder);
 
-  // 8 dots/mm × paper width: 80mm → 576 dots, 58mm → 384 dots
-  const maxDots = width >= 42 ? 576 : 384;
-  const logoBuf = await buildLogoBuf(maxDots);
+  // 8 dots/mm × paper width: 80mm → 576 dots, 58mm → 384 dots.
+  // Print the logo at ~45% of paper width (it's centered) so it isn't oversized.
+  const paperDots = width >= 42 ? 576 : 384;
+  const logoBuf = await buildLogoBuf(Math.round(paperDots * 0.45));
 
   function withLogo(ticket: Buffer): Buffer {
     return logoBuf ? Buffer.concat([logoBuf, ticket]) : ticket;

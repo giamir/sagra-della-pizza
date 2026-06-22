@@ -1,5 +1,5 @@
 import { EscPos } from './escpos.js';
-import { STATION_ORDER, normalizeStation } from './station-map.js';
+import { STATION_ORDER, normalizeStation } from './station-constants.js';
 
 export type PrintLine = {
   itemId: string;
@@ -40,6 +40,8 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
 
   e.init()
     .align('center')
+    .line('Sagra della Pizza')
+    .line('Orentano')
     .bold(true)
     .doubleSize(true)
     .line(station.toUpperCase())
@@ -53,6 +55,7 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     .separator('=')
     .align('left');
 
+  e.doubleHeight(true);
   for (const l of lines) {
     const qtyStr = `${l.qty}x`;
     const maxName = width - qtyStr.length - 2;
@@ -63,6 +66,7 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
   if (normalizeStation(station) === copertoStation && order.people > 0) {
     e.bold(true).text(`${order.people}x  `).bold(false).line('Coperti');
   }
+  e.doubleHeight(false);
 
   e.feed().separator('=').feed(3).cut();
   return e.toBuffer();
@@ -77,6 +81,7 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
     .align('center')
     .bold(true)
     .line('Sagra della Pizza')
+    .line('Orentano')
     .line('Copia Cliente')
     .bold(false)
     .separator('=')
@@ -144,6 +149,8 @@ export function buildPreviewText(
 
   for (const [station, lines] of byStation) {
     const rows: string[] = [
+      'Sagra della Pizza',
+      'Orentano',
       station.toUpperCase(),
       `ORD #${order.id}`,
       formatTime(order.createdAt),
@@ -163,7 +170,7 @@ export function buildPreviewText(
   }
 
   const copertoTotal = order.people * 150;
-  const receiptRows: string[] = ['Sagra della Pizza', 'Copia Cliente', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
+  const receiptRows: string[] = ['Sagra della Pizza', 'Orentano', 'Copia Cliente', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
   for (const l of order.lines) {
     const label = `${l.qty}x ${l.name}`;
     const sub = eur(l.unitPriceCents * l.qty);

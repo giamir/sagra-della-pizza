@@ -1,16 +1,8 @@
 import { getSetting, setSetting } from '../db/schema.js';
+import { STATION_ORDER, DEFAULT_COPERTO_STATION, normalizeStation } from './station-constants.js';
 
-// Default kitchen station labels, in print order. Acts as the seed for the
-// user-managed station list (settings key `stations_list`).
-export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande', 'Bar', 'Dolce'];
-
-export const DEFAULT_COPERTO_STATION = 'Bevande';
-
-export function normalizeStation(station: string): string {
-  if (station === 'Gastronomia') return 'Cucina';
-  if (station === 'Griglia' || station === 'Contorni') return 'Griglia e contorni';
-  return station;
-}
+// Re-exported for backwards compatibility — defined in station-constants.ts.
+export { STATION_ORDER, DEFAULT_COPERTO_STATION, normalizeStation };
 
 // The live, user-managed station list (ordered = print order). Falls back to
 // the default when unset or malformed.

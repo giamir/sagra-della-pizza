@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { getDb } from '../db/schema.js';
 import { loadPrinterConfig, savePrinterConfig, sendToTcpPrinter, sendToUsbPrinter, listUsbPrinters } from '../printing/service.js';
 import { buildStationTicket, buildReceipt, buildPreviewText, groupByStation, type PrintOrder } from '../printing/templates.js';
+import { getStations, getCopertoStation } from '../printing/station-map.js';
 import { buildLogoBuf } from '../printing/logo.js';
 import type { PrinterConfig, UsbPrinterEntry } from '../printing/service.js';
 
@@ -33,8 +34,10 @@ function loadOrderForPrint(orderId: number | bigint): PrintOrder | null {
 
 async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> {
   const { width } = config;
+  const stationOrder = getStations();
+  const copertoStation = getCopertoStation();
   const enabledStations = new Set(config.stations.filter((s) => s.enabled).map((s) => s.name));
-  const byStation = groupByStation(order.lines);
+  const byStation = groupByStation(order.lines, stationOrder);
 
   // 8 dots/mm × paper width: 80mm → 576 dots, 58mm → 384 dots
   const maxDots = width >= 42 ? 576 : 384;
@@ -55,7 +58,7 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
   // One ticket per station that has items and is enabled (no logo on kitchen tickets)
   for (const [station, lines] of byStation) {
     if (!enabledStations.has(station)) continue;
-    const ticket = buildStationTicket(order, station, lines, width);
+    const ticket = buildStationTicket(order, station, lines, width, copertoStation);
     await send(ticket);
   }
 
@@ -66,7 +69,7 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
 
 async function printPrintOrder(order: PrintOrder): Promise<{ ok: boolean; error?: string; preview?: ReturnType<typeof buildPreviewText> }> {
   const config = loadPrinterConfig();
-  const preview = buildPreviewText(order);
+  const preview = buildPreviewText(order, { order: getStations(), copertoStation: getCopertoStation() });
 
   if (!config.enabled) {
     return { ok: false, error: 'Stampante non configurata', preview };

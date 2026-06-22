@@ -4,7 +4,7 @@ import { getDb, getSetting, setSetting } from './schema.js';
 // Settings keys that travel with a backup. Deliberately excludes
 // machine-specific config (printer_config, ecr17_config, till_settings) so an
 // import never clobbers the target machine's hardware/network setup.
-const EXPORTED_SETTING_KEYS = ['catalog_json', 'station_overrides'] as const;
+const EXPORTED_SETTING_KEYS = ['catalog_json', 'station_overrides', 'stations_list', 'coperto_station'] as const;
 
 const BUNDLE_FORMAT = 'sagra-db';
 const BUNDLE_VERSION = 1;

@@ -35,7 +35,7 @@ function tableAndRowLine(width: number): string {
 }
 
 // One ticket for a single station.
-export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42): Buffer {
+export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42, copertoStation = 'Bevande'): Buffer {
   const e = new EscPos(width);
 
   e.init()
@@ -60,7 +60,7 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     e.bold(true).text(`${qtyStr}  `).bold(false).line(name);
   }
 
-  if (normalizeStation(station) === 'Bevande' && order.people > 0) {
+  if (normalizeStation(station) === copertoStation && order.people > 0) {
     e.bold(true).text(`${order.people}x  `).bold(false).line('Coperti');
   }
 
@@ -111,8 +111,8 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
   return e.toBuffer();
 }
 
-// Groups order lines by station, in canonical order.
-export function groupByStation(lines: PrintLine[]): Map<string, PrintLine[]> {
+// Groups order lines by station, in canonical (print) order.
+export function groupByStation(lines: PrintLine[], order: string[] = STATION_ORDER): Map<string, PrintLine[]> {
   const map = new Map<string, PrintLine[]>();
   for (const l of lines) {
     const s = normalizeStation(l.station || 'Altro');
@@ -121,7 +121,7 @@ export function groupByStation(lines: PrintLine[]): Map<string, PrintLine[]> {
   }
   // Return in canonical order
   const ordered = new Map<string, PrintLine[]>();
-  for (const s of STATION_ORDER) {
+  for (const s of order) {
     if (map.has(s)) ordered.set(s, map.get(s)!);
   }
   for (const [s, v] of map) {
@@ -131,10 +131,14 @@ export function groupByStation(lines: PrintLine[]): Map<string, PrintLine[]> {
 }
 
 // Plain-text preview for each station ticket + receipt.
-export function buildPreviewText(order: PrintOrder): { stations: { name: string; text: string }[]; receipt: string } {
+export function buildPreviewText(
+  order: PrintOrder,
+  opts: { order?: string[]; copertoStation?: string } = {}
+): { stations: { name: string; text: string }[]; receipt: string } {
   const width = 42;
+  const copertoStation = opts.copertoStation ?? 'Bevande';
   const sep = (c = '-') => c.repeat(width);
-  const byStation = groupByStation(order.lines);
+  const byStation = groupByStation(order.lines, opts.order);
 
   const stations: { name: string; text: string }[] = [];
 
@@ -151,7 +155,7 @@ export function buildPreviewText(order: PrintOrder): { stations: { name: string;
     for (const l of lines) {
       rows.push(`${l.qty}x  ${l.name}`);
     }
-    if (normalizeStation(station) === 'Bevande' && order.people > 0) {
+    if (normalizeStation(station) === copertoStation && order.people > 0) {
       rows.push(`${order.people}x  Coperti`);
     }
     rows.push('', sep('='));

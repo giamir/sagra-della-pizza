@@ -36,6 +36,29 @@ export function saveStationOverrides(overrides: Record<string, string>): void {
   setSetting('station_overrides', JSON.stringify(normalized));
 }
 
+// A complete item-id → station map for every catalog item (and variant), with
+// overrides applied and the hardcoded map as fallback. The catalog admin uses
+// this so every item shows an explicit station (no "auto" fallthrough).
+export function getResolvedStations(): Record<string, string> {
+  const catalog = getCatalog();
+  const overrides = getStationOverrides();
+  const result: Record<string, string> = {};
+  for (const cat of catalog.categories) {
+    for (const group of cat.groups) {
+      for (const item of group.items) {
+        const station = normalizeStation(overrides[item.id] ?? getStation(item.id));
+        result[item.id] = station;
+        if (item.variants) {
+          for (const v of item.variants) {
+            result[v.id] = normalizeStation(overrides[v.id] ?? station);
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
 // Resolves station for a cart key, checking overrides first then the hardcoded
 // map. Composite option keys (e.g. `margherita||senza-mozzarella`) are decoded
 // to their base item id so options don't fall through to the "Altro" station.

@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { getSetting, setSetting } from '../db/schema.js';
-import { STATION_ORDER, normalizeStation } from './station-map.js';
+import { getStations, normalizeStation } from './station-map.js';
 
 export type StationConfig = {
   name: string;
@@ -27,10 +27,12 @@ export type PrinterConfig = {
   stations: StationConfig[];
 };
 
+// The live station list (DB-backed). Called at runtime, never at import time.
 function defaultStations(): StationConfig[] {
-  return STATION_ORDER.map((name) => ({ name, enabled: true }));
+  return getStations().map((name) => ({ name, enabled: true }));
 }
 
+// `stations` is filled in at runtime by loadPrinterConfig (it depends on the DB).
 const DEFAULTS: PrinterConfig = {
   enabled: false,
   connectionType: 'tcp',
@@ -43,19 +45,20 @@ const DEFAULTS: PrinterConfig = {
   usbWriteMode: 'auto',
   usbPrintCommand: 'lp',
   usbRawOption: 'raw',
-  stations: defaultStations()
+  stations: []
 };
 
 export function loadPrinterConfig(): PrinterConfig {
   const raw = getSetting('printer_config');
-  if (!raw) return structuredClone(DEFAULTS);
+  if (!raw) return { ...structuredClone(DEFAULTS), stations: defaultStations() };
   try {
     const saved = JSON.parse(raw) as Partial<PrinterConfig>;
     const savedMap = new Map((saved.stations ?? []).map((s) => [normalizeStation(s.name), { ...s, name: normalizeStation(s.name) }]));
-    const stations = STATION_ORDER.map((name) => savedMap.get(name) ?? { name, enabled: true });
+    // Driven by the live station list so added/removed stations stay in sync.
+    const stations = getStations().map((name) => savedMap.get(name) ?? { name, enabled: true });
     return { ...DEFAULTS, ...saved, stations };
   } catch {
-    return structuredClone(DEFAULTS);
+    return { ...structuredClone(DEFAULTS), stations: defaultStations() };
   }
 }
 

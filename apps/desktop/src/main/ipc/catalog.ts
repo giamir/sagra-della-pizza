@@ -2,15 +2,29 @@ import { ipcMain, dialog, app } from 'electron';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import type { Menu } from '@sagra/shared/types';
-import { getCatalog, saveCatalog, getStationOverrides, saveStationOverrides } from '../catalog/catalog.js';
+import { getCatalog, saveCatalog, getResolvedStations, saveStationOverrides } from '../catalog/catalog.js';
+import { getStations, saveStations, getCopertoStation, saveCopertoStation } from '../printing/station-map.js';
 
 export function registerCatalogHandlers(): void {
   ipcMain.handle('catalog:get', () => {
-    return { catalog: getCatalog(), stations: getStationOverrides() };
+    return {
+      catalog: getCatalog(),
+      stations: getResolvedStations(),
+      stationList: getStations(),
+      copertoStation: getCopertoStation()
+    };
   });
 
-  ipcMain.handle('catalog:save', (_e, catalog: Menu, stations: Record<string, string>) => {
+  ipcMain.handle('catalog:save', (
+    _e,
+    catalog: Menu,
+    stations: Record<string, string>,
+    stationList: string[],
+    copertoStation: string
+  ) => {
     saveCatalog(catalog);
+    if (Array.isArray(stationList)) saveStations(stationList);
+    if (typeof copertoStation === 'string' && copertoStation) saveCopertoStation(copertoStation);
     saveStationOverrides(stations);
     return { ok: true };
   });

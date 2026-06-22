@@ -77,7 +77,8 @@ const api = {
 
   // Catalog admin
   getCatalog: () => ipcRenderer.invoke('catalog:get'),
-  saveCatalog: (catalog: unknown, stations: unknown) => ipcRenderer.invoke('catalog:save', catalog, stations),
+  saveCatalog: (catalog: unknown, stations: unknown, stationList: unknown, copertoStation: unknown) =>
+    ipcRenderer.invoke('catalog:save', catalog, stations, stationList, copertoStation),
   exportCatalog: () => ipcRenderer.invoke('catalog:export'),
 
   // Database backup / restore

@@ -1,23 +1,31 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Menu, MenuCategory, MenuGroup, MenuItem } from '@sagra/shared/types';
-  import { STATION_ORDER } from '$lib/station-order';
 
   let { onClose }: { onClose: () => void } = $props();
 
-  const STATIONS = ['', ...STATION_ORDER, 'Altro'] as string[];
+  // 'Altro' is the always-available catch-all; it is not part of the managed list.
+  const FALLBACK_STATION = 'Altro';
 
   let catalog = $state<Menu | null>(null);
   let stations = $state<Record<string, string>>({});
+  let stationList = $state<string[]>([]);
+  let copertoStation = $state('');
+  let newStation = $state('');
   let activeTab = $state('');
   let saving = $state(false);
   let exporting = $state(false);
   let statusMsg = $state<{ text: string; ok: boolean } | null>(null);
 
+  // Options offered in the per-item dropdown: the managed stations plus the catch-all.
+  const stationOptions = $derived([...stationList, FALLBACK_STATION]);
+
   onMount(async () => {
     const result = await window.api.getCatalog();
     catalog = result.catalog as Menu;
     stations = result.stations as Record<string, string>;
+    stationList = (result.stationList as string[] | undefined) ?? [];
+    copertoStation = (result.copertoStation as string | undefined) ?? stationList[0] ?? '';
     activeTab = catalog.categories[0]?.id ?? '';
   });
 
@@ -30,7 +38,7 @@
     if (!catalog) return;
     saving = true;
     try {
-      await window.api.saveCatalog(catalog, stations);
+      await window.api.saveCatalog(catalog, stations, stationList, copertoStation);
       showStatus('Salvato');
     } catch {
       showStatus('Errore salvataggio', false);
@@ -44,7 +52,7 @@
     exporting = true;
     try {
       // Save first so export reflects latest edits
-      await window.api.saveCatalog(catalog, stations);
+      await window.api.saveCatalog(catalog, stations, stationList, copertoStation);
       const result = await window.api.exportCatalog();
       if (result.cancelled) {
         // user dismissed dialog — no message needed
@@ -112,6 +120,8 @@
     if (!catalog) return;
     const id = `item-${Date.now()}`;
     const newItem: MenuItem = { id, name: '', price: 0 };
+    // New items get an explicit station (first managed station) — never "auto".
+    stations = { ...stations, [id]: stationList[0] ?? FALLBACK_STATION };
     catalog = {
       ...catalog,
       categories: catalog.categories.map((cat) => {
@@ -133,24 +143,58 @@
   }
 
   function stationFor(item: MenuItem): string {
-    return stations[item.id] ?? '';
+    return stations[item.id] ?? stationList[0] ?? FALLBACK_STATION;
   }
 
   function setStation(item: MenuItem, station: string) {
     // Apply to all variant IDs too if the item has variants
     const next = { ...stations };
-    if (station === '') {
-      delete next[item.id];
-      if (item.variants) {
-        for (const v of item.variants) delete next[v.id];
-      }
-    } else {
-      next[item.id] = station;
-      if (item.variants) {
-        for (const v of item.variants) next[v.id] = station;
-      }
+    next[item.id] = station;
+    if (item.variants) {
+      for (const v of item.variants) next[v.id] = station;
     }
     stations = next;
+  }
+
+  // --- Station management ---
+
+  function addStation() {
+    const name = newStation.trim();
+    if (!name) return;
+    if (stationList.some((s) => s.toLowerCase() === name.toLowerCase())) {
+      showStatus('Stazione già esistente', false);
+      return;
+    }
+    stationList = [...stationList, name];
+    newStation = '';
+  }
+
+  function removeStation(name: string) {
+    if (stationList.length <= 1) {
+      showStatus('Serve almeno una stazione', false);
+      return;
+    }
+    const remaining = stationList.filter((s) => s !== name);
+    // Reassign any item currently on the removed station to the catch-all.
+    const next = { ...stations };
+    for (const [id, st] of Object.entries(next)) {
+      if (st === name) next[id] = FALLBACK_STATION;
+    }
+    stations = next;
+    if (copertoStation === name) copertoStation = remaining[0] ?? FALLBACK_STATION;
+    stationList = remaining;
+  }
+
+  function itemsOnStation(name: string): number {
+    return Object.values(stations).filter((s) => s === name).length;
+  }
+
+  function moveStation(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= stationList.length) return;
+    const next = [...stationList];
+    [next[index], next[target]] = [next[target], next[index]];
+    stationList = next;
   }
 </script>
 
@@ -221,6 +265,18 @@
       >
         Coperto
       </button>
+      <!-- Stazioni tab -->
+      <button
+        type="button"
+        onclick={() => activeTab = '__stazioni__'}
+        class="shrink-0 px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px"
+        class:border-green-700={'__stazioni__' === activeTab}
+        class:text-green-900={'__stazioni__' === activeTab}
+        class:border-transparent={'__stazioni__' !== activeTab}
+        class:text-gray-500={'__stazioni__' !== activeTab}
+      >
+        Stazioni
+      </button>
     </div>
 
     <!-- Content area -->
@@ -241,6 +297,72 @@
             />
           </div>
           <p class="text-xs text-gray-400 mt-2">Importo aggiunto per ogni coperto in un ordine manuale.</p>
+
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-6 mb-3">Stazione coperto</p>
+          <select
+            value={copertoStation}
+            onchange={(e) => copertoStation = (e.target as HTMLSelectElement).value}
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-green-600"
+          >
+            {#each stationList as s}
+              <option value={s}>{s}</option>
+            {/each}
+          </select>
+          <p class="text-xs text-gray-400 mt-2">Il conteggio coperti viene stampato sul ticket di questa stazione.</p>
+        </div>
+
+      {:else if activeTab === '__stazioni__'}
+        <!-- Station manager -->
+        <div class="max-w-md">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Stazioni</p>
+          <p class="text-xs text-gray-400 mb-3">L'ordine determina la sequenza di stampa dei ticket.</p>
+
+          <div class="flex flex-col gap-1">
+            {#each stationList as s, i (s)}
+              <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50">
+                <span class="flex-1 text-sm text-gray-800">{s}</span>
+                <span class="text-xs text-gray-400">{itemsOnStation(s)} voci</span>
+                <button
+                  type="button"
+                  onclick={() => moveStation(i, -1)}
+                  disabled={i === 0}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                  title="Sposta su"
+                >↑</button>
+                <button
+                  type="button"
+                  onclick={() => moveStation(i, 1)}
+                  disabled={i === stationList.length - 1}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                  title="Sposta giù"
+                >↓</button>
+                <button
+                  type="button"
+                  onclick={() => removeStation(s)}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 text-base leading-none"
+                  title="Elimina stazione"
+                >×</button>
+              </div>
+            {/each}
+          </div>
+
+          <div class="flex items-center gap-2 mt-4">
+            <input
+              type="text"
+              bind:value={newStation}
+              onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addStation(); } }}
+              placeholder="Nuova stazione"
+              class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+            />
+            <button
+              type="button"
+              onclick={addStation}
+              class="px-3 py-1.5 rounded text-xs font-semibold text-green-700 border border-dashed border-green-300 hover:bg-green-50"
+            >
+              + Aggiungi
+            </button>
+          </div>
+          <p class="text-xs text-gray-400 mt-3">Eliminando una stazione, le voci collegate passano a "{FALLBACK_STATION}".</p>
         </div>
 
       {:else}
@@ -304,11 +426,9 @@
                     onchange={(e) => setStation(item, (e.target as HTMLSelectElement).value)}
                     class="w-full border border-gray-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-green-600"
                   >
-                    <option value="">— auto —</option>
-                    {#each STATION_ORDER as s}
+                    {#each stationOptions as s}
                       <option value={s}>{s}</option>
                     {/each}
-                    <option value="Altro">Altro</option>
                   </select>
 
                   <!-- Delete -->

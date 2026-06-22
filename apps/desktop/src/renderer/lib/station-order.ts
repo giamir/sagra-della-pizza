@@ -1,4 +1,4 @@
-export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande', 'Bar'];
+export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande', 'Bar', 'Dolce'];
 
 export function normalizeStation(station: string): string {
   if (station === 'Gastronomia') return 'Cucina';

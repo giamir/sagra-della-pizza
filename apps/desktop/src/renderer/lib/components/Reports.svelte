@@ -638,7 +638,7 @@
   aria-modal="true"
   aria-label="Rapporti"
   tabindex="-1"
-  class="fixed inset-0 z-50 bg-white flex flex-col"
+  class="fixed inset-0 z-50 bg-white dark:bg-[#20242c] flex flex-col"
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
   <div class="flex flex-col flex-1 overflow-hidden">
@@ -658,7 +658,7 @@
               disabled={!!customDate}
               class="px-3 py-1.5 transition-colors"
               class:bg-white={period === p.key && !customDate}
-              class:text-green-900={period === p.key && !customDate}
+              class:text-[#14532d]={period === p.key && !customDate}
               class:text-white={period !== p.key || !!customDate}
               class:opacity-60={period !== p.key}
             >{p.label}</button>
@@ -926,19 +926,19 @@
                 </p>
               </div>
               <div class="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                <div class="rounded-lg bg-white px-3 py-2">
+                <div class="rounded-lg bg-white dark:bg-[#20242c] px-3 py-2">
                   <span class="block text-gray-400">Picco</span>
                   <span class="font-bold text-gray-900">{trendSummary.peak?.rangeLabel ?? '-'}</span>
                 </div>
-                <div class="rounded-lg bg-white px-3 py-2">
+                <div class="rounded-lg bg-white dark:bg-[#20242c] px-3 py-2">
                   <span class="block text-gray-400">Ordini picco</span>
                   <span class="font-bold text-gray-900">{trendSummary.peak?.orders ?? 0}</span>
                 </div>
-                <div class="rounded-lg bg-white px-3 py-2">
+                <div class="rounded-lg bg-white dark:bg-[#20242c] px-3 py-2">
                   <span class="block text-gray-400">Media</span>
                   <span class="font-bold text-gray-900">{trendSummary.averageOrders.toFixed(1)}</span>
                 </div>
-                <div class="rounded-lg bg-white px-3 py-2">
+                <div class="rounded-lg bg-white dark:bg-[#20242c] px-3 py-2">
                   <span class="block text-gray-400">Scontrino medio</span>
                   <span class="font-bold text-gray-900">{formatEUR(trendSummary.averageTicketCents / 100)}</span>
                 </div>

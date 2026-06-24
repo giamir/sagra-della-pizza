@@ -203,7 +203,7 @@
   aria-modal="true"
   aria-label="Catalogo"
   tabindex="-1"
-  class="fixed inset-0 z-50 bg-white flex flex-col"
+  class="fixed inset-0 z-50 bg-white dark:bg-[#20242c] flex flex-col"
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
   <!-- App bar -->
@@ -228,7 +228,7 @@
         type="button"
         onclick={exportJson}
         disabled={exporting || !catalog}
-        class="px-3 py-1 rounded text-xs font-bold bg-white text-green-900 hover:bg-green-100 disabled:opacity-40"
+        class="px-3 py-1 rounded text-xs font-bold bg-white dark:bg-[#20242c] text-green-900 hover:bg-green-100 disabled:opacity-40"
       >
         {exporting ? '…' : 'Esporta menu.json'}
       </button>
@@ -302,7 +302,7 @@
           <select
             value={copertoStation}
             onchange={(e) => copertoStation = (e.target as HTMLSelectElement).value}
-            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-green-600"
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-1 focus:ring-green-600"
           >
             {#each stationList as s}
               <option value={s}>{s}</option>
@@ -424,7 +424,7 @@
                   <select
                     value={stationFor(item)}
                     onchange={(e) => setStation(item, (e.target as HTMLSelectElement).value)}
-                    class="w-full border border-gray-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-green-600"
+                    class="w-full border border-gray-200 rounded px-2 py-1 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-1 focus:ring-green-600"
                   >
                     {#each stationOptions as s}
                       <option value={s}>{s}</option>

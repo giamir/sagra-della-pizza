@@ -129,7 +129,7 @@
   onclick={(e) => { if ((e.target as Element) === (e.currentTarget as Element)) onClose(); }}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
+  <div class="bg-white dark:bg-[#20242c] rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
     <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
       <h2 class="font-bold text-lg text-gray-900">Terminale Nexi / ECR17</h2>
       <button type="button" onclick={onClose} class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
@@ -205,7 +205,7 @@
                     bind:value={timeoutMs}
                     min="5000"
                     max="300000"
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
                 <label class="flex flex-col gap-1">
@@ -214,7 +214,7 @@
                     type="text"
                     bind:value={terminalId}
                     maxlength="8"
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
                 <label class="flex flex-col gap-1">
@@ -223,7 +223,7 @@
                     type="text"
                     bind:value={cashRegisterId}
                     maxlength="8"
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
                 <label class="flex flex-col gap-1">
@@ -232,14 +232,14 @@
                     type="text"
                     bind:value={lrcSeedHex}
                     placeholder="7F"
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </label>
                 <label class="flex flex-col gap-1">
                   <span class="text-xs font-semibold text-gray-600">Vendita</span>
                   <select
                     bind:value={purchaseCode}
-                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-[#20242c] focus:outline-none focus:ring-2 focus:ring-green-600"
                   >
                     <option value="P">P - pagamento</option>
                     <option value="X">X - risultato esteso</option>

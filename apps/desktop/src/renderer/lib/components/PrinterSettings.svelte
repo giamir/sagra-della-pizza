@@ -173,7 +173,7 @@
   onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
+  <div class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
     <div class="flex items-center justify-between px-6 pt-5 pb-3">
       <h2 class="font-bold text-gray-900">Stampante termica</h2>
       <button type="button" onclick={onClose} class="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
@@ -258,7 +258,7 @@
             {#if availablePrinters.length > 0}
               <select
                 bind:value={config.usbTarget}
-                class="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                class="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]"
               >
                 <option value="">— seleziona —</option>
                 {#each availablePrinters as p}
@@ -312,7 +312,7 @@
                       bind:value={config.tcpTimeoutMs}
                       min="500"
                       max="60000"
-                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]"
                     />
                   </label>
                   <label class="block">
@@ -322,14 +322,14 @@
                       bind:value={config.tcpCloseDelayMs}
                       min="0"
                       max="5000"
-                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]"
                     />
                   </label>
                 </div>
               {:else}
                 <label class="block">
                   <span class="text-xs font-semibold text-gray-600">Modalità invio USB</span>
-                  <select bind:value={config.usbWriteMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white">
+                  <select bind:value={config.usbWriteMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]">
                     <option value="auto">Automatica (spooler Windows / CUPS)</option>
                     <option value="cups">Forza CUPS</option>
                     <option value="file">Scrittura diretta (solo porte COM/LPT)</option>
@@ -338,7 +338,7 @@
                 <div class="grid grid-cols-2 gap-2">
                   <label class="block">
                     <span class="text-xs font-semibold text-gray-600">Comando CUPS</span>
-                    <select bind:value={config.usbPrintCommand} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white">
+                    <select bind:value={config.usbPrintCommand} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]">
                       <option value="lp">lp</option>
                       <option value="lpr">lpr</option>
                     </select>
@@ -349,7 +349,7 @@
                       type="text"
                       bind:value={config.usbRawOption}
                       placeholder="raw"
-                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+                      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white dark:bg-[#20242c]"
                     />
                   </label>
                 </div>

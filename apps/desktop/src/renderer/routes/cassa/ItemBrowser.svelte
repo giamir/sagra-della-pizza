@@ -71,7 +71,7 @@
 
 </script>
 
-<div class="flex flex-col w-[58%] border-r border-gray-200 bg-white overflow-hidden">
+<div class="flex flex-col w-[58%] border-r border-gray-200 bg-white dark:bg-[#20242c] overflow-hidden">
 
   <!-- Category tabs -->
   <div class="shrink-0 flex gap-1 px-2 pt-2 pb-1 overflow-x-auto bg-gray-50 border-b border-gray-200">
@@ -79,14 +79,11 @@
       <button
         type="button"
         onclick={() => onCategoryChange(cat.id)}
-        class="shrink-0 px-4 py-2 rounded-t text-sm font-bold transition-colors"
-        class:bg-white={cat.id === activeCategoryId}
-        class:text-green-900={cat.id === activeCategoryId}
-        class:border={cat.id === activeCategoryId}
-        class:border-gray-200={cat.id === activeCategoryId}
-        class:border-b-white={cat.id === activeCategoryId}
-        class:text-gray-500={cat.id !== activeCategoryId}
-        class:hover:text-gray-800={cat.id !== activeCategoryId}
+        class={`shrink-0 px-4 py-2 rounded-t text-sm font-bold transition-colors ${
+          cat.id === activeCategoryId
+            ? 'bg-white dark:bg-[#20242c] text-green-900 dark:text-green-300 border border-gray-200 border-b-white dark:border-b-[#20242c]'
+            : 'text-gray-500 hover:text-gray-800'
+        }`}
       >
         {cat.label}
       </button>

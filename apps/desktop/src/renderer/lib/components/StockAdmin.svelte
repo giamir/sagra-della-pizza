@@ -92,7 +92,7 @@
   aria-modal="true"
   aria-label="Gestione scorte"
   tabindex="-1"
-  class="fixed inset-0 z-50 bg-white flex flex-col"
+  class="fixed inset-0 z-50 bg-white dark:bg-[#20242c] flex flex-col"
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
   <div class="flex flex-col flex-1 overflow-hidden">

@@ -22,6 +22,7 @@
   import CatalogAdmin from '$lib/components/CatalogAdmin.svelte';
   import BackupRestore from '$lib/components/BackupRestore.svelte';
   import AboutUpdates from '$lib/components/AboutUpdates.svelte';
+  import { theme, toggleTheme } from '$lib/theme.svelte';
 
   const MENU = menuData as Menu;
   const PRICE_INDEX = buildPriceIndex(MENU);
@@ -682,7 +683,7 @@
       >
         Oggi {formatCents(liveStats.revenueCents)} · {liveStats.covers} coperti
         {#if statsIncreased && statsDeltaCents > 0}
-          <span class="statsDelta absolute left-1/2 top-0 -translate-x-1/2 rounded-full bg-lime-300 px-2 py-0.5 text-[11px] font-black text-green-950 shadow-lg">
+          <span class="statsDelta absolute left-1/2 top-0 -translate-x-1/2 rounded-full bg-lime-300 px-2 py-0.5 text-[11px] font-black text-[#052e16] shadow-lg">
             +{formatCents(statsDeltaCents)}
           </span>
         {/if}
@@ -696,7 +697,7 @@
           onclick={() => liveStatsOpen = false}
         ></button>
 
-        <section class="absolute left-1/2 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+        <section class="absolute left-1/2 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 bg-white dark:bg-[#20242c] text-gray-900 rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-100">
             <div class="flex items-start justify-between gap-3">
               <div>
@@ -802,7 +803,7 @@
         onclick={() => menuOpen = false}
       ></button>
 
-      <div class="absolute top-full right-0 z-50 w-52 bg-white rounded-b-xl shadow-2xl border border-gray-100 overflow-hidden">
+      <div class="absolute top-full right-0 z-50 w-52 bg-white dark:bg-[#20242c] rounded-b-xl shadow-2xl border border-gray-100 overflow-hidden">
         <!-- Operazioni -->
         <p class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Operazioni</p>
         <button type="button" onclick={() => { reportsOpen = true; menuOpen = false; }}
@@ -844,8 +845,13 @@
           <span class="w-5 text-center text-gray-400">⛁</span> Backup / Ripristino
         </button>
         <button type="button" onclick={() => { aboutUpdatesOpen = true; menuOpen = false; }}
-          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
           <span class="w-5 text-center text-gray-400">↻</span> Aggiornamenti
+        </button>
+        <button type="button" onclick={() => { toggleTheme(); menuOpen = false; }}
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
+          <span class="w-5 text-center text-gray-400">{theme.mode === 'dark' ? '☀' : '☾'}</span>
+          {theme.mode === 'dark' ? 'Tema chiaro' : 'Tema scuro'}
         </button>
       </div>
     {/if}
@@ -862,7 +868,7 @@
       <button
         type="button"
         onclick={stopScan}
-        class="px-6 py-2 rounded-full bg-white text-gray-900 font-bold"
+        class="px-6 py-2 rounded-full bg-white dark:bg-[#20242c] text-gray-900 font-bold"
       >
         Annulla
       </button>

@@ -99,7 +99,7 @@
   onclick={handleBackdrop}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 flex flex-col gap-5">
+  <div class="bg-white dark:bg-[#20242c] rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 flex flex-col gap-5">
     <div class="flex items-center justify-between gap-4">
       <div>
         <h2 class="font-bold text-lg text-gray-900">Aggiornamenti</h2>
@@ -125,7 +125,7 @@
         <p class="mt-1 text-xs font-semibold">Ultima versione: {updateStatus.latestVersion}</p>
       {/if}
       {#if updateStatus?.state === 'downloading' && typeof updateStatus.percent === 'number'}
-        <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/80">
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/80 dark:bg-white/15">
           <div class="h-full rounded-full bg-blue-700" style={`width:${Math.max(0, Math.min(100, updateStatus.percent))}%`}></div>
         </div>
         <p class="mt-1 text-xs font-semibold">{updateStatus.percent}%</p>

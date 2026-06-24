@@ -24,7 +24,7 @@
   onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+  <div class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
     <div class="flex items-start justify-between gap-4 px-5 pt-5 pb-3">
       <div>
         <h2 class="font-bold text-gray-900">Anteprima stampa</h2>

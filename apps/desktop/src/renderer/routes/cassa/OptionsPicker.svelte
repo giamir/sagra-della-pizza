@@ -55,7 +55,7 @@
   onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 max-w-[90vw]">
+  <div class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl p-6 w-80 max-w-[90vw]">
     <h2 class="text-lg font-bold text-gray-900 mb-1">{baseName}</h2>
     {#if item.description}
       <p class="text-sm text-gray-500 mb-3">{item.description}</p>

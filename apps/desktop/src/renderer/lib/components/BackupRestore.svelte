@@ -58,7 +58,7 @@
   aria-modal="true"
   aria-label="Backup / Ripristino"
   tabindex="-1"
-  class="fixed inset-0 z-50 bg-white flex flex-col"
+  class="fixed inset-0 z-50 bg-white dark:bg-[#20242c] flex flex-col"
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
   <!-- App bar -->
@@ -76,7 +76,7 @@
     <div class="max-w-xl mx-auto flex flex-col gap-5">
 
       <!-- Export -->
-      <section class="bg-white border border-gray-200 rounded-xl p-4">
+      <section class="bg-white dark:bg-[#20242c] border border-gray-200 rounded-xl p-4">
         <h2 class="text-lg font-bold text-green-900">Esporta database</h2>
         <p class="text-sm text-gray-600 mt-1">
           Salva un file <code>.json</code> con tutti gli ordini, le scorte, i dati di cassa
@@ -94,7 +94,7 @@
       </section>
 
       <!-- Import -->
-      <section class="bg-white border border-gray-200 rounded-xl p-4">
+      <section class="bg-white dark:bg-[#20242c] border border-gray-200 rounded-xl p-4">
         <h2 class="text-lg font-bold text-green-900">Importa database</h2>
         <p class="text-sm text-gray-600 mt-1">
           Carica un file di backup per <strong>sostituire</strong> i dati di questa

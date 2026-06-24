@@ -105,7 +105,7 @@
   tabindex="-1"
   class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
 >
-  <div class="bg-white rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden max-h-[90vh] {state === 'cash' ? 'max-w-2xl' : 'max-w-sm'}">
+  <div class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden max-h-[90vh] {state === 'cash' ? 'max-w-2xl' : 'max-w-sm'}">
 
     <!-- Amount header -->
     <div class="bg-green-900 text-white px-6 py-4 text-center shrink-0">

@@ -89,7 +89,7 @@
 
       <!-- Coperto (always first, before menu groups) -->
       <ul class="space-y-1">
-        <li class="flex items-center gap-2 bg-white rounded-lg px-2 py-2 border border-gray-100">
+        <li class="flex items-center gap-2 bg-white dark:bg-[#20242c] rounded-lg px-2 py-2 border border-gray-100">
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold leading-tight truncate">Coperto</p>
             <p class="text-xs text-gray-500">{formatEUR(copertoPerPerson)} × {people} = {formatEUR(copertoTotal)}</p>
@@ -132,7 +132,7 @@
             {/if}
             <ul class="space-y-1">
               {#each group.lines as line (line.id)}
-                <li class="flex items-center gap-2 bg-white rounded-lg px-2 py-2 border border-gray-100">
+                <li class="flex items-center gap-2 bg-white dark:bg-[#20242c] rounded-lg px-2 py-2 border border-gray-100">
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold leading-tight truncate">{line.name}</p>
                     <p class="text-xs text-gray-500">{formatEUR(line.price)} × {line.qty} = {formatEUR(line.subtotal)}</p>
@@ -166,7 +166,7 @@
   </div>
 
   <!-- Footer: total, actions -->
-  <div class="shrink-0 border-t border-gray-200 bg-white px-3 pb-3 pt-2 space-y-2">
+  <div class="shrink-0 border-t border-gray-200 bg-white dark:bg-[#20242c] px-3 pb-3 pt-2 space-y-2">
 
     <!-- Total -->
     <div class="flex items-center justify-between bg-green-900 text-white rounded-lg px-3 py-2">

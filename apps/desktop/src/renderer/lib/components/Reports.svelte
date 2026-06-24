@@ -50,8 +50,12 @@
     { key: 'orders',  label: 'Ordini' },
   ];
   let period = $state<Period>('today');
-  // YYYY-MM-DD string; when set, overrides the period quick-filter
-  let customDate = $state('');
+  // YYYY-MM-DD strings; when either is set, the range overrides the period quick-filter.
+  // Setting only one yields a single day (from === to).
+  let fromDate = $state('');
+  let toDate = $state('');
+  // When set, scopes the whole report to a single till (matches a tillKey()). '' = all tills.
+  let tillFilter = $state('');
   let tab = $state<'summary' | 'items' | 'orders'>('summary');
   let orders = $state<ReportOrder[]>([]);
   let loading = $state(false);
@@ -64,15 +68,44 @@
   let printSuccessId = $state<string | null>(null);
   let printPreview = $state<{ stations: { name: string; text: string }[]; receipt: string; error: string } | null>(null);
 
+  // Normalized till identity, shared between byTill grouping and the till dropdown so
+  // the filter value can never drift from the grouping key.
+  function tillKey(o: { tillName: string }): string {
+    return o.tillName?.trim() || 'Cassa senza nome';
+  }
+
+  // A custom range is active when either date input is set; it overrides the quick period.
+  const rangeActive = $derived(!!(fromDate || toDate));
+  // Effective bounds: a single date (only Da or only A) collapses to one day; swap if inverted.
+  const effectiveRange = $derived.by((): { from: string; to: string } | null => {
+    if (!rangeActive) return null;
+    let from = fromDate || toDate;
+    let to = toDate || fromDate;
+    if (from > to) [from, to] = [to, from];
+    return { from, to };
+  });
+  const isSingleDay = $derived(effectiveRange != null && effectiveRange.from === effectiveRange.to);
+
+  function fmtDayLabel(ymd: string): string {
+    return new Date(ymd + 'T00:00:00').toLocaleDateString('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+  }
+  function fmtDayShort(ymd: string): string {
+    return new Date(ymd + 'T00:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  }
+
   // Label shown above the orders list to tell the user what range is active
   const rangeLabel = $derived.by(() => {
-    if (customDate) {
-      const d = new Date(customDate + 'T00:00:00');
-      return d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
-    }
-    if (period === 'hour') return 'Ultima ora';
-    if (period === 'today') return 'Oggi';
-    return 'Tutti i giorni';
+    let base: string;
+    if (effectiveRange) {
+      base = isSingleDay
+        ? fmtDayLabel(effectiveRange.from)
+        : `${fmtDayShort(effectiveRange.from)} – ${fmtDayShort(effectiveRange.to)}`;
+    } else if (period === 'hour') base = 'Ultima ora';
+    else if (period === 'today') base = 'Oggi';
+    else base = 'Tutti i giorni';
+    return tillFilter ? `${base} · ${tillFilter}` : base;
   });
 
   async function handleVoid(order: ReportOrder, reload: boolean) {
@@ -126,10 +159,10 @@
   }
 
   function activeRange(): [string, string] {
-    // Custom date picker takes priority
-    if (customDate) {
-      const from = new Date(customDate + 'T00:00:00').toISOString();
-      const to   = new Date(customDate + 'T23:59:59.999').toISOString();
+    // Custom from/to range takes priority over the quick period buttons.
+    if (effectiveRange) {
+      const from = new Date(effectiveRange.from + 'T00:00:00').toISOString();
+      const to   = new Date(effectiveRange.to + 'T23:59:59.999').toISOString();
       return [from, to];
     }
     const now = new Date();
@@ -150,7 +183,12 @@
     try {
       const result = await window.api.getReports(from, to);
       if (!result.ok) { error = result.error; orders = []; }
-      else orders = result.orders;
+      else {
+        orders = result.orders;
+        // Drop a till filter that has no orders in the freshly loaded range so the
+        // UI never gets stuck on an empty selection.
+        if (tillFilter && !orders.some((o) => tillKey(o) === tillFilter)) tillFilter = '';
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Errore';
       orders = [];
@@ -160,13 +198,27 @@
   }
 
   onMount(load);
-  $effect(() => { period; customDate; load(); });
+  $effect(() => { period; fromDate; toDate; load(); });
+
+  // Tills present in the loaded (unfiltered) range — drives the dropdown so it never
+  // collapses to a single entry once a filter is applied.
+  const availableTills = $derived.by(() => {
+    const set = new Set<string>();
+    for (const o of orders) set.add(tillKey(o));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'it'));
+  });
+
+  // Every aggregation below works off the till-scoped set; raw `orders` is only used
+  // for `availableTills` above.
+  const filteredOrders = $derived(
+    tillFilter ? orders.filter((o) => tillKey(o) === tillFilter) : orders
+  );
 
   // --- Summary computations ---
-  const totalRevenue   = $derived(orders.reduce((s, o) => s + o.totalCents, 0));
-  const totalCovers    = $derived(orders.reduce((s, o) => s + o.people, 0));
-  const cashRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'cash' ? o.totalCents : 0), 0));
-  const cardRevenue    = $derived(orders.reduce((s, o) => s + (o.paymentMethod === 'card' ? o.totalCents : 0), 0));
+  const totalRevenue   = $derived(filteredOrders.reduce((s, o) => s + o.totalCents, 0));
+  const totalCovers    = $derived(filteredOrders.reduce((s, o) => s + o.people, 0));
+  const cashRevenue    = $derived(filteredOrders.reduce((s, o) => s + (o.paymentMethod === 'cash' ? o.totalCents : 0), 0));
+  const cardRevenue    = $derived(filteredOrders.reduce((s, o) => s + (o.paymentMethod === 'card' ? o.totalCents : 0), 0));
 
   // --- Cash float (fondo cassa) per till ---
   // Editable euro strings keyed by till name; cents are derived on the fly.
@@ -180,9 +232,9 @@
     return `${y}-${m}-${day}`;
   }
 
-  // The single day the closing applies to, or null for multi-day views ("Tutto").
+  // The single day the closing applies to, or null for multi-day views ("Tutto" / range).
   const businessDate = $derived.by((): string | null => {
-    if (customDate) return customDate;
+    if (effectiveRange) return isSingleDay ? effectiveRange.from : null;
     if (period === 'all') return null;
     return localDateKey(new Date());
   });
@@ -199,7 +251,41 @@
   function fondoCentsOf(till: string): number {
     return parseEuro(cashByTill[till]?.fondo ?? '');
   }
+
+  // Banknote denominations (euro), largest first; coins are entered as a single lump.
+  const NOTE_DENOMS = [500, 200, 100, 50, 20, 10, 5];
+  // Session-only count per till: how many of each note + a coins euro string. Not
+  // persisted (we store only the computed total), so it's empty when reopening a closing.
+  let denomCounts = $state<Record<string, { notes: Record<number, string>; coins: string }>>({});
+
+  function denomEntry(till: string): { notes: Record<number, string>; coins: string } {
+    return denomCounts[till] ?? { notes: {}, coins: '' };
+  }
+  function noteQty(till: string, denom: number): number {
+    const n = Number.parseInt(denomEntry(till).notes[denom] ?? '', 10);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+  function noteSubtotalCents(till: string, denom: number): number {
+    return noteQty(till, denom) * denom * 100;
+  }
+  function coinsCentsOf(till: string): number {
+    return parseEuro(denomEntry(till).coins);
+  }
+  function hasDenomInput(till: string): boolean {
+    const e = denomEntry(till);
+    return e.coins.trim() !== '' || NOTE_DENOMS.some((d) => (e.notes[d] ?? '').trim() !== '');
+  }
+  // Counted cash built from the note/coin breakdown.
+  function denomCountedCents(till: string): number {
+    let cents = coinsCentsOf(till);
+    for (const d of NOTE_DENOMS) cents += noteSubtotalCents(till, d);
+    return cents;
+  }
+  // Effective counted cash used for the difference and for persistence: the live
+  // breakdown when the operator has entered any note/coin, otherwise the saved total
+  // (so reopening a previously closed till still shows its figure).
   function countedCentsOf(till: string): number | null {
+    if (hasDenomInput(till)) return denomCountedCents(till);
     const c = cashByTill[till]?.counted ?? '';
     return c.trim() === '' ? null : parseEuro(c);
   }
@@ -207,6 +293,14 @@
   function updateCashField(till: string, field: 'fondo' | 'counted', value: string) {
     const cur = cashByTill[till] ?? { fondo: '', counted: '' };
     cashByTill = { ...cashByTill, [till]: { ...cur, [field]: value } };
+  }
+  function updateNote(till: string, denom: number, value: string) {
+    const e = denomEntry(till);
+    denomCounts = { ...denomCounts, [till]: { ...e, notes: { ...e.notes, [denom]: value } } };
+  }
+  function updateCoins(till: string, value: string) {
+    const e = denomEntry(till);
+    denomCounts = { ...denomCounts, [till]: { ...e, coins: value } };
   }
 
   async function loadCash() {
@@ -252,8 +346,8 @@
 
   const byTill = $derived.by((): TillSummary[] => {
     const map = new Map<string, TillSummary>();
-    for (const o of orders) {
-      const key = o.tillName?.trim() || 'Cassa senza nome';
+    for (const o of filteredOrders) {
+      const key = tillKey(o);
       const cur = map.get(key) ?? {
         tillName: key,
         orders: 0,
@@ -285,7 +379,7 @@
 
   const byStation = $derived.by(() => {
     const map = new Map<string, { qty: number; cents: number }>();
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       for (const l of o.lines) {
         const key = normalizeStation(l.station || 'Altro');
         const cur = map.get(key) ?? { qty: 0, cents: 0 };
@@ -306,7 +400,7 @@
 
   const soldItems = $derived.by(() => {
     const map = new Map<string, { itemId: string; name: string; qty: number; cents: number; unitPriceCents: number; station: string }>();
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       for (const l of o.lines) {
         const cur = map.get(l.itemId) ?? {
           itemId: l.itemId,
@@ -331,7 +425,7 @@
   const soldItemsTotalQty = $derived(soldItems.reduce((sum, item) => sum + item.qty, 0));
 
   const orderTrend = $derived.by((): TrendBucket[] => {
-    if (period === 'hour' && !customDate) {
+    if (period === 'hour' && !rangeActive) {
       const to = new Date();
       to.setSeconds(0, 0);
       const from = new Date(to.getTime() - 60 * 60 * 1000);
@@ -349,7 +443,7 @@
           revenuePct: 0
         });
       }
-      for (const o of orders) {
+      for (const o of filteredOrders) {
         const createdAt = new Date(o.createdAt);
         const index = Math.floor((createdAt.getTime() - from.getTime()) / (10 * 60 * 1000));
         if (index < 0 || index >= buckets.length) continue;
@@ -366,14 +460,14 @@
     }
 
     const map = new Map<number, { orders: number; cents: number }>();
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       const h = new Date(o.createdAt).getHours();
       const cur = map.get(h) ?? { orders: 0, cents: 0 };
       cur.orders++;
       cur.cents += o.totalCents;
       map.set(h, cur);
     }
-    const hours = customDate || period === 'all'
+    const hours = rangeActive || period === 'all'
       ? Array.from({ length: 24 }, (_, i) => i)
       : Array.from({ length: new Date().getHours() + 1 }, (_, i) => i);
     const maxOrders = Math.max(1, ...hours.map((h) => map.get(h)?.orders ?? 0));
@@ -436,11 +530,22 @@
       .replaceAll("'", '&#39;');
   }
 
+  function slugifyTill(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
   function exportRangeKey(): string {
-    if (customDate) return customDate;
-    if (period === 'today') return new Date().toISOString().slice(0, 10);
-    if (period === 'hour') return `ultima-ora-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`;
-    return 'tutto';
+    let key: string;
+    if (effectiveRange) {
+      key = isSingleDay ? effectiveRange.from : `${effectiveRange.from}_${effectiveRange.to}`;
+    } else if (period === 'today') key = new Date().toISOString().slice(0, 10);
+    else if (period === 'hour') key = `ultima-ora-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`;
+    else key = 'tutto';
+    return tillFilter ? `${key}-${slugifyTill(tillFilter)}` : key;
   }
 
   function exportSoldItemsCsv() {
@@ -586,7 +691,7 @@
               <p>${htmlEscape(rangeLabel)} · generato ${htmlEscape(generatedAt)}</p>
             </div>
             <div>
-              <p>${orders.length} ordini · ${totalCovers} coperti</p>
+              <p>${filteredOrders.length} ordini · ${totalCovers} coperti</p>
               <p>${formatEUR(totalRevenue / 100)} incasso totale</p>
             </div>
           </header>
@@ -649,34 +754,62 @@
       <span class="font-bold tracking-wide text-sm uppercase">Rapporti</span>
         <!-- Quick period buttons -->
         <div class="flex rounded-lg overflow-hidden border border-white/30 text-xs font-semibold"
-          class:opacity-40={!!customDate}
+          class:opacity-40={rangeActive}
         >
           {#each PERIODS as p}
             <button
               type="button"
-              onclick={() => { customDate = ''; period = p.key; }}
-              disabled={!!customDate}
+              onclick={() => { fromDate = ''; toDate = ''; period = p.key; }}
+              disabled={rangeActive}
               class="px-3 py-1.5 transition-colors"
-              class:bg-white={period === p.key && !customDate}
-              class:text-[#14532d]={period === p.key && !customDate}
-              class:text-white={period !== p.key || !!customDate}
+              class:bg-white={period === p.key && !rangeActive}
+              class:text-[#14532d]={period === p.key && !rangeActive}
+              class:text-white={period !== p.key || rangeActive}
               class:opacity-60={period !== p.key}
             >{p.label}</button>
           {/each}
         </div>
 
-        <!-- Date picker -->
-        <div class="flex items-center gap-1">
-          <input
-            type="date"
-            bind:value={customDate}
-            class="rounded px-2 py-1 text-xs bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-white border {customDate ? 'border-white' : 'border-white/30'}"
-            title="Filtra per giorno specifico"
-          />
-          {#if customDate}
-            <button type="button" onclick={() => customDate = ''} class="text-white/60 hover:text-white text-xs px-1" title="Rimuovi filtro data">✕</button>
+        <!-- Da / A date range -->
+        <div class="flex items-center gap-1 text-xs">
+          <label class="flex items-center gap-1">
+            <span class="text-white/60">Da</span>
+            <input
+              type="date"
+              bind:value={fromDate}
+              max={toDate || undefined}
+              class="rounded px-2 py-1 bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-white border {fromDate ? 'border-white' : 'border-white/30'}"
+              title="Inizio periodo"
+            />
+          </label>
+          <label class="flex items-center gap-1">
+            <span class="text-white/60">A</span>
+            <input
+              type="date"
+              bind:value={toDate}
+              min={fromDate || undefined}
+              class="rounded px-2 py-1 bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-white border {toDate ? 'border-white' : 'border-white/30'}"
+              title="Fine periodo"
+            />
+          </label>
+          {#if rangeActive}
+            <button type="button" onclick={() => { fromDate = ''; toDate = ''; }} class="text-white/60 hover:text-white px-1" title="Rimuovi filtro periodo">✕</button>
           {/if}
         </div>
+
+        <!-- Till filter -->
+        {#if availableTills.length > 1 || tillFilter}
+          <select
+            bind:value={tillFilter}
+            class="rounded px-2 py-1 text-xs bg-green-900 text-white focus:outline-none focus:ring-1 focus:ring-white border {tillFilter ? 'border-white' : 'border-white/30'}"
+            title="Filtra per cassa"
+          >
+            <option value="">Tutte le casse</option>
+            {#each availableTills as till}
+              <option value={till}>{till}</option>
+            {/each}
+          </select>
+        {/if}
 
         <button type="button" onclick={load} class="ml-auto text-white/60 hover:text-white text-lg" title="Aggiorna">↻</button>
     </div>
@@ -705,8 +838,12 @@
         <div class="flex items-center justify-center h-40 text-gray-400">Caricamento…</div>
       {:else if error}
         <div class="flex items-center justify-center h-40 text-red-500">{error}</div>
-      {:else if orders.length === 0}
-        <div class="flex items-center justify-center h-40 text-gray-400">Nessun ordine nel periodo selezionato</div>
+      {:else if filteredOrders.length === 0}
+        <div class="flex items-center justify-center h-40 text-gray-400">
+          {tillFilter
+            ? `Nessun ordine per ${tillFilter} nel periodo selezionato`
+            : 'Nessun ordine nel periodo selezionato'}
+        </div>
       {:else if tab === 'summary'}
 
         <!-- KPI row -->
@@ -716,7 +853,7 @@
             <p class="text-xs text-green-700 mt-1 font-medium">Incasso totale</p>
           </div>
           <div class="bg-gray-50 rounded-xl p-4 text-center">
-            <p class="text-2xl font-bold text-gray-800">{orders.length}</p>
+            <p class="text-2xl font-bold text-gray-800">{filteredOrders.length}</p>
             <p class="text-xs text-gray-500 mt-1 font-medium">Ordini</p>
           </div>
           <div class="bg-gray-50 rounded-xl p-4 text-center">
@@ -778,20 +915,59 @@
                           <span class="font-semibold text-gray-700">= Attesi in cassa</span>
                           <span class="text-lg font-black tabular-nums text-green-800">{formatEUR(expected / 100)}</span>
                         </div>
-                        <label class="flex items-center justify-between gap-2 pt-1">
+
+                        <!-- Card takings: informational, never in the cash drawer -->
+                        <div class="flex items-center justify-between text-gray-400">
+                          <span>Incasso carta <span class="text-[10px] uppercase tracking-wide">(non in cassa)</span></span>
+                          <span class="tabular-nums text-blue-600">{formatEUR(row.cardCents / 100)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-500">
+                          <span>Totale incassato</span>
+                          <span class="tabular-nums">{formatEUR((row.cashCents + row.cardCents) / 100)}</span>
+                        </div>
+
+                        <!-- Cash count by banknote denomination + coins lump -->
+                        <div class="border-t border-gray-200 pt-2">
+                          <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Conteggio contanti</p>
+                          <div class="space-y-1">
+                            {#each NOTE_DENOMS as note}
+                              <div class="flex items-center gap-2">
+                                <span class="w-10 text-gray-500 tabular-nums">€{note}</span>
+                                <span class="text-gray-300">×</span>
+                                <input
+                                  inputmode="numeric"
+                                  value={denomEntry(row.tillName).notes[note] ?? ''}
+                                  oninput={(e) => updateNote(row.tillName, note, e.currentTarget.value)}
+                                  onblur={() => saveCash(row.tillName)}
+                                  placeholder="0"
+                                  class="w-14 rounded border border-gray-300 py-0.5 px-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                                />
+                                <span class="ml-auto w-20 text-right tabular-nums text-gray-400">{noteQty(row.tillName, note) ? formatEUR(noteSubtotalCents(row.tillName, note) / 100) : '—'}</span>
+                              </div>
+                            {/each}
+                            <label class="flex items-center gap-2">
+                              <span class="w-10 text-gray-500">Monete</span>
+                              <span class="text-transparent">×</span>
+                              <span class="relative">
+                                <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                                <input
+                                  inputmode="decimal"
+                                  value={denomEntry(row.tillName).coins}
+                                  oninput={(e) => updateCoins(row.tillName, e.currentTarget.value)}
+                                  onblur={() => saveCash(row.tillName)}
+                                  placeholder="0,00"
+                                  class="w-14 rounded border border-gray-300 py-0.5 pl-5 pr-1 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                                />
+                              </span>
+                              <span class="ml-auto w-20"></span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center justify-between border-t border-gray-200 pt-2">
                           <span class="text-gray-500">Contanti contati</span>
-                          <span class="relative">
-                            <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">€</span>
-                            <input
-                              inputmode="decimal"
-                              value={cashByTill[row.tillName]?.counted ?? ''}
-                              oninput={(e) => updateCashField(row.tillName, 'counted', e.currentTarget.value)}
-                              onblur={() => saveCash(row.tillName)}
-                              placeholder="—"
-                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
-                            />
-                          </span>
-                        </label>
+                          <span class="font-bold tabular-nums text-gray-800">{counted == null ? '—' : formatEUR(counted / 100)}</span>
+                        </div>
                         {#if diff != null}
                           <div class="flex items-center justify-between">
                             <span class="text-gray-500">Differenza</span>
@@ -851,7 +1027,7 @@
                 {/each}
                 <tr class="border-t border-gray-200 bg-green-50 font-bold">
                   <td class="px-4 py-2 text-green-950">Totale</td>
-                  <td class="px-4 py-2 text-right text-green-950">{orders.length}</td>
+                  <td class="px-4 py-2 text-right text-green-950">{filteredOrders.length}</td>
                   <td class="px-4 py-2 text-right text-green-950">{totalCovers}</td>
                   <td class="px-4 py-2 text-right text-green-950">{formatEUR(cashRevenue / 100)}</td>
                   <td class="px-4 py-2 text-right text-green-950">{formatEUR(cardRevenue / 100)}</td>
@@ -916,9 +1092,9 @@
               <div>
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Andamento ordini</p>
                 <p class="text-sm font-semibold text-gray-800">
-                  {#if period === 'hour' && !customDate}
+                  {#if period === 'hour' && !rangeActive}
                     Ultima ora, divisa ogni 10 minuti
-                  {:else if period === 'all'}
+                  {:else if period === 'all' || (rangeActive && !isSingleDay)}
                     Distribuzione per fascia oraria
                   {:else}
                     Ordini per ora
@@ -1007,7 +1183,7 @@
                         <td class="px-3 py-2 font-medium text-gray-800">{bucket.rangeLabel}</td>
                         <td class="px-3 py-2 text-right font-bold text-gray-800">{bucket.orders}</td>
                         <td class="px-3 py-2 text-right text-gray-500">
-                          {orders.length ? Math.round((bucket.orders / orders.length) * 100) : 0}%
+                          {filteredOrders.length ? Math.round((bucket.orders / filteredOrders.length) * 100) : 0}%
                         </td>
                         <td class="px-3 py-2 text-right font-semibold text-green-800">{formatEUR(bucket.cents / 100)}</td>
                       </tr>
@@ -1036,7 +1212,7 @@
               <div class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
                   <span class="block text-xs font-semibold text-gray-400">Ordini</span>
-                  <span class="font-black text-gray-900">{orders.length}</span>
+                  <span class="font-black text-gray-900">{filteredOrders.length}</span>
                 </div>
                 <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
                   <span class="block text-xs font-semibold text-gray-400">Coperti</span>
@@ -1056,7 +1232,7 @@
                   type="button"
                   onclick={exportSoldItemsCsv}
                   disabled={soldItems.length === 0}
-                  class="rounded-lg bg-green-800 px-4 py-2 text-sm font-bold text-white hover:bg-green-900 disabled:bg-gray-200 disabled:text-gray-400"
+                  class="rounded-lg border border-green-800 px-4 py-2 text-sm font-bold text-green-900 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent"
                 >
                   CSV
                 </button>
@@ -1116,7 +1292,7 @@
 
         <!-- Orders list -->
         <div class="flex flex-col divide-y divide-gray-100 px-4 py-2">
-          {#each orders as order}
+          {#each filteredOrders as order}
             <div class="py-2">
               <button
                 type="button"

@@ -202,7 +202,7 @@
     <button
       type="button"
       onclick={onAddAdjustment}
-      class="w-full py-2 rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-100 dark:hover:bg-white/5"
+      class="w-full py-2 rounded-lg border border-gray-300 text-gray-600 font-semibold text-sm hover:bg-gray-100"
     >
       + Sconto / Supplemento
     </button>

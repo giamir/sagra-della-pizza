@@ -9,23 +9,24 @@
     onClose: () => void;
   } = $props();
 
-  // sign: -1 = sconto (discount), +1 = supplemento (surplus)
-  let sign = $state<-1 | 1>(-1);
+  // sign: -1 = sconto (discount), +1 = supplemento (surplus). Default supplemento.
+  let sign = $state<-1 | 1>(1);
   let amount = $state(''); // euros, as typed
   let reason = $state('');
 
   const REASON_MAX = 24;
 
-  // Quick presets as signed cents.
-  const presets = [-100, -500, 200];
+  // Quick presets as magnitudes (cents); the active sign decides + or −.
+  const PRESET_CENTS = [50, 100, 200];
 
   const amountCents = $derived(Math.round((Number(amount.replace(',', '.')) || 0) * 100));
   const signedCents = $derived(sign * Math.abs(amountCents));
   const valid = $derived(Math.abs(amountCents) > 0);
 
-  function applyPreset(cents: number) {
-    sign = cents < 0 ? -1 : 1;
-    amount = (Math.abs(cents) / 100).toString();
+  // Tap to accumulate, like the contanti denomination pad: each tap adds its
+  // magnitude to the current importo (so +€0,50 twice = €1,00).
+  function applyPreset(magnitude: number) {
+    amount = ((amountCents + magnitude) / 100).toString();
   }
 
   function confirm() {
@@ -86,13 +87,13 @@
 
     <!-- Presets -->
     <div class="flex flex-wrap gap-2 mb-3">
-      {#each presets as p (p)}
+      {#each PRESET_CENTS as m (m)}
         <button
           type="button"
-          onclick={() => applyPreset(p)}
+          onclick={() => applyPreset(m)}
           class="px-3 py-1.5 rounded-full border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50"
         >
-          {p < 0 ? '−' : '+'}{formatEUR(Math.abs(p) / 100)}
+          {sign === -1 ? '−' : '+'}{formatEUR(m / 100)}
         </button>
       {/each}
     </div>

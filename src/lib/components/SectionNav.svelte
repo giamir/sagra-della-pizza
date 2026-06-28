@@ -1,14 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { MENU } from '$lib/stores/order.svelte';
 
+  // Steps are generated from the active menu so the flow follows whatever
+  // categories the tenant defined, bookended by Persone and Riepilogo.
   const sections = [
     { href: '/ordina/persone', label: 'Persone' },
-    { href: '/ordina/bevande', label: 'Bevande' },
-    { href: '/ordina/antipasti', label: 'Antipasti' },
-    { href: '/ordina/pizze', label: 'Pizze' },
-    { href: '/ordina/griglia', label: 'Griglia' },
-    { href: '/ordina/contorni', label: 'Contorni' },
-    { href: '/ordina/bar', label: 'Bar' },
+    ...MENU.categories.map((c) => ({ href: `/ordina/${c.id}`, label: c.label })),
     { href: '/ordina/riepilogo', label: 'Riepilogo' }
   ];
 </script>

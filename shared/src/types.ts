@@ -27,6 +27,7 @@ export type MenuOption = {
 export type MenuCategory = {
   id: string;
   label: string;
+  subtitle?: string; // optional tagline shown under the category title in the ordering flow
   groups: MenuGroup[];
   options?: MenuOption[]; // optional add-ons available for every item in this category
 };

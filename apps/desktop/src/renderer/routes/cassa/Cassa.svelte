@@ -25,6 +25,18 @@
   import BackupRestore from '$lib/components/BackupRestore.svelte';
   import AboutUpdates from '$lib/components/AboutUpdates.svelte';
   import { theme, toggleTheme } from '$lib/theme.svelte';
+  import {
+    ChartColumn,
+    Package,
+    BookOpen,
+    Printer,
+    CreditCard,
+    Wifi,
+    Database,
+    RefreshCw,
+    Sun,
+    Moon,
+  } from 'lucide-svelte';
 
   const MENU = menuData as Menu;
   const PRICE_INDEX = buildPriceIndex(MENU);
@@ -603,7 +615,7 @@
         ? await window.api.printOrderData(result.order)
         : await window.api.printOrder(result.orderId);
       if (printResult.ok) {
-        statusMessage = 'Ordine completato ✓';
+        statusMessage = 'Ordine completato';
       } else if (printResult.preview) {
         printPreview = { stations: printResult.preview.stations, receipt: printResult.preview.receipt, error: printResult.error };
         statusMessage = 'Ordine salvato — stampante non raggiungibile';
@@ -830,15 +842,15 @@
         <p class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Operazioni</p>
         <button type="button" onclick={() => { reportsOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">▤</span> Rapporti
+          <span class="w-5 flex justify-center text-gray-400"><ChartColumn size={16} /></span> Rapporti
         </button>
         <button type="button" onclick={() => { stockAdminOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">▦</span> Scorte
+          <span class="w-5 flex justify-center text-gray-400"><Package size={16} /></span> Scorte
         </button>
         <button type="button" onclick={() => { catalogAdminOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">☰</span> Catalogo
+          <span class="w-5 flex justify-center text-gray-400"><BookOpen size={16} /></span> Catalogo
         </button>
 
         <div class="border-t border-gray-100 my-1"></div>
@@ -847,15 +859,15 @@
         <p class="px-4 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Impostazioni</p>
         <button type="button" onclick={() => { settingsOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">⚙</span> Stampante
+          <span class="w-5 flex justify-center text-gray-400"><Printer size={16} /></span> Stampante
         </button>
         <button type="button" onclick={() => { paymentSettingsOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">⚙</span> Terminale Nexi
+          <span class="w-5 flex justify-center text-gray-400"><CreditCard size={16} /></span> Terminale Nexi
         </button>
         <button type="button" onclick={() => { tillSettingsOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
-          <span class="w-5 text-center text-gray-400">⚙</span> Cassa / Rete
+          <span class="w-5 flex justify-center text-gray-400"><Wifi size={16} /></span> Cassa / Rete
         </button>
 
         <div class="border-t border-gray-100 my-1"></div>
@@ -864,15 +876,17 @@
         <p class="px-4 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-gray-400">Sistema</p>
         <button type="button" onclick={() => { backupOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">⛁</span> Backup / Ripristino
+          <span class="w-5 flex justify-center text-gray-400"><Database size={16} /></span> Backup / Ripristino
         </button>
         <button type="button" onclick={() => { aboutUpdatesOpen = true; menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
-          <span class="w-5 text-center text-gray-400">↻</span> Aggiornamenti
+          <span class="w-5 flex justify-center text-gray-400"><RefreshCw size={16} /></span> Aggiornamenti
         </button>
         <button type="button" onclick={() => { toggleTheme(); menuOpen = false; }}
           class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
-          <span class="w-5 text-center text-gray-400">{theme.mode === 'dark' ? '☀' : '☾'}</span>
+          <span class="w-5 flex justify-center text-gray-400">
+            {#if theme.mode === 'dark'}<Sun size={16} />{:else}<Moon size={16} />{/if}
+          </span>
           {theme.mode === 'dark' ? 'Tema chiaro' : 'Tema scuro'}
         </button>
       </div>

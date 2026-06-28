@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Menu, MenuCategory, MenuGroup, MenuItem } from '@sagra/shared/types';
+  import { ArrowLeft, ChevronUp, ChevronDown, X } from 'lucide-svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -267,7 +268,7 @@
 >
   <!-- App bar -->
   <div class="shrink-0 h-12 bg-green-900 text-white flex items-center px-4 gap-3">
-    <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1">← Cassa</button>
+    <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1 inline-flex items-center gap-1"><ArrowLeft size={16} /> Cassa</button>
     <span class="font-bold tracking-wide text-sm uppercase">Catalogo</span>
 
     {#if statusMsg}
@@ -399,20 +400,20 @@
                   disabled={i === 0}
                   class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                   title="Sposta su"
-                >↑</button>
+                ><ChevronUp size={16} /></button>
                 <button
                   type="button"
                   onclick={() => moveStation(i, 1)}
                   disabled={i === stationList.length - 1}
                   class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                   title="Sposta giù"
-                >↓</button>
+                ><ChevronDown size={16} /></button>
                 <button
                   type="button"
                   onclick={() => removeStation(s)}
-                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 text-base leading-none"
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
                   title="Elimina stazione"
-                >×</button>
+                ><X size={16} /></button>
               </div>
             {/each}
           </div>
@@ -468,20 +469,20 @@
                   disabled={i === 0}
                   class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                   title="Sposta su"
-                >↑</button>
+                ><ChevronUp size={16} /></button>
                 <button
                   type="button"
                   onclick={() => moveCategory(i, 1)}
                   disabled={i === catalog.categories.length - 1}
                   class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                   title="Sposta giù"
-                >↓</button>
+                ><ChevronDown size={16} /></button>
                 <button
                   type="button"
                   onclick={() => removeCategory(cat.id)}
-                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 text-base leading-none"
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
                   title="Elimina categoria"
-                >×</button>
+                ><X size={16} /></button>
               </div>
             {/each}
           </div>
@@ -575,10 +576,10 @@
                   <button
                     type="button"
                     onclick={() => deleteItem(cat.id, group.label, item.id)}
-                    class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 text-base leading-none"
+                    class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
                     title="Elimina voce"
                   >
-                    ×
+                    <X size={16} />
                   </button>
                 </div>
               {/each}

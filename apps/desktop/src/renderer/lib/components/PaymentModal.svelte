@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { Banknote, CreditCard, Delete, ArrowLeft, Check, X, TriangleAlert } from 'lucide-svelte';
 
   type PaymentState = 'choose' | 'cash' | 'waiting' | 'approved' | 'declined' | 'error';
 
@@ -124,7 +125,7 @@
             onclick={openCash}
             class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-green-700 hover:bg-green-50 transition-colors"
           >
-            <span class="text-3xl">💵</span>
+            <Banknote size={32} class="text-green-700" />
             <span class="font-bold text-gray-800">Contanti</span>
           </button>
           <button
@@ -132,7 +133,7 @@
             onclick={selectCard}
             class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-colors"
           >
-            <span class="text-3xl">💳</span>
+            <CreditCard size={32} class="text-blue-600" />
             <span class="font-bold text-gray-800">Carta</span>
           </button>
         </div>
@@ -160,7 +161,7 @@
                   disabled={receivedCents === 0}
                   aria-label="Cancella ultima cifra"
                   class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
-                >⌫</button>
+                ><Delete size={16} /></button>
               </div>
             </div>
 
@@ -236,8 +237,8 @@
           <button
             type="button"
             onclick={() => (state = 'choose')}
-            class="px-4 py-3 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-          >← Indietro</button>
+            class="px-4 py-3 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 inline-flex items-center gap-1"
+          ><ArrowLeft size={16} /> Indietro</button>
           <button
             type="button"
             onclick={onCash}
@@ -262,7 +263,7 @@
       {:else if state === 'approved'}
         <div class="flex flex-col items-center gap-3 py-4">
           <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-            <span class="text-3xl">✓</span>
+            <Check size={32} class="text-green-700" />
           </div>
           <p class="font-bold text-green-800 text-lg">Pagamento approvato</p>
           {#if authCode}
@@ -274,7 +275,7 @@
       {:else if state === 'declined'}
         <div class="flex flex-col items-center gap-3 py-4">
           <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-            <span class="text-3xl">✗</span>
+            <X size={32} class="text-red-600" />
           </div>
           <p class="font-bold text-red-700 text-lg">Pagamento rifiutato</p>
           <p class="text-sm text-gray-500">{errorMessage}</p>
@@ -295,7 +296,7 @@
       {:else if state === 'error'}
         <div class="flex flex-col items-center gap-3 py-4">
           <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
-            <span class="text-3xl">⚠</span>
+            <TriangleAlert size={30} class="text-amber-600" />
           </div>
           <p class="font-bold text-amber-700">Terminale non raggiungibile</p>
           <p class="text-sm text-gray-500 text-center">{errorMessage}</p>

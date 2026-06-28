@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { adjLabel } from '@sagra/shared/utils/adjustments';
+  import { Camera, ReceiptText } from 'lucide-svelte';
 
   type CartLine = { id: string; name: string; categoryLabel: string; price: number; qty: number; subtotal: number };
   type Adjustment = { id: number; amountCents: number; reason?: string };
@@ -86,7 +87,7 @@
   <!-- QR origin badge: persists for the whole life of a QR-loaded order -->
   {#if orderSource === 'qr'}
     <div class="shrink-0 flex items-center gap-2 bg-green-100 border-b border-green-300 text-green-900 px-3 py-2 text-sm font-bold">
-      <span class="text-lg leading-none">📷</span>
+      <Camera size={18} class="shrink-0" />
       <span>Ordine dal QR cliente — verifica e incassa</span>
     </div>
   {/if}
@@ -121,7 +122,7 @@
 
       {#if isEmpty}
         <div class="flex flex-col items-center justify-center gap-3 pt-10 text-gray-400">
-          <span class="text-4xl">🧾</span>
+          <ReceiptText size={48} strokeWidth={1.5} />
           <p class="font-semibold text-sm">Carrello vuoto</p>
           <p class="text-xs text-center">Seleziona articoli dal menu<br>o scansiona il QR del cliente</p>
           <button

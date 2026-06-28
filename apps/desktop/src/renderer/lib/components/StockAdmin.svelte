@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import menuData from '@sagra/shared/data/menu.json';
+  import { ArrowLeft } from 'lucide-svelte';
   import type { Menu } from '@sagra/shared/types';
 
   let { onClose }: { onClose: () => void } = $props();
@@ -99,7 +100,7 @@
 
     <!-- App bar -->
     <div class="shrink-0 h-12 bg-green-900 text-white flex items-center px-4 gap-3">
-      <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1">← Cassa</button>
+      <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1 inline-flex items-center gap-1"><ArrowLeft size={16} /> Cassa</button>
       <span class="font-bold tracking-wide text-sm uppercase">Gestione Scorte</span>
     </div>
 

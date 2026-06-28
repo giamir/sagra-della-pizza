@@ -4,6 +4,7 @@
   import { isAdjKey } from '@sagra/shared/utils/adjustments';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
   import PrintPreview from './PrintPreview.svelte';
+  import { ArrowLeft, X, RefreshCw, Banknote, CreditCard, ChevronUp, ChevronDown } from 'lucide-svelte';
 
   type ReportLine = { itemId: string; name: string; qty: number; unitPriceCents: number; station: string };
   type ReportOrder = {
@@ -753,7 +754,7 @@
 
     <!-- App bar -->
     <div class="shrink-0 h-12 bg-green-900 text-white flex flex-wrap items-center gap-2 px-4">
-      <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1">← Cassa</button>
+      <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1 inline-flex items-center gap-1"><ArrowLeft size={16} /> Cassa</button>
       <span class="font-bold tracking-wide text-sm uppercase">Rapporti</span>
         <!-- Quick period buttons -->
         <div class="flex rounded-lg overflow-hidden border border-white/30 text-xs font-semibold"
@@ -796,7 +797,7 @@
             />
           </label>
           {#if rangeActive}
-            <button type="button" onclick={() => { fromDate = ''; toDate = ''; }} class="text-white/60 hover:text-white px-1" title="Rimuovi filtro periodo">✕</button>
+            <button type="button" onclick={() => { fromDate = ''; toDate = ''; }} class="text-white/60 hover:text-white px-1 inline-flex items-center" title="Rimuovi filtro periodo"><X size={16} /></button>
           {/if}
         </div>
 
@@ -814,7 +815,7 @@
           </select>
         {/if}
 
-        <button type="button" onclick={load} class="ml-auto text-white/60 hover:text-white text-lg" title="Aggiorna">↻</button>
+        <button type="button" onclick={load} class="ml-auto text-white/60 hover:text-white inline-flex items-center" title="Aggiorna"><RefreshCw size={18} /></button>
     </div>
 
     <!-- Tabs + active range label -->
@@ -865,9 +866,9 @@
           </div>
           <div class="bg-gray-50 rounded-xl p-4 text-center">
             <p class="text-lg font-bold text-gray-800">
-              <span class="text-gray-600">💵 {formatEUR(cashRevenue / 100)}</span>
+              <span class="text-gray-600 inline-flex items-center gap-1"><Banknote size={18} /> {formatEUR(cashRevenue / 100)}</span>
               <span class="mx-1 text-gray-300">·</span>
-              <span class="text-blue-700">💳 {formatEUR(cardRevenue / 100)}</span>
+              <span class="text-blue-700 inline-flex items-center gap-1"><CreditCard size={18} /> {formatEUR(cardRevenue / 100)}</span>
             </p>
             <p class="text-xs text-gray-500 mt-1 font-medium">Contanti / Carta</p>
           </div>
@@ -1312,15 +1313,15 @@
                 </div>
                 <div class="shrink-0 flex items-center gap-2">
                   {#if order.paymentMethod === 'card'}
-                    <span class="text-xs font-medium text-blue-600">💳</span>
+                    <CreditCard size={16} class="text-blue-600" />
                   {:else}
-                    <span class="text-xs font-medium text-gray-400">💵</span>
+                    <Banknote size={16} class="text-gray-400" />
                   {/if}
                   {#if order.source === 'qr'}
                     <span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">QR</span>
                   {/if}
                   <span class="text-sm font-bold text-green-800 w-20 text-right">{formatEUR(order.totalCents / 100)}</span>
-                  <span class="text-gray-400 text-xs">{expandedId === order.id ? '▲' : '▼'}</span>
+                  <span class="text-gray-400 inline-flex items-center">{#if expandedId === order.id}<ChevronUp size={14} />{:else}<ChevronDown size={14} />{/if}</span>
                 </div>
               </button>
 

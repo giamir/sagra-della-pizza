@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { ArrowLeft, TriangleAlert } from 'lucide-svelte';
+
   let { onClose }: { onClose: () => void } = $props();
 
   let exporting = $state(false);
@@ -93,7 +95,7 @@
 >
   <!-- App bar -->
   <div class="shrink-0 h-12 bg-green-900 text-white flex items-center px-4 gap-3">
-    <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1">← Cassa</button>
+    <button type="button" onclick={onClose} class="text-green-200 hover:text-white font-bold text-sm mr-1 inline-flex items-center gap-1"><ArrowLeft size={16} /> Cassa</button>
     <span class="font-bold tracking-wide text-sm uppercase">Backup / Ripristino</span>
 
     {#if statusMsg}
@@ -131,8 +133,8 @@
           postazione. La configurazione di stampante, terminale di pagamento e rete
           rimane invariata.
         </p>
-        <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2">
-          ⚠ Operazione irreversibile: gli ordini e i dati di cassa attuali verranno cancellati.
+        <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2 flex items-center gap-2">
+          <TriangleAlert size={16} class="shrink-0" /> Operazione irreversibile: gli ordini e i dati di cassa attuali verranno cancellati.
         </div>
         <button
           type="button"
@@ -165,8 +167,8 @@
           </span>
         </label>
 
-        <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2">
-          ⚠ Operazione irreversibile.
+        <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2 flex items-start gap-2">
+          <TriangleAlert size={16} class="shrink-0 mt-0.5" /> Operazione irreversibile.
           {#if resetIncludeSettings}
             La postazione andrà riconfigurata da zero (stampante, pagamento, rete).
           {/if}

@@ -2,15 +2,16 @@
 // Kept separate from station-map.ts so that ticket templates can use them
 // without pulling in the DB/Electron-backed settings code — which also makes
 // the templates loadable from standalone tooling (e.g. the ticket preview).
+// The tenant config it reads is plain JSON, so this stays DB/Electron-free.
+import { tenant } from '../config/tenant.js';
 
 // Default kitchen station labels, in print order. Acts as the seed for the
 // user-managed station list (settings key `stations_list`).
-export const STATION_ORDER = ['Pizza', 'Griglia e contorni', 'Crostini', 'Cecina', 'Cucina', 'Bevande', 'Bar', 'Dolce'];
+export const STATION_ORDER = [...tenant.stations.order];
 
-export const DEFAULT_COPERTO_STATION = 'Bevande';
+export const DEFAULT_COPERTO_STATION = tenant.stations.copertoStation;
 
+// Collapse legacy/alias station names onto canonical ones (e.g. Gastronomia → Cucina).
 export function normalizeStation(station: string): string {
-  if (station === 'Gastronomia') return 'Cucina';
-  if (station === 'Griglia' || station === 'Contorni') return 'Griglia e contorni';
-  return station;
+  return tenant.stations.aliases[station] ?? station;
 }

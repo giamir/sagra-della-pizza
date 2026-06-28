@@ -28,7 +28,7 @@ const config = {
   publish: [
     {
       provider: 'generic',
-      url: 'https://sagradellapizza.it/desktop-updates',
+      url: base.publish[0].url,
       channel: 'win7-latest'
     }
   ],

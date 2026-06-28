@@ -3,6 +3,7 @@ import { networkInterfaces } from 'os';
 import WebSocket from 'ws';
 import { getSetting, setSetting } from '../db/schema.js';
 import { startServer, stopServer } from '../server/index.js';
+import { tenant } from '../config/tenant.js';
 
 let _wsClient: WebSocket | null = null;
 
@@ -80,10 +81,10 @@ export type LocalNetworkAddress = {
 };
 
 const DEFAULTS: TillSettings = {
-  tillName: 'Cassa 1',
+  tillName: tenant.network.defaultTillName,
   role: 'host',
-  hostUrl: 'http://192.168.1.10:7331',
-  serverPort: 7331
+  hostUrl: `http://192.168.1.10:${tenant.network.serverPort}`,
+  serverPort: tenant.network.serverPort
 };
 
 function getLocalNetworkAddresses(): LocalNetworkAddress[] {

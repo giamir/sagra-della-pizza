@@ -1,13 +1,14 @@
 const path = require('path')
+const tenant = require('../../shared/src/config/tenant.json')
 
 /** @type {import('electron-builder').Configuration} */
 const config = {
-  appId: 'it.sagra.gestionale',
-  productName: 'Sagra della Pizza',
+  appId: tenant.desktop.appId,
+  productName: tenant.desktop.productName,
   publish: [
     {
       provider: 'generic',
-      url: 'https://sagradellapizza.it/desktop-updates'
+      url: tenant.desktop.updateFeedUrl
     }
   ],
   directories: {

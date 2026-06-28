@@ -2,14 +2,15 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { autoUpdater, type ProgressInfo, type UpdateInfo } from 'electron-updater';
 import { loadTillSettings } from './settings.js';
 import { snapshotDb } from '../db/auto-backup.js';
+import { tenant } from '../config/tenant.js';
 
 // Injected by electron.vite.config.ts (define). 'latest' for the normal build,
 // 'win7-latest' for the Windows 7 / Electron 22 build so the two never cross
 // update channels.
 declare const __UPDATE_CHANNEL__: string;
 
-const UPDATE_FEED_URL = 'https://sagradellapizza.it/desktop-updates';
-const DOWNLOAD_PAGE_URL = 'https://sagradellapizza.it/download';
+const UPDATE_FEED_URL = tenant.desktop.updateFeedUrl;
+const DOWNLOAD_PAGE_URL = tenant.desktop.downloadPageUrl;
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const supportsAutoInstall = process.platform !== 'darwin';
 

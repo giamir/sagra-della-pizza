@@ -1,5 +1,6 @@
 <script lang="ts">
   import { MENU } from '$lib/stores/order.svelte';
+  import { tenant } from '$lib/config/tenant';
   import { formatEUR } from '$lib/utils/currency';
   import { decodeOrder } from '$lib/utils/payload';
   import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
@@ -130,7 +131,7 @@
 
   const DEFAULT_CONFIG: CassaConfig = {
     host: '192.168.1.1',
-    port: 7331,
+    port: tenant.network.serverPort,
     tillName: 'Cassa telefono'
   };
 

@@ -44,6 +44,15 @@ jobs:
       - name: Activate tenant
         run: npm run use-tenant ${{ matrix.tenant }}
 
+      # On a tag build (e.g. v1.0.44) stamp the desktop app version from the tag
+      # so the installers, update feed (latest.yml) and download page advertise
+      # it. CI-only — not committed; manual runs keep the committed version.
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        working-directory: apps/desktop
+        run: npm pkg set version="${GITHUB_REF_NAME#v}"
+
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync
 
@@ -93,6 +102,15 @@ jobs:
 
       - name: Activate tenant
         run: npm run use-tenant ${{ matrix.tenant }}
+
+      # On a tag build (e.g. v1.0.44) stamp the desktop app version from the tag
+      # so the installers, update feed (latest.yml) and download page advertise
+      # it. CI-only — not committed; manual runs keep the committed version.
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        working-directory: apps/desktop
+        run: npm pkg set version="${GITHUB_REF_NAME#v}"
 
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync
@@ -150,6 +168,15 @@ jobs:
 
       - name: Activate tenant
         run: npm run use-tenant ${{ matrix.tenant }}
+
+      # On a tag build (e.g. v1.0.44) stamp the desktop app version from the tag
+      # so the installers, update feed (latest.yml) and download page advertise
+      # it. CI-only — not committed; manual runs keep the committed version.
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        working-directory: apps/desktop
+        run: npm pkg set version="${GITHUB_REF_NAME#v}"
 
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync

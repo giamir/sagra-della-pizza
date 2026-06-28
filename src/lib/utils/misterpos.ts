@@ -1,4 +1,5 @@
 import mappingData from '$lib/data/misterpos-mapping.json';
+import { storageKey } from '$lib/config/tenant';
 import type { Payload } from '$lib/types';
 import type {
   MisterPosConfig,
@@ -9,7 +10,7 @@ import type {
   MisterPosTicketItem
 } from '$lib/types/misterpos';
 
-const CONFIG_KEY = 'sagra-misterpos-config-v1';
+const CONFIG_KEY = storageKey('misterpos-config-v1');
 
 export const DEFAULT_MISTERPOS_CONFIG: MisterPosConfig = {
   uiSeatKey: 11,

@@ -11,6 +11,11 @@ export const tenant = tenantJson as TenantConfig;
 /** Cover charge per person (EUR), single-sourced from the menu. */
 export const copertoPerPersona: number = (menu as Menu).coperto?.perPersona ?? 0;
 
+/** localStorage key namespaced by the tenant, e.g. storageKey('order-v1'). */
+export function storageKey(suffix: string): string {
+  return `${tenant.storagePrefix}-${suffix}`;
+}
+
 /** `:root { --color-…: … }` block built from the tenant palette, injected in
  *  the root layout so Tailwind's @theme defaults are overridden per tenant. */
 export function themeCssVars(): string {

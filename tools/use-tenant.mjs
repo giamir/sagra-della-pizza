@@ -6,7 +6,8 @@
 // Overlay layout (tenants/<slug>/):
 //   tenant.json        -> shared/src/config/tenant.json
 //   menu.json          -> shared/src/data/menu.json
-//   assets/*           -> static/*            (logo + PWA icons + favicon)
+//   assets/*           -> static/*                    (web logo + PWA icons + favicon)
+//   desktop/*          -> apps/desktop/resources/*    (app icon.ico/.icns + runtime logo.png)
 import { cpSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,14 +44,17 @@ for (const [from, to] of copies) {
   console.log(`  ${from} -> ${to}`);
 }
 
-const assetsDir = join(overlay, 'assets');
-if (existsSync(assetsDir)) {
-  for (const name of readdirSync(assetsDir)) {
-    const src = join(assetsDir, name);
+function copyDir(fromDir, toDir, label) {
+  if (!existsSync(fromDir)) return;
+  for (const name of readdirSync(fromDir)) {
+    const src = join(fromDir, name);
     if (!statSync(src).isFile()) continue;
-    cpSync(src, join(repoRoot, 'static', name));
-    console.log(`  assets/${name} -> static/${name}`);
+    cpSync(src, join(toDir, name));
+    console.log(`  ${label}/${name} -> ${toDir.replace(repoRoot + '/', '')}/${name}`);
   }
 }
+
+copyDir(join(overlay, 'assets'), join(repoRoot, 'static'), 'assets');
+copyDir(join(overlay, 'desktop'), join(repoRoot, 'apps/desktop/resources'), 'desktop');
 
 console.log(`\nActivated tenant "${slug}".`);

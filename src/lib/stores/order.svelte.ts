@@ -1,8 +1,9 @@
 import menu from '@sagra/shared/data/menu.json';
 import type { Menu, OrderState } from '$lib/types';
 import { computeTotal, itemsCount } from '$lib/utils/pricing';
+import { storageKey } from '$lib/config/tenant';
 
-const STORAGE_KEY = 'sagra-order-v1';
+const STORAGE_KEY = storageKey('order-v1');
 const MENU = menu as Menu;
 
 function loadInitial(): OrderState {

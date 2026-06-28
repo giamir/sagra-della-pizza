@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MENU } from '$lib/stores/order.svelte';
-  import { tenant } from '$lib/config/tenant';
+  import { tenant, storageKey } from '$lib/config/tenant';
   import { formatEUR } from '$lib/utils/currency';
   import { decodeOrder } from '$lib/utils/payload';
   import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
@@ -125,9 +125,9 @@
     }
   ] as const;
 
-  const RECENT_SCANS_KEY = 'sagra-cassa-recent-scans-v1';
+  const RECENT_SCANS_KEY = storageKey('cassa-recent-scans-v1');
   const RECENT_SCAN_LIMIT = 10;
-  const CONFIG_KEY = 'sagra-cassa-config-v1';
+  const CONFIG_KEY = storageKey('cassa-config-v1');
 
   const DEFAULT_CONFIG: CassaConfig = {
     host: '192.168.1.1',

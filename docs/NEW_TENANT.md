@@ -31,6 +31,9 @@ See `shared/src/config/types.ts` (`TenantConfig`) for the full typed schema. Key
 - `theme.colors` — palette keyed by CSS var name without `--color-` (e.g. `leaf`, `tomato-dark`);
   overrides the Tailwind `@theme` defaults in `src/app.css` for the customer web app.
 - `theme.themeColor` / `backgroundColor` — PWA + browser chrome.
+- `theme.tillAccent` — optional. Accent for the desktop till's `green-*` ramp (primary buttons,
+  header, selected states). Defaults to `colors.leaf`; set it when the web primary is too dark/muted
+  to read well in the till (e.g. Sorsi e Morsi uses a bright orange so the till isn't near-black).
 - `locale` — `lang`, `intl` (number/date locale), `currency`.
 - `receipt` — `headerLines`, `customerCopyLabel`, `footerLines` (printed on tickets/receipts).
 - `stations` — `order` (print order), `copertoStation`, `aliases` (legacy→canonical station names).
@@ -40,6 +43,18 @@ See `shared/src/config/types.ts` (`TenantConfig`) for the full typed schema. Key
 
 The cover charge is **single-sourced** from `menu.json` (`coperto.perPersona`); the UI and
 receipts derive from it — do not duplicate it in `tenant.json`.
+
+### Menu structure drives the ordering flow
+
+The customer ordering flow (`/ordina/...`) is generated from `menu.json`: each category becomes
+a step in the wizard and the step nav, in array order, bookended by Persone and Riepilogo. So you
+define your own categories/items freely — no route changes needed. Each category supports an
+optional `subtitle` shown under its title. The QR encodes item IDs, so once the menu is shared by
+web + desktop the QR flow works as-is.
+
+**Desktop station routing:** the per-item → station map is seeded for the Sagra item IDs only. For
+a new menu, open the desktop ☰ → Catalogo and assign each item to one of your `stations` (otherwise
+items default to "Altro" on prep tickets). These overrides are stored in the till DB.
 
 ## 2. Activate the tenant
 
@@ -80,9 +95,10 @@ which keeps QR item IDs aligned. The desktop catalog is editable in-app (☰ →
 Target tenants are Italian associations, so the following stay hardcoded (would be addressed by a
 future i18n pass, Phase 4):
 
-- UI microcopy and category-page subtitles (e.g. "Cosa beviamo?") — generic Italian festival copy.
+- Generic UI microcopy outside the menu (button labels, the persone/riepilogo step headers).
 - Date/time formatting locale in the desktop Reports/About panels (`it-IT`).
-- The desktop **gestionale** renderer uses a neutral light/dark admin palette (not brand colors),
-  so `theme.colors` only restyle the customer web app.
+- The desktop **gestionale** renderer uses a neutral gray light/dark admin palette; only its accent
+  ramp follows the brand (via `theme.tillAccent`, falling back to `colors.leaf`). The surfaces and
+  the carefully-tuned dark mode stay neutral.
 - `apps/desktop/src/renderer/index.html` window title ("Gestionale Sagra"); the installed app
   name comes from `tenant.desktop.productName`.

@@ -1,0 +1,38 @@
+{
+  "coperto": { "perPersona": 1.50 },
+  "categories": [
+    {
+      "id": "sorsi",
+      "label": "Sorsi",
+      "subtitle": "Da bere, freschi",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "birra-spina", "name": "Birra alla Spina 0,4 L", "price": 5.00 },
+            { "id": "spritz", "name": "Spritz", "price": 5.00 },
+            { "id": "vino", "name": "Vino (bicchiere)", "price": 2.50 },
+            { "id": "bibita", "name": "Bibita in Lattina", "price": 2.50 },
+            { "id": "acqua", "name": "Acqua (0,5 L)", "price": 1.00 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "morsi",
+      "label": "Morsi",
+      "subtitle": "Da mangiare, caldi",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "panino-salsiccia", "name": "Panino con Salsiccia", "price": 5.00 },
+            { "id": "hamburger", "name": "Hamburger", "price": 6.00 },
+            { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
+            { "id": "tagliere-misto", "name": "Tagliere Misto", "price": 12.00 }
+          ]
+        }
+      ]
+    }
+  ]
+}

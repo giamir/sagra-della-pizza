@@ -1,0 +1,59 @@
+{
+  "id": "sorsi-e-morsi",
+  "brand": {
+    "name": "Sorsi e Morsi",
+    "location": "Orentano",
+    "shortName": "Sorsi e Morsi",
+    "tagline": "Food & drink dalle 19:00, a seguire musica e divertimento! Ordina e mostra il QR alla cassa.",
+    "logo": "/ente-carnevale-dei-bambini.png",
+    "logoAlt": "Sorsi e Morsi in Piazza"
+  },
+  "theme": {
+    "colors": {
+      "cream-50": "#fdf5e6",
+      "cream-100": "#f8e6c4",
+      "cream-200": "#efd29c",
+      "ink": "#17285a",
+      "leaf": "#1f6f63",
+      "leaf-dark": "#154c44",
+      "tomato": "#e3582a",
+      "tomato-dark": "#c0461f",
+      "focus": "#f2b134"
+    },
+    "themeColor": "#1f6f63",
+    "backgroundColor": "#fdf5e6",
+    "tillAccent": "#f47f28"
+  },
+  "locale": {
+    "lang": "it",
+    "intl": "it-IT",
+    "currency": "EUR"
+  },
+  "receipt": {
+    "headerLines": ["Sorsi e Morsi in Piazza", "Orentano"],
+    "customerCopyLabel": "Copia Cliente",
+    "footerLines": ["Non e' scontrino fiscale", "Grazie e buon divertimento!"]
+  },
+  "stations": {
+    "order": ["Bar", "Cucina"],
+    "copertoStation": "Bar",
+    "aliases": {
+      "Bevande": "Bar",
+      "Griglia": "Cucina",
+      "Dolci": "Cucina",
+      "Dolce": "Cucina"
+    }
+  },
+  "network": {
+    "serverPort": 7331,
+    "defaultTillName": "Cassa 1"
+  },
+  "storagePrefix": "sorsi",
+  "desktop": {
+    "appId": "it.crocebiancaorentano.sorsiemorsi",
+    "productName": "Sorsi e Morsi",
+    "author": "Croce Bianca P.A. Orentano",
+    "updateFeedUrl": "https://sorsiemorsi.example/desktop-updates",
+    "downloadPageUrl": "https://sorsiemorsi.example/download"
+  }
+}

@@ -45,13 +45,13 @@ export function registerBackupHandlers(): void {
     }
   });
 
-  ipcMain.handle('database:reset', async () => {
+  ipcMain.handle('database:reset', async (_evt, includeSettings = false) => {
     try {
       // Always take a raw snapshot first — the wipe is irreversible, so this is
       // the only way back if it was triggered by mistake.
-      snapshotDb('pre-reset');
+      snapshotDb(includeSettings ? 'pre-full-reset' : 'pre-reset');
       pruneSnapshots();
-      const { orders } = resetDatabase();
+      const { orders } = resetDatabase({ includeSettings: !!includeSettings });
       broadcastStock();
       return { ok: true, orders };
     } catch (err) {

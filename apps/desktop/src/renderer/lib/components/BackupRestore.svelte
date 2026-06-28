@@ -5,6 +5,7 @@
   let importing = $state(false);
   let resetting = $state(false);
   let resetConfirm = $state('');
+  let resetIncludeSettings = $state(false);
   let statusMsg = $state<{ text: string; ok: boolean } | null>(null);
 
   const RESET_WORD = 'AZZERA';
@@ -62,10 +63,15 @@
     resetting = true;
     statusMsg = null;
     try {
-      const result = await window.api.resetDatabase();
+      const full = resetIncludeSettings;
+      const result = await window.api.resetDatabase(full);
       if (result.ok) {
         resetConfirm = '';
-        showStatus(`Database azzerato (${result.orders} ordini eliminati). Una copia di sicurezza è stata salvata automaticamente.`);
+        resetIncludeSettings = false;
+        const extra = full
+          ? ' Configurazione e catalogo riportati ai valori di fabbrica.'
+          : '';
+        showStatus(`Database azzerato (${result.orders} ordini eliminati).${extra} Una copia di sicurezza è stata salvata automaticamente.`);
       } else {
         showStatus(result.error ?? 'Errore azzeramento', false);
       }
@@ -146,9 +152,25 @@
           postazione, riportandola allo stato di inizio sagra. Il catalogo e la
           configurazione di stampante, terminale di pagamento e rete rimangono invariati.
         </p>
+
+        <label class="flex items-start gap-2 mt-3 text-sm text-gray-700 cursor-pointer">
+          <input
+            type="checkbox"
+            bind:checked={resetIncludeSettings}
+            class="mt-0.5 h-4 w-4 accent-red-700"
+          />
+          <span>
+            Cancella <strong>tutto</strong>, configurazione inclusa: catalogo, stampante,
+            terminale di pagamento e rete tornano ai valori di fabbrica (ripristino completo).
+          </span>
+        </label>
+
         <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2">
-          ⚠ Operazione irreversibile. Una copia di sicurezza del database viene salvata
-          automaticamente prima dell'azzeramento.
+          ⚠ Operazione irreversibile.
+          {#if resetIncludeSettings}
+            La postazione andrà riconfigurata da zero (stampante, pagamento, rete).
+          {/if}
+          Una copia di sicurezza del database viene salvata automaticamente prima dell'azzeramento.
         </div>
         <label class="block text-sm text-gray-700 mt-3" for="reset-confirm">
           Per confermare, scrivi <strong>{RESET_WORD}</strong> qui sotto:

@@ -107,14 +107,19 @@ function validateBundle(bundle: unknown): asserts bundle is DbBundle {
 }
 
 /**
- * Wipe all operational data from the live database, returning it to an
- * empty-event state: no orders, no stock counts, no cash floats.
+ * Wipe the live database.
  *
- * Mirrors the destructive scope of an import — it deliberately leaves the
+ * By default this clears only operational data — orders, stock counts and cash
+ * floats — returning the postazione to an empty-event state while leaving the
  * catalog and every machine-specific setting (printer, payment, till, network)
- * untouched, so the postazione stays configured and ready for a fresh event.
+ * intact. This mirrors the destructive scope of an import.
+ *
+ * With `includeSettings`, it performs a complete factory wipe: settings and
+ * tills are cleared too, so the app reverts to first-run defaults (bundled menu,
+ * no printer/payment/network config). Callers must surface that this also
+ * removes hardware/network setup.
  */
-export function resetDatabase(): { orders: number } {
+export function resetDatabase(opts: { includeSettings?: boolean } = {}): { orders: number } {
   const db = getDb();
 
   const before = db.prepare('SELECT COUNT(*) AS n FROM orders').get() as { n: number };
@@ -126,8 +131,15 @@ export function resetDatabase(): { orders: number } {
       db.exec('DELETE FROM orders');
       db.exec('DELETE FROM stock');
       db.exec('DELETE FROM cash_floats');
+      if (opts.includeSettings) {
+        db.exec('DELETE FROM settings');
+        db.exec('DELETE FROM tills');
+      }
       // Restart AUTOINCREMENT counters so the next event numbers from 1 again.
-      db.exec(`DELETE FROM sqlite_sequence WHERE name IN ('orders', 'order_lines')`);
+      const seqTables = opts.includeSettings
+        ? `'orders', 'order_lines', 'tills'`
+        : `'orders', 'order_lines'`;
+      db.exec(`DELETE FROM sqlite_sequence WHERE name IN (${seqTables})`);
     })();
   } finally {
     db.pragma('foreign_keys = ON');

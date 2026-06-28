@@ -119,7 +119,8 @@
     {/if}
 
     <p class="text-center text-sm text-ink/70">
-      L'app installata controlla automaticamente gli aggiornamenti.
+      L'app installata controlla automaticamente gli aggiornamenti. Per la configurazione iniziale
+      puoi seguire il <a href="/manuale" class="font-bold text-leaf underline underline-offset-4">manuale rapido</a>.
     </p>
 
     {#if data.previousVersions.length}

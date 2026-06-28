@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tenant } from '$lib/config/tenant';
+
   let { data } = $props();
 
   function formatSize(bytes: number | null): string {
@@ -15,7 +17,7 @@
 
     <section class="text-center">
       <img
-        src="/ente-carnevale-dei-bambini.png"
+        src={tenant.brand.logo}
         alt=""
         width="160"
         height="160"
@@ -23,7 +25,7 @@
       />
       <h1 class="text-4xl font-bold leading-tight text-leaf sm:text-5xl">Gestionale cassa</h1>
       <p class="mt-4 text-lg text-ink">
-        Scarica l'ultima versione dell'app desktop per le casse della Sagra della Pizza.
+        Scarica l'ultima versione dell'app desktop per le casse della {tenant.brand.name}.
       </p>
     </section>
 

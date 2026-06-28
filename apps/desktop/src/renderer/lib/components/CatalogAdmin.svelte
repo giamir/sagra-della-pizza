@@ -12,6 +12,7 @@
   let stationList = $state<string[]>([]);
   let copertoStation = $state('');
   let newStation = $state('');
+  let newCategory = $state('');
   let activeTab = $state('');
   let saving = $state(false);
   let exporting = $state(false);
@@ -196,6 +197,64 @@
     [next[index], next[target]] = [next[target], next[index]];
     stationList = next;
   }
+
+  // --- Category management ---
+
+  function updateCategory(catId: string, patch: Partial<MenuCategory>) {
+    if (!catalog) return;
+    catalog = {
+      ...catalog,
+      categories: catalog.categories.map((cat) => cat.id === catId ? { ...cat, ...patch } : cat)
+    };
+  }
+
+  function addCategory() {
+    if (!catalog) return;
+    const label = newCategory.trim();
+    if (!label) return;
+    if (catalog.categories.some((c) => c.label.toLowerCase() === label.toLowerCase())) {
+      showStatus('Categoria già esistente', false);
+      return;
+    }
+    // New categories start with a single unnamed group so items can be added right away.
+    const cat: MenuCategory = { id: `cat-${Date.now()}`, label, groups: [{ label: '', items: [] }] };
+    catalog = { ...catalog, categories: [...catalog.categories, cat] };
+    newCategory = '';
+  }
+
+  function removeCategory(catId: string) {
+    if (!catalog) return;
+    if (catalog.categories.length <= 1) {
+      showStatus('Serve almeno una categoria', false);
+      return;
+    }
+    const cat = catalog.categories.find((c) => c.id === catId);
+    // Drop station overrides for every item (and variant) in the removed category.
+    if (cat) {
+      const next = { ...stations };
+      for (const group of cat.groups) {
+        for (const item of group.items) {
+          delete next[item.id];
+          if (item.variants) for (const v of item.variants) delete next[v.id];
+        }
+      }
+      stations = next;
+    }
+    catalog = { ...catalog, categories: catalog.categories.filter((c) => c.id !== catId) };
+  }
+
+  function moveCategory(index: number, dir: -1 | 1) {
+    if (!catalog) return;
+    const target = index + dir;
+    if (target < 0 || target >= catalog.categories.length) return;
+    const next = [...catalog.categories];
+    [next[index], next[target]] = [next[target], next[index]];
+    catalog = { ...catalog, categories: next };
+  }
+
+  function itemsInCategory(cat: MenuCategory): number {
+    return cat.groups.reduce((sum, g) => sum + g.items.length, 0);
+  }
 </script>
 
 <div
@@ -276,6 +335,18 @@
         class:text-gray-500={'__stazioni__' !== activeTab}
       >
         Stazioni
+      </button>
+      <!-- Categorie tab -->
+      <button
+        type="button"
+        onclick={() => activeTab = '__categorie__'}
+        class="shrink-0 px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px"
+        class:border-green-700={'__categorie__' === activeTab}
+        class:text-green-900={'__categorie__' === activeTab}
+        class:border-transparent={'__categorie__' !== activeTab}
+        class:text-gray-500={'__categorie__' !== activeTab}
+      >
+        Categorie
       </button>
     </div>
 
@@ -363,6 +434,75 @@
             </button>
           </div>
           <p class="text-xs text-gray-400 mt-3">Eliminando una stazione, le voci collegate passano a "{FALLBACK_STATION}".</p>
+        </div>
+
+      {:else if activeTab === '__categorie__'}
+        <!-- Category manager -->
+        <div class="max-w-2xl">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Categorie</p>
+          <p class="text-xs text-gray-400 mb-3">L'ordine determina la sequenza delle schede e dell'ordinazione.</p>
+
+          <div class="flex flex-col gap-1">
+            {#each catalog.categories as cat, i (cat.id)}
+              <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50">
+                <div class="flex-1 grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={cat.label}
+                    oninput={(e) => updateCategory(cat.id, { label: (e.target as HTMLInputElement).value })}
+                    placeholder="Nome categoria"
+                    class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+                  />
+                  <input
+                    type="text"
+                    value={cat.subtitle ?? ''}
+                    oninput={(e) => updateCategory(cat.id, { subtitle: (e.target as HTMLInputElement).value || undefined })}
+                    placeholder="Sottotitolo (facoltativo)"
+                    class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+                  />
+                </div>
+                <span class="text-xs text-gray-400 w-14 text-right">{itemsInCategory(cat)} voci</span>
+                <button
+                  type="button"
+                  onclick={() => moveCategory(i, -1)}
+                  disabled={i === 0}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                  title="Sposta su"
+                >↑</button>
+                <button
+                  type="button"
+                  onclick={() => moveCategory(i, 1)}
+                  disabled={i === catalog.categories.length - 1}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                  title="Sposta giù"
+                >↓</button>
+                <button
+                  type="button"
+                  onclick={() => removeCategory(cat.id)}
+                  class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 text-base leading-none"
+                  title="Elimina categoria"
+                >×</button>
+              </div>
+            {/each}
+          </div>
+
+          <div class="flex items-center gap-2 mt-4">
+            <input
+              type="text"
+              bind:value={newCategory}
+              onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
+              placeholder="Nuova categoria"
+              class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+            />
+            <button
+              type="button"
+              onclick={addCategory}
+              class="px-3 py-1.5 rounded text-xs font-semibold text-green-700 border border-dashed border-green-300 hover:bg-green-50"
+            >
+              + Aggiungi
+            </button>
+          </div>
+          <p class="text-xs text-gray-400 mt-3">Eliminando una categoria si rimuovono anche tutte le sue voci.</p>
         </div>
 
       {:else}

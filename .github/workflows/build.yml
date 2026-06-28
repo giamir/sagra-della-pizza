@@ -8,11 +8,22 @@ on:
   # Also runnable manually from the GitHub Actions tab
   workflow_dispatch:
 
+# Each platform builds once per tenant. The tenant overlay (use-tenant) brands
+# the app icon, productName and update feed URL; the matching Blob token routes
+# the artifacts to that tenant's store, which its /download page reads.
 jobs:
 
   build-mac:
-    name: macOS (DMG)
+    name: macOS (DMG) — ${{ matrix.tenant }}
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tenant: sagra-della-pizza
+            blob_secret: BLOB_READ_WRITE_TOKEN
+          - tenant: sorsi-e-morsi
+            blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +38,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Brand this build for the tenant: tenant.json/menu.json + desktop icons
+      # (apps/desktop/resources) drive productName, appId and the update feed.
+      - name: Activate tenant
+        run: npm run use-tenant ${{ matrix.tenant }}
 
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync
@@ -50,12 +66,20 @@ jobs:
 
       - name: Upload update artifacts (macOS)
         env:
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets[matrix.blob_secret] }}
         run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist
 
   build-win:
-    name: Windows (NSIS)
+    name: Windows (NSIS) — ${{ matrix.tenant }}
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tenant: sagra-della-pizza
+            blob_secret: BLOB_READ_WRITE_TOKEN
+          - tenant: sorsi-e-morsi
+            blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
     steps:
       - uses: actions/checkout@v4
 
@@ -66,6 +90,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Activate tenant
+        run: npm run use-tenant ${{ matrix.tenant }}
 
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync
@@ -84,12 +111,20 @@ jobs:
 
       - name: Upload update artifacts (Windows)
         env:
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets[matrix.blob_secret] }}
         run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist
 
   build-win7:
-    name: Windows 7 (legacy, Electron 22)
+    name: Windows 7 (legacy, Electron 22) — ${{ matrix.tenant }}
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tenant: sagra-della-pizza
+            blob_secret: BLOB_READ_WRITE_TOKEN
+          - tenant: sorsi-e-morsi
+            blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
     steps:
       - uses: actions/checkout@v4
 
@@ -109,6 +144,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Activate tenant
+        run: npm run use-tenant ${{ matrix.tenant }}
 
       - name: Prepare SvelteKit config
         run: npx svelte-kit sync
@@ -130,5 +168,5 @@ jobs:
 
       - name: Upload update artifacts (Windows 7)
         env:
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets[matrix.blob_secret] }}
         run: node tools/desktop-updates/upload-to-vercel-blob.mjs apps/desktop/dist

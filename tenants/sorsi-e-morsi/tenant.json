@@ -53,7 +53,7 @@
     "appId": "it.crocebiancaorentano.sorsiemorsi",
     "productName": "Sorsi e Morsi",
     "author": "Croce Bianca P.A. Orentano",
-    "updateFeedUrl": "https://sorsiemorsi.example/desktop-updates",
-    "downloadPageUrl": "https://sorsiemorsi.example/download"
+    "updateFeedUrl": "https://sorsi.orentano.news/desktop-updates",
+    "downloadPageUrl": "https://sorsi.orentano.news/download"
   }
 }

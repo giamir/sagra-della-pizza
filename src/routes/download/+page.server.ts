@@ -1,6 +1,17 @@
 import { list } from '@vercel/blob';
+import tenant from '@sagra/shared/config/tenant.json';
 
 export const prerender = false;
+
+// Installer filenames are branded with the tenant's productName (spaces become
+// hyphens once normalized), e.g. "Sorsi-e-Morsi-Setup-1.2.3.exe". Derive the
+// version-matching patterns from the active tenant so the history list works
+// for any association, not just Sagra.
+const PRODUCT_SLUG = tenant.desktop.productName
+  .replaceAll(' ', '-')
+  .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const SETUP_EXE_RE = new RegExp(`^${PRODUCT_SLUG}-Setup-(\\d+\\.\\d+\\.\\d+)\\.exe$`);
+const DMG_RE = new RegExp(`^${PRODUCT_SLUG}-(\\d+\\.\\d+\\.\\d+)-[^/]+\\.dmg$`);
 
 type UpdateFile = {
   url: string;
@@ -69,8 +80,8 @@ async function loadPreviousVersions(currentVersion: string | null): Promise<Prev
         const fileName = fileNameFromPath(blob.pathname);
         const normalized = normalizedName(fileName);
         const version =
-          normalized.match(/^Sagra-della-Pizza-Setup-(\d+\.\d+\.\d+)\.exe$/)?.[1] ??
-          normalized.match(/^Sagra-della-Pizza-(\d+\.\d+\.\d+)-[^/]+\.dmg$/)?.[1] ??
+          normalized.match(SETUP_EXE_RE)?.[1] ??
+          normalized.match(DMG_RE)?.[1] ??
           null;
 
         if (!version || version === currentVersion) continue;

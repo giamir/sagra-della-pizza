@@ -128,9 +128,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Stay on Node 20 for the legacy build: better-sqlite3 8.7.0 ships no
+      # prebuilt binary for Node 22, so npm install would fall back to node-gyp,
+      # which can't drive the runner's newer Visual Studio toolchain.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       # Pin the desktop app to the last Electron that supports Windows 7/8/8.1

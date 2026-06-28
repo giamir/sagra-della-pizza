@@ -1,0 +1,71 @@
+name: Deploy tenants to Vercel
+
+on:
+  # Production deploy when main moves
+  push:
+    branches:
+      - main
+  # Manual deploy from the Actions tab (optionally a single tenant)
+  workflow_dispatch:
+    inputs:
+      tenant:
+        description: 'Deploy only this tenant (blank = all)'
+        required: false
+        default: ''
+
+# One in-flight deploy per tenant; newer pushes cancel older ones.
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: ${{ matrix.tenant }}
+    runs-on: ubuntu-latest
+    # Skip tenants not selected in a manual single-tenant run.
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.tenant == '' ||
+      github.event.inputs.tenant == matrix.tenant
+    strategy:
+      # Deploy every tenant even if one fails.
+      fail-fast: false
+      matrix:
+        include:
+          - tenant: sagra-della-pizza
+            project_id: ${{ vars.VERCEL_PROJECT_ID_SAGRA }}
+          - tenant: sorsi-e-morsi
+            project_id: ${{ vars.VERCEL_PROJECT_ID_SORSI }}
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ matrix.project_id }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Overlay this tenant's config/menu/assets onto the active files
+      # (shared/src/config/tenant.json, menu.json, static/*) before building.
+      - name: Activate tenant
+        run: npm run use-tenant ${{ matrix.tenant }}
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      # Writes .vercel/project.json from VERCEL_ORG_ID + VERCEL_PROJECT_ID and
+      # pulls the project's production env/settings.
+      - name: Pull Vercel project settings
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build (Vercel, prebuilt)
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy to production
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -13,29 +13,43 @@ on:
         required: false
         default: ''
 
-# One in-flight deploy per tenant; newer pushes cancel older ones.
+# One in-flight deploy run per ref; queued runs don't pile up.
 concurrency:
   group: deploy-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  # Build the (optionally filtered) tenant matrix, carrying each tenant's
+  # Vercel project ID. A job-level matrix can't be filtered by an input, so we
+  # compute it here and feed it to the deploy job via fromJSON.
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - id: set
+        env:
+          SELECTED: ${{ github.event.inputs.tenant }}
+          SAGRA_ID: ${{ vars.VERCEL_PROJECT_ID_SAGRA }}
+          SORSI_ID: ${{ vars.VERCEL_PROJECT_ID_SORSI }}
+        run: |
+          all=$(jq -c -n --arg sagra "$SAGRA_ID" --arg sorsi "$SORSI_ID" '[
+            {tenant:"sagra-della-pizza", project_id:$sagra},
+            {tenant:"sorsi-e-morsi",     project_id:$sorsi}
+          ]')
+          if [ -n "$SELECTED" ]; then
+            all=$(echo "$all" | jq -c --arg t "$SELECTED" '[.[] | select(.tenant==$t)]')
+          fi
+          echo "matrix={\"include\":$all}" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: prepare
     name: ${{ matrix.tenant }}
     runs-on: ubuntu-latest
-    # Skip tenants not selected in a manual single-tenant run.
-    if: >-
-      github.event_name != 'workflow_dispatch' ||
-      github.event.inputs.tenant == '' ||
-      github.event.inputs.tenant == matrix.tenant
     strategy:
       # Deploy every tenant even if one fails.
       fail-fast: false
-      matrix:
-        include:
-          - tenant: sagra-della-pizza
-            project_id: ${{ vars.VERCEL_PROJECT_ID_SAGRA }}
-          - tenant: sorsi-e-morsi
-            project_id: ${{ vars.VERCEL_PROJECT_ID_SORSI }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}

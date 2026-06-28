@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import tenantJson from '@sagra/shared/config/tenant.json';
+
+  const tenant = tenantJson as { desktop?: { productName?: string } };
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -103,7 +106,7 @@
     <div class="flex items-center justify-between gap-4">
       <div>
         <h2 class="font-bold text-lg text-gray-900">Aggiornamenti</h2>
-        <p class="text-sm font-semibold text-gray-500">{appInfo?.name ?? 'Sagra della Pizza'}</p>
+        <p class="text-sm font-semibold text-gray-500">{appInfo?.name ?? tenant.desktop?.productName ?? 'Gestionale'}</p>
       </div>
       <button type="button" onclick={onClose} class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
     </div>

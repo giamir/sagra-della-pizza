@@ -12,6 +12,7 @@ import { registerCatalogHandlers } from './ipc/catalog.js';
 import { registerBackupHandlers } from './ipc/backup.js';
 import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
 import { snapshotDb, pruneSnapshots } from './db/auto-backup.js';
+import { tenant } from './config/tenant.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -24,7 +25,7 @@ function getIcon() {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    title: 'Sagra della Pizza',
+    title: tenant.desktop.productName,
     width: 1280,
     height: 800,
     minWidth: 1024,

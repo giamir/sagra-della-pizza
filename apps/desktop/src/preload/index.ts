@@ -93,7 +93,8 @@ const api = {
 
   // Database backup / restore
   exportDatabase: () => ipcRenderer.invoke('database:export'),
-  importDatabase: () => ipcRenderer.invoke('database:import')
+  importDatabase: () => ipcRenderer.invoke('database:import'),
+  resetDatabase: () => ipcRenderer.invoke('database:reset')
 };
 
 if (process.contextIsolated) {

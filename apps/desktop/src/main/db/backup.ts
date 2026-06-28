@@ -106,6 +106,36 @@ function validateBundle(bundle: unknown): asserts bundle is DbBundle {
   }
 }
 
+/**
+ * Wipe all operational data from the live database, returning it to an
+ * empty-event state: no orders, no stock counts, no cash floats.
+ *
+ * Mirrors the destructive scope of an import — it deliberately leaves the
+ * catalog and every machine-specific setting (printer, payment, till, network)
+ * untouched, so the postazione stays configured and ready for a fresh event.
+ */
+export function resetDatabase(): { orders: number } {
+  const db = getDb();
+
+  const before = db.prepare('SELECT COUNT(*) AS n FROM orders').get() as { n: number };
+
+  db.pragma('foreign_keys = OFF');
+  try {
+    db.transaction(() => {
+      db.exec('DELETE FROM order_lines');
+      db.exec('DELETE FROM orders');
+      db.exec('DELETE FROM stock');
+      db.exec('DELETE FROM cash_floats');
+      // Restart AUTOINCREMENT counters so the next event numbers from 1 again.
+      db.exec(`DELETE FROM sqlite_sequence WHERE name IN ('orders', 'order_lines')`);
+    })();
+  } finally {
+    db.pragma('foreign_keys = ON');
+  }
+
+  return { orders: before.n };
+}
+
 export function importBundle(bundle: unknown): { orders: number } {
   validateBundle(bundle);
   const db = getDb();

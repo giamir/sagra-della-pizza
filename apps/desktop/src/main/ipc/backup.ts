@@ -1,7 +1,9 @@
 import { ipcMain, dialog, app } from 'electron';
 import { writeFileSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { buildBundle, importBundle } from '../db/backup.js';
+import { buildBundle, importBundle, resetDatabase } from '../db/backup.js';
+import { snapshotDb, pruneSnapshots } from '../db/auto-backup.js';
+import { broadcastStock } from '../server/index.js';
 
 function defaultBackupName(): string {
   const d = new Date();
@@ -36,6 +38,21 @@ export function registerBackupHandlers(): void {
       const raw = readFileSync(result.filePaths[0], 'utf8');
       const bundle = JSON.parse(raw);
       const { orders } = importBundle(bundle);
+      broadcastStock();
+      return { ok: true, orders };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  ipcMain.handle('database:reset', async () => {
+    try {
+      // Always take a raw snapshot first — the wipe is irreversible, so this is
+      // the only way back if it was triggered by mistake.
+      snapshotDb('pre-reset');
+      pruneSnapshots();
+      const { orders } = resetDatabase();
+      broadcastStock();
       return { ok: true, orders };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };

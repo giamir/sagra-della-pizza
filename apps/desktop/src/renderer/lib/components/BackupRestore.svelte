@@ -3,7 +3,11 @@
 
   let exporting = $state(false);
   let importing = $state(false);
+  let resetting = $state(false);
+  let resetConfirm = $state('');
   let statusMsg = $state<{ text: string; ok: boolean } | null>(null);
+
+  const RESET_WORD = 'AZZERA';
 
   function showStatus(text: string, ok = true) {
     statusMsg = { text, ok };
@@ -49,6 +53,26 @@
       showStatus(err instanceof Error ? err.message : 'Errore importazione', false);
     } finally {
       importing = false;
+    }
+  }
+
+  async function resetDb() {
+    if (resetConfirm.trim().toUpperCase() !== RESET_WORD) return;
+
+    resetting = true;
+    statusMsg = null;
+    try {
+      const result = await window.api.resetDatabase();
+      if (result.ok) {
+        resetConfirm = '';
+        showStatus(`Database azzerato (${result.orders} ordini eliminati). Una copia di sicurezza è stata salvata automaticamente.`);
+      } else {
+        showStatus(result.error ?? 'Errore azzeramento', false);
+      }
+    } catch (err) {
+      showStatus(err instanceof Error ? err.message : 'Errore azzeramento', false);
+    } finally {
+      resetting = false;
     }
   }
 </script>
@@ -112,6 +136,42 @@
         >
           {importing ? 'Importazione…' : 'Importa da file'}
         </button>
+      </section>
+
+      <!-- Reset -->
+      <section class="bg-white dark:bg-[#20242c] border-2 border-red-300 rounded-xl p-4">
+        <h2 class="text-lg font-bold text-red-700">Azzera database</h2>
+        <p class="text-sm text-gray-600 mt-1">
+          Elimina <strong>tutti</strong> gli ordini, le scorte e i dati di cassa di questa
+          postazione, riportandola allo stato di inizio sagra. Il catalogo e la
+          configurazione di stampante, terminale di pagamento e rete rimangono invariati.
+        </p>
+        <div class="mt-2 text-sm bg-red-100 text-red-800 rounded-lg px-3 py-2">
+          ⚠ Operazione irreversibile. Una copia di sicurezza del database viene salvata
+          automaticamente prima dell'azzeramento.
+        </div>
+        <label class="block text-sm text-gray-700 mt-3" for="reset-confirm">
+          Per confermare, scrivi <strong>{RESET_WORD}</strong> qui sotto:
+        </label>
+        <input
+          id="reset-confirm"
+          type="text"
+          bind:value={resetConfirm}
+          autocomplete="off"
+          spellcheck="false"
+          placeholder={RESET_WORD}
+          class="mt-1 w-48 px-3 py-2 rounded-lg border border-gray-300 text-base uppercase tracking-widest focus:border-red-500 focus:outline-none"
+        />
+        <div>
+          <button
+            type="button"
+            onclick={resetDb}
+            disabled={resetting || resetConfirm.trim().toUpperCase() !== RESET_WORD}
+            class="mt-3 px-6 py-3 min-h-12 rounded-full bg-red-700 hover:bg-red-800 text-white font-bold disabled:opacity-40"
+          >
+            {resetting ? 'Azzeramento…' : 'Azzera database'}
+          </button>
+        </div>
       </section>
 
     </div>

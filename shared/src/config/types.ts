@@ -27,6 +27,10 @@ export type TenantTheme = {
   themeColor: string;
   /** PWA background color. */
   backgroundColor: string;
+  /** Optional accent for the desktop till's `green-*` ramp (primary buttons,
+   *  header, selected states). Falls back to `colors.leaf` when omitted. Use it
+   *  when the web primary colour is too dark/muted to read well in the till. */
+  tillAccent?: string;
 };
 
 export type TenantLocale = {

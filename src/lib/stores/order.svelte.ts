@@ -1,4 +1,4 @@
-import menu from '$lib/data/menu.json';
+import menu from '@sagra/shared/data/menu.json';
 import type { Menu, OrderState } from '$lib/types';
 import { computeTotal, itemsCount } from '$lib/utils/pricing';
 

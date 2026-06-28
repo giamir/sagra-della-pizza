@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { clearOrder, count } from '$lib/stores/order.svelte';
+  import { tenant } from '$lib/config/tenant';
 
   const hasOrder = $derived(count() > 0);
   let cashierTaps = 0;
@@ -27,11 +28,11 @@
     <button
       type="button"
       onclick={handleLogoTap}
-      aria-label="Ente Carnevale dei Bambini"
+      aria-label={tenant.brand.logoAlt}
       class="block mx-auto mb-6 rounded-full"
     >
       <img
-        src="/ente-carnevale-dei-bambini.png"
+        src={tenant.brand.logo}
         alt=""
         width="256"
         height="256"
@@ -39,11 +40,11 @@
       />
     </button>
     <h1 class="text-4xl sm:text-5xl font-bold text-leaf leading-tight">
-      Sagra della Pizza
+      {tenant.brand.name}
     </h1>
-    <p class="mt-3 text-xl font-semibold tracking-wide uppercase text-tomato">Orentano</p>
+    <p class="mt-3 text-xl font-semibold tracking-wide uppercase text-tomato">{tenant.brand.location}</p>
     <p class="mt-6 text-xl text-ink">
-      Ordina mentre sei in fila. Mostra il QR alla cassa: il tuo ordine sarà già pronto!
+      {tenant.brand.tagline}
     </p>
 
     <div class="mt-10 flex flex-col gap-4">

@@ -12,7 +12,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve:phone": "npm run build && vite preview --host 0.0.0.0 --port 4173",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "use-tenant": "node tools/use-tenant.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-vercel": "^5.5.0",

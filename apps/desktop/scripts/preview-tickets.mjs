@@ -15,16 +15,27 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { spawn } from 'node:child_process';
 
-// Let Node resolve the project's `.js` import specifiers to their `.ts` source.
+// Let Node resolve the project's `.js` import specifiers to their `.ts` source,
+// and synthesize JSON modules so bare `import x from './x.json'` works without
+// import attributes (the real Vite/electron-vite builds handle that for us).
 const loader =
   'data:text/javascript,' +
   encodeURIComponent(`
+    import { readFileSync } from 'node:fs';
+    import { fileURLToPath } from 'node:url';
     export async function resolve(spec, ctx, next) {
       if (spec.endsWith('.js')) {
         try { return await next(spec, ctx); }
         catch (e) { try { return await next(spec.slice(0, -3) + '.ts', ctx); } catch { throw e; } }
       }
       return next(spec, ctx);
+    }
+    export async function load(url, ctx, next) {
+      if (url.endsWith('.json')) {
+        const src = readFileSync(fileURLToPath(url), 'utf8');
+        return { format: 'module', shortCircuit: true, source: 'export default ' + src + ';' };
+      }
+      return next(url, ctx);
     }
   `);
 register(loader, import.meta.url);

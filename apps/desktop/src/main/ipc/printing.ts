@@ -4,7 +4,13 @@ import { loadPrinterConfig, savePrinterConfig, sendToTcpPrinter, sendToUsbPrinte
 import { buildStationTicket, buildReceipt, buildPreviewText, groupByStation, type PrintOrder } from '../printing/templates.js';
 import { getStations, getCopertoStation } from '../printing/station-map.js';
 import { buildLogoBuf } from '../printing/logo.js';
+import { getCatalog } from '../catalog/catalog.js';
 import type { PrinterConfig, UsbPrinterEntry } from '../printing/service.js';
+
+// Live cover charge (cents) from the editable catalog, single-sourced from the menu.
+function copertoCents(): number {
+  return Math.round((getCatalog().coperto?.perPersona ?? 0) * 100);
+}
 
 function loadOrderForPrint(orderId: number | bigint): PrintOrder | null {
   const db = getDb();
@@ -64,13 +70,13 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
   }
 
   // Courtesy receipt last — logo only here
-  const receipt = buildReceipt(order, width);
+  const receipt = buildReceipt(order, width, copertoCents());
   await send(withLogo(receipt));
 }
 
 async function printPrintOrder(order: PrintOrder): Promise<{ ok: boolean; error?: string; preview?: ReturnType<typeof buildPreviewText> }> {
   const config = loadPrinterConfig();
-  const preview = buildPreviewText(order, { order: getStations(), copertoStation: getCopertoStation() });
+  const preview = buildPreviewText(order, { order: getStations(), copertoStation: getCopertoStation(), copertoCents: copertoCents() });
 
   if (!config.enabled) {
     return { ok: false, error: 'Stampante non configurata', preview };

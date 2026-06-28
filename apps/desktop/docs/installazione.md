@@ -211,7 +211,8 @@ Il gestionale esporta il catalogo nel formato compatibile con `sagradellapizza.i
 1. ☰ → **Catalogo**
 2. Modificare prezzi, voci, stazioni
 3. Cliccare **Esporta menu.json**
-4. Copiare il file generato in `src/lib/data/menu.json` nel repository del sito web
+4. Copiare il file generato in `shared/src/data/menu.json` nel repository del sito web
+   (e in `tenants/<slug>/menu.json` se si usa un overlay tenant)
 5. Fare deploy del sito (es. `git push` → Vercel)
 
 ---

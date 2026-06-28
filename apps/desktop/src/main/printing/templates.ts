@@ -1,6 +1,9 @@
 import { EscPos } from './escpos.js';
 import { STATION_ORDER, normalizeStation } from './station-constants.js';
 import { isAdjKey } from '@sagra/shared/utils/adjustments';
+import { tenant } from '../config/tenant.js';
+
+const DEFAULT_COPERTO_CENTS = 150;
 
 export type PrintLine = {
   itemId: string;
@@ -39,11 +42,9 @@ function tableAndRowLine(width: number): string {
 export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42, copertoStation = 'Bevande'): Buffer {
   const e = new EscPos(width);
 
-  e.init()
-    .align('center')
-    .line('Sagra della Pizza')
-    .line('Orentano')
-    .bold(true)
+  e.init().align('center');
+  for (const h of tenant.receipt.headerLines) e.line(h);
+  e.bold(true)
     .doubleSize(true)
     .line(station.toUpperCase())
     .doubleSize(false)
@@ -75,16 +76,13 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
 }
 
 // Courtesy receipt: full itemised list with prices.
-export function buildReceipt(order: PrintOrder, width = 42): Buffer {
+export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAULT_COPERTO_CENTS): Buffer {
   const e = new EscPos(width);
-  const copertoTotal = order.people * 150;
+  const copertoTotal = order.people * copertoCents;
 
-  e.init()
-    .align('center')
-    .bold(true)
-    .line('Sagra della Pizza')
-    .line('Orentano')
-    .line('Copia Cliente')
+  e.init().align('center').bold(true);
+  for (const h of tenant.receipt.headerLines) e.line(h);
+  e.line(tenant.receipt.customerCopyLabel)
     .bold(false)
     .separator('=')
     .align('left')
@@ -101,7 +99,7 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
 
   e.separator('-');
   if (order.people > 0) {
-    e.columns(`${order.people} cop. (${eur(150)} cad.)`, eur(copertoTotal));
+    e.columns(`${order.people} cop. (${eur(copertoCents)} cad.)`, eur(copertoTotal));
   }
 
   for (const l of order.lines) {
@@ -115,11 +113,9 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
     .bold(false)
     .separator('=')
     .feed()
-    .align('center')
-    .line("Non e' scontrino fiscale")
-    .line('Grazie e buon appetito!')
-    .feed(3)
-    .cut();
+    .align('center');
+  for (const f of tenant.receipt.footerLines) e.line(f);
+  e.feed(3).cut();
 
   return e.toBuffer();
 }
@@ -147,10 +143,11 @@ export function groupByStation(lines: PrintLine[], order: string[] = STATION_ORD
 // Plain-text preview for each station ticket + receipt.
 export function buildPreviewText(
   order: PrintOrder,
-  opts: { order?: string[]; copertoStation?: string } = {}
+  opts: { order?: string[]; copertoStation?: string; copertoCents?: number } = {}
 ): { stations: { name: string; text: string }[]; receipt: string } {
   const width = 42;
   const copertoStation = opts.copertoStation ?? 'Bevande';
+  const copertoCents = opts.copertoCents ?? DEFAULT_COPERTO_CENTS;
   const sep = (c = '-') => c.repeat(width);
   const byStation = groupByStation(order.lines, opts.order);
 
@@ -158,8 +155,7 @@ export function buildPreviewText(
 
   for (const [station, lines] of byStation) {
     const rows: string[] = [
-      'Sagra della Pizza',
-      'Orentano',
+      ...tenant.receipt.headerLines,
       station.toUpperCase(),
       `ORD #${order.id}`,
       formatTime(order.createdAt),
@@ -178,8 +174,8 @@ export function buildPreviewText(
     stations.push({ name: station, text: rows.join('\n') });
   }
 
-  const copertoTotal = order.people * 150;
-  const receiptRows: string[] = ['Sagra della Pizza', 'Orentano', 'Copia Cliente', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
+  const copertoTotal = order.people * copertoCents;
+  const receiptRows: string[] = [...tenant.receipt.headerLines, tenant.receipt.customerCopyLabel, sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
   for (const l of order.lines) {
     if (isAdjKey(l.itemId)) continue;
     const label = `${l.qty}x ${l.name}`;
@@ -198,7 +194,7 @@ export function buildPreviewText(
   }
   receiptRows.push(sep('='));
   const totStr = eur(order.totalCents);
-  receiptRows.push(`TOTALE${' '.repeat(Math.max(1, width - 6 - totStr.length))}${totStr}`, sep('='), '', "Non e' scontrino fiscale", 'Grazie e buon appetito!');
+  receiptRows.push(`TOTALE${' '.repeat(Math.max(1, width - 6 - totStr.length))}${totStr}`, sep('='), '', ...tenant.receipt.footerLines);
 
   return { stations, receipt: receiptRows.join('\n') };
 }

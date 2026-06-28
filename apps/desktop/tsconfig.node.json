@@ -17,7 +17,9 @@
       "@sagra/shared/utils/pricing": ["../../shared/src/utils/pricing.ts"],
       "@sagra/shared/utils/currency": ["../../shared/src/utils/currency.ts"],
       "@sagra/shared/utils/adjustments": ["../../shared/src/utils/adjustments.ts"],
-      "@sagra/shared/data/menu.json": ["../../shared/src/data/menu.json"]
+      "@sagra/shared/data/menu.json": ["../../shared/src/data/menu.json"],
+      "@sagra/shared/config/types": ["../../shared/src/config/types.ts"],
+      "@sagra/shared/config/tenant.json": ["../../shared/src/config/tenant.json"]
     }
   },
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"]

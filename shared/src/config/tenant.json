@@ -1,0 +1,57 @@
+{
+  "id": "sagra-della-pizza",
+  "brand": {
+    "name": "Sagra della Pizza",
+    "location": "Orentano",
+    "shortName": "Sagra Pizza",
+    "tagline": "Ordina mentre sei in fila. Mostra il QR alla cassa: il tuo ordine sarà già pronto!",
+    "logo": "/ente-carnevale-dei-bambini.png",
+    "logoAlt": "Ente Carnevale dei Bambini"
+  },
+  "theme": {
+    "colors": {
+      "cream-50": "#fbf3e0",
+      "cream-100": "#f6e9c8",
+      "cream-200": "#ecdba4",
+      "ink": "#1f3a2a",
+      "leaf": "#2c5e3f",
+      "leaf-dark": "#1f4530",
+      "tomato": "#c0392b",
+      "tomato-dark": "#8e2820",
+      "focus": "#f59e0b"
+    },
+    "themeColor": "#2c5e3f",
+    "backgroundColor": "#fbf3e0"
+  },
+  "locale": {
+    "lang": "it",
+    "intl": "it-IT",
+    "currency": "EUR"
+  },
+  "receipt": {
+    "headerLines": ["Sagra della Pizza", "Orentano"],
+    "customerCopyLabel": "Copia Cliente",
+    "footerLines": ["Non e' scontrino fiscale", "Grazie e buon appetito!"]
+  },
+  "stations": {
+    "order": ["Pizza", "Griglia e contorni", "Crostini", "Cecina", "Cucina", "Bevande", "Bar", "Dolce"],
+    "copertoStation": "Bevande",
+    "aliases": {
+      "Gastronomia": "Cucina",
+      "Griglia": "Griglia e contorni",
+      "Contorni": "Griglia e contorni"
+    }
+  },
+  "network": {
+    "serverPort": 7331,
+    "defaultTillName": "Cassa 1"
+  },
+  "storagePrefix": "sagra",
+  "desktop": {
+    "appId": "it.sagra.gestionale",
+    "productName": "Sagra della Pizza",
+    "author": "Sagra della Pizza",
+    "updateFeedUrl": "https://sagradellapizza.it/desktop-updates",
+    "downloadPageUrl": "https://sagradellapizza.it/download"
+  }
+}

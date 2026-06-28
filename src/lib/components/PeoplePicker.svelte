@@ -1,5 +1,7 @@
 <script lang="ts">
   import { order, setPeople } from '$lib/stores/order.svelte';
+  import { copertoPerPersona } from '$lib/config/tenant';
+  import { formatEUR } from '$lib/utils/currency';
 </script>
 
 <div class="flex flex-col items-center gap-6 py-6">
@@ -33,6 +35,6 @@
     </button>
   </div>
   <p class="text-base text-ink text-center max-w-md px-4">
-    Aggiungeremo <strong>€ 1,50</strong> di coperto per persona.
+    Aggiungeremo <strong>{formatEUR(copertoPerPersona)}</strong> di coperto per persona.
   </p>
 </div>

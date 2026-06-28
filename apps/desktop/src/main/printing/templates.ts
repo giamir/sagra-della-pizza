@@ -1,5 +1,6 @@
 import { EscPos } from './escpos.js';
 import { STATION_ORDER, normalizeStation } from './station-constants.js';
+import { isAdjKey } from '@sagra/shared/utils/adjustments';
 
 export type PrintLine = {
   itemId: string;
@@ -18,7 +19,7 @@ export type PrintOrder = {
 };
 
 function eur(cents: number): string {
-  return `€${(cents / 100).toFixed(2)}`;
+  return cents < 0 ? `-€${(Math.abs(cents) / 100).toFixed(2)}` : `€${(cents / 100).toFixed(2)}`;
 }
 
 function formatTime(iso: string): string {
@@ -57,6 +58,7 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
 
   e.doubleHeight(true);
   for (const l of lines) {
+    if (isAdjKey(l.itemId)) continue; // never print adjustments on prep tickets
     const qtyStr = `${l.qty}x`;
     const maxName = width - qtyStr.length - 2;
     const name = l.name.length > maxName ? l.name.slice(0, maxName - 1) + '…' : l.name;
@@ -91,6 +93,7 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
     .separator('-');
 
   for (const l of order.lines) {
+    if (isAdjKey(l.itemId)) continue;
     const subtotal = eur(l.unitPriceCents * l.qty);
     const label = `${l.qty}x ${l.name}`;
     e.columns(label, subtotal);
@@ -99,6 +102,11 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
   e.separator('-');
   if (order.people > 0) {
     e.columns(`${order.people} cop. (${eur(150)} cad.)`, eur(copertoTotal));
+  }
+
+  for (const l of order.lines) {
+    if (!isAdjKey(l.itemId)) continue;
+    e.columns(l.name, eur(l.unitPriceCents));
   }
 
   e.separator('=')
@@ -120,6 +128,7 @@ export function buildReceipt(order: PrintOrder, width = 42): Buffer {
 export function groupByStation(lines: PrintLine[], order: string[] = STATION_ORDER): Map<string, PrintLine[]> {
   const map = new Map<string, PrintLine[]>();
   for (const l of lines) {
+    if (isAdjKey(l.itemId)) continue; // adjustments are financial, not prep items
     const s = normalizeStation(l.station || 'Altro');
     if (!map.has(s)) map.set(s, []);
     map.get(s)!.push(l);
@@ -172,6 +181,7 @@ export function buildPreviewText(
   const copertoTotal = order.people * 150;
   const receiptRows: string[] = ['Sagra della Pizza', 'Orentano', 'Copia Cliente', sep('='), formatTime(order.createdAt), `Ordine #${order.id}`, sep('-')];
   for (const l of order.lines) {
+    if (isAdjKey(l.itemId)) continue;
     const label = `${l.qty}x ${l.name}`;
     const sub = eur(l.unitPriceCents * l.qty);
     const gap = Math.max(1, width - label.length - sub.length);
@@ -181,6 +191,11 @@ export function buildPreviewText(
   const copStr = eur(copertoTotal);
   const copLabel = `${order.people} coperti`;
   receiptRows.push(`${copLabel}${' '.repeat(Math.max(1, width - copLabel.length - copStr.length))}${copStr}`);
+  for (const l of order.lines) {
+    if (!isAdjKey(l.itemId)) continue;
+    const sub = eur(l.unitPriceCents);
+    receiptRows.push(`${l.name}${' '.repeat(Math.max(1, width - l.name.length - sub.length))}${sub}`);
+  }
   receiptRows.push(sep('='));
   const totStr = eur(order.totalCents);
   receiptRows.push(`TOTALE${' '.repeat(Math.max(1, width - 6 - totStr.length))}${totStr}`, sep('='), '', "Non e' scontrino fiscale", 'Grazie e buon appetito!');

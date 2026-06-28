@@ -9,6 +9,7 @@
     "./utils/pricing": "./src/utils/pricing.ts",
     "./utils/stock": "./src/utils/stock.ts",
     "./utils/currency": "./src/utils/currency.ts",
+    "./utils/adjustments": "./src/utils/adjustments.ts",
     "./data/menu.json": "./src/data/menu.json"
   }
 }

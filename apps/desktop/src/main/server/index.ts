@@ -8,6 +8,7 @@ import { queryOrders, voidOrder } from '../db/reports.js';
 import { getCashFloats, setCashFloat } from '../db/cash.js';
 import { getCatalog, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 import { getReservedTotals, setReservation, clearReservation } from './reservations.js';
+import { isAdjKey, parseAdj, adjLabel } from '@sagra/shared/utils/adjustments';
 
 let _httpServer: ReturnType<typeof createServer> | null = null;
 let _wss: WebSocketServer | null = null;
@@ -206,6 +207,13 @@ export function startServer(port = 7331): void {
         const priceIndex = getLivePriceIndex();
         const printLines = [] as { itemId: string; qty: number; unitPriceCents: number; name: string; station: string }[];
         for (const [itemId, qty] of lines) {
+          if (isAdjKey(itemId)) {
+            const { cents, reason } = parseAdj(itemId);
+            const name = reason || adjLabel(cents);
+            insertLine.run({ orderId, itemId, qty: 1, unitPriceCents: cents, nameSnapshot: name, station: '' });
+            printLines.push({ itemId, qty: 1, unitPriceCents: cents, name, station: '' });
+            continue;
+          }
           const entry = priceIndex[itemId];
           const unitPriceCents = entry ? Math.round(entry.price * 100) : 0;
           const nameSnapshot = entry?.name ?? itemId;

@@ -5,6 +5,7 @@
   import { buildPriceIndex, optionsForItem } from '@sagra/shared/utils/pricing';
   import { buildStockIdIndex, stockIdForCartKey } from '@sagra/shared/utils/stock';
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { encodeAdjKey, isAdjKey, parseAdj } from '@sagra/shared/utils/adjustments';
   import type { Payload, MenuItem, MenuOption } from '@sagra/shared/types';
   import menuData from '@sagra/shared/data/menu.json';
   import type { Menu } from '@sagra/shared/types';
@@ -12,6 +13,7 @@
   import CartPanel from './CartPanel.svelte';
   import VariantPicker from './VariantPicker.svelte';
   import OptionsPicker from './OptionsPicker.svelte';
+  import AdjustmentModal from './AdjustmentModal.svelte';
   import PrintPreview from '$lib/components/PrintPreview.svelte';
   import PrinterSettings from '$lib/components/PrinterSettings.svelte';
   import TillSettings from '$lib/components/TillSettings.svelte';
@@ -55,6 +57,11 @@
   // --- Cart state ---
   let cart = $state<Record<string, number>>({});
   let people = $state(1);
+  // Ad-hoc adjustments (surplus / discount). Held separately from `cart` so they
+  // never touch stock reservations; encoded into the order lines only at submit.
+  let adjustments = $state<{ id: number; amountCents: number; reason?: string }[]>([]);
+  let adjustmentModalOpen = $state(false);
+  let nextAdjId = 0;
 
   // --- UI state ---
   let activeCategoryId = $state(MENU.categories[0].id);
@@ -122,7 +129,8 @@
 
   const itemsTotal = $derived(cartLines.reduce((s, l) => s + l.subtotal, 0));
   const copertoTotal = $derived(people * MENU.coperto.perPersona);
-  const total = $derived(itemsTotal + copertoTotal);
+  const adjustmentsTotal = $derived(adjustments.reduce((s, a) => s + a.amountCents, 0) / 100);
+  const total = $derived(itemsTotal + copertoTotal + adjustmentsTotal);
   const cartIsEmpty = $derived(cartLines.length === 0);
   const liveStats = $derived.by(() => {
     const orderCount = todayOrders.length;
@@ -137,6 +145,7 @@
     const itemMap = new Map<string, { id: string; name: string; qty: number; cents: number }>();
     for (const order of todayOrders) {
       for (const line of order.lines) {
+        if (isAdjKey(line.itemId)) continue; // adjustments aren't menu items
         const current = itemMap.get(line.itemId) ?? {
           id: line.itemId,
           name: line.name,
@@ -212,9 +221,19 @@
 
   function clearCart() {
     for (const k of Object.keys(cart)) delete cart[k];
+    adjustments = [];
     people = 1;
     orderSource = 'manual';
     statusMessage = null;
+  }
+
+  function addAdjustment(amountCents: number, reason?: string) {
+    if (!amountCents) return;
+    adjustments = [...adjustments, { id: nextAdjId++, amountCents, reason: reason?.trim() || undefined }];
+  }
+
+  function removeAdjustment(id: number) {
+    adjustments = adjustments.filter((a) => a.id !== id);
   }
 
   function setPeople(n: number) {
@@ -549,7 +568,10 @@
       const result = await window.api.submitOrder({
         people,
         totalCents: Math.round(total * 100),
-        lines: Object.entries(cart).filter(([, q]) => q > 0),
+        lines: [
+          ...Object.entries(cart).filter(([, q]) => q > 0),
+          ...adjustments.map((a) => [encodeAdjKey(a.amountCents, a.reason), 1] as [string, number])
+        ],
         source: orderSource,
         paymentMethod
       });
@@ -892,6 +914,7 @@
       categoryOrder={MENU.categories.map((c) => c.label)}
       {people}
       copertoPerPerson={MENU.coperto.perPersona}
+      {adjustments}
       {total}
       {completing}
       {orderSource}
@@ -900,6 +923,8 @@
       onDec={decLine}
       onRemove={removeLine}
       onSetPeople={setPeople}
+      onAddAdjustment={() => (adjustmentModalOpen = true)}
+      onRemoveAdjustment={removeAdjustment}
       onComplete={initiateOrder}
       onScanQr={startScan}
     />
@@ -924,6 +949,14 @@
       baseName={optionsPicker.baseName}
       onAdd={(key) => { addItem(key); optionsPicker = null; }}
       onClose={() => optionsPicker = null}
+    />
+  {/if}
+
+  <!-- Ad-hoc adjustment (sconto / supplemento) -->
+  {#if adjustmentModalOpen}
+    <AdjustmentModal
+      onAdd={(cents, reason) => { addAdjustment(cents, reason); adjustmentModalOpen = false; }}
+      onClose={() => adjustmentModalOpen = false}
     />
   {/if}
 
@@ -975,7 +1008,15 @@
       }}
       onReloadCart={(lines, p) => {
         for (const k of Object.keys(cart)) delete cart[k];
-        for (const { id, qty } of lines) cart[id] = qty;
+        adjustments = [];
+        for (const { id, qty } of lines) {
+          if (isAdjKey(id)) {
+            const { cents, reason } = parseAdj(id);
+            adjustments = [...adjustments, { id: nextAdjId++, amountCents: cents, reason }];
+          } else {
+            cart[id] = qty;
+          }
+        }
         people = p;
         orderSource = 'manual';
         reportsOpen = false;

@@ -21,6 +21,7 @@ export default defineConfig({
         '@sagra/shared/utils/payload': resolve(sharedSrc, 'utils/payload.ts'),
         '@sagra/shared/utils/pricing': resolve(sharedSrc, 'utils/pricing.ts'),
         '@sagra/shared/utils/currency': resolve(sharedSrc, 'utils/currency.ts'),
+        '@sagra/shared/utils/adjustments': resolve(sharedSrc, 'utils/adjustments.ts'),
         '@sagra/shared/data/menu.json': resolve(sharedSrc, 'data/menu.json')
       }
     }
@@ -36,6 +37,7 @@ export default defineConfig({
         '@sagra/shared/utils/payload': resolve(sharedSrc, 'utils/payload.ts'),
         '@sagra/shared/utils/pricing': resolve(sharedSrc, 'utils/pricing.ts'),
         '@sagra/shared/utils/currency': resolve(sharedSrc, 'utils/currency.ts'),
+        '@sagra/shared/utils/adjustments': resolve(sharedSrc, 'utils/adjustments.ts'),
         '@sagra/shared/data/menu.json': resolve(sharedSrc, 'data/menu.json'),
         $lib: resolve(__dirname, 'src/renderer/lib')
       }

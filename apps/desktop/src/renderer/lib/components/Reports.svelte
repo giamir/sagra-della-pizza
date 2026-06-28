@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { isAdjKey } from '@sagra/shared/utils/adjustments';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
   import PrintPreview from './PrintPreview.svelte';
 
@@ -381,6 +382,7 @@
     const map = new Map<string, { qty: number; cents: number }>();
     for (const o of filteredOrders) {
       for (const l of o.lines) {
+        if (isAdjKey(l.itemId)) continue;
         const key = normalizeStation(l.station || 'Altro');
         const cur = map.get(key) ?? { qty: 0, cents: 0 };
         cur.qty += l.qty;
@@ -402,6 +404,7 @@
     const map = new Map<string, { itemId: string; name: string; qty: number; cents: number; unitPriceCents: number; station: string }>();
     for (const o of filteredOrders) {
       for (const l of o.lines) {
+        if (isAdjKey(l.itemId)) continue;
         const cur = map.get(l.itemId) ?? {
           itemId: l.itemId,
           name: l.name,

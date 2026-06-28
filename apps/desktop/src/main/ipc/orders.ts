@@ -5,6 +5,7 @@ import { loadTillSettings } from './settings.js';
 import { broadcastStock } from '../server/index.js';
 import { clearReservation } from '../server/reservations.js';
 import { getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
+import { isAdjKey, parseAdj, adjLabel } from '@sagra/shared/utils/adjustments';
 
 type SubmitOrderPayload = {
   people: number;
@@ -53,6 +54,13 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
     const printLines: PrintOrderPayload['lines'] = [];
 
     for (const [itemId, qty] of payload.lines) {
+      if (isAdjKey(itemId)) {
+        const { cents, reason } = parseAdj(itemId);
+        const name = reason || adjLabel(cents);
+        insertLine.run({ orderId, itemId, qty: 1, unitPriceCents: cents, nameSnapshot: name, station: '' });
+        printLines.push({ itemId, qty: 1, unitPriceCents: cents, name, station: '' });
+        continue;
+      }
       const entry = priceIndex[itemId];
       const unitPriceCents = entry ? Math.round(entry.price * 100) : 0;
       const nameSnapshot = entry?.name ?? itemId;

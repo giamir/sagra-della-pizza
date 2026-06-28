@@ -1,13 +1,16 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
+  import { adjLabel } from '@sagra/shared/utils/adjustments';
 
   type CartLine = { id: string; name: string; categoryLabel: string; price: number; qty: number; subtotal: number };
+  type Adjustment = { id: number; amountCents: number; reason?: string };
 
   let {
     cartLines,
     categoryOrder,
     people,
     copertoPerPerson,
+    adjustments,
     total,
     completing,
     orderSource,
@@ -16,6 +19,8 @@
     onDec,
     onRemove,
     onSetPeople,
+    onAddAdjustment,
+    onRemoveAdjustment,
     onComplete,
     onScanQr
   }: {
@@ -23,6 +28,7 @@
     categoryOrder: string[];
     people: number;
     copertoPerPerson: number;
+    adjustments: Adjustment[];
     total: number;
     completing: boolean;
     orderSource: 'manual' | 'qr';
@@ -31,6 +37,8 @@
     onDec: (id: string) => void;
     onRemove: (id: string) => void;
     onSetPeople: (n: number) => void;
+    onAddAdjustment: () => void;
+    onRemoveAdjustment: (id: number) => void;
     onComplete: () => void;
     onScanQr: () => void;
   } = $props();
@@ -162,11 +170,42 @@
           </div>
         {/each}
       {/if}
+
+      <!-- Ad-hoc adjustments (sconto / supplemento) -->
+      {#if adjustments.length}
+        <ul class="space-y-1">
+          {#each adjustments as adj (adj.id)}
+            <li class="flex items-center gap-2 bg-white dark:bg-[#20242c] rounded-lg px-2 py-2 border border-gray-100">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold leading-tight truncate" class:text-red-700={adj.amountCents < 0}>
+                  {adj.reason || adjLabel(adj.amountCents)}
+                </p>
+                <p class="text-xs text-gray-500">{adj.amountCents < 0 ? '−' : '+'}{formatEUR(Math.abs(adj.amountCents) / 100)}</p>
+              </div>
+              <button
+                type="button"
+                onclick={() => onRemoveAdjustment(adj.id)}
+                class="w-7 h-7 flex items-center justify-center rounded border border-red-200 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 text-lg leading-none"
+                aria-label="Rimuovi"
+              >×</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
   </div>
 
   <!-- Footer: total, actions -->
   <div class="shrink-0 border-t border-gray-200 bg-white dark:bg-[#20242c] px-3 pb-3 pt-2 space-y-2">
+
+    <!-- Add adjustment -->
+    <button
+      type="button"
+      onclick={onAddAdjustment}
+      class="w-full py-2 rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-100 dark:hover:bg-white/5"
+    >
+      + Sconto / Supplemento
+    </button>
 
     <!-- Total -->
     <div class="flex items-center justify-between bg-green-900 text-white rounded-lg px-3 py-2">

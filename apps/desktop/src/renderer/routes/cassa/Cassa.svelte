@@ -38,9 +38,7 @@
     Moon,
   } from 'lucide-svelte';
 
-  const MENU = menuData as Menu;
-  const PRICE_INDEX = buildPriceIndex(MENU);
-  const STOCK_INDEX = buildStockIdIndex(MENU);
+  const DEFAULT_MENU = menuData as Menu;
   const LIVE_STATS_REFRESH_MS = 15000;
   const LOW_STOCK_LIMIT = 5;
   // Re-publish our cart hold periodically so the host doesn't drop it as stale
@@ -69,6 +67,7 @@
   // --- Cart state ---
   let cart = $state<Record<string, number>>({});
   let people = $state(1);
+  let menu = $state<Menu>(DEFAULT_MENU);
   // Ad-hoc adjustments (surplus / discount). Held separately from `cart` so they
   // never touch stock reservations; encoded into the order lines only at submit.
   let adjustments = $state<{ id: number; amountCents: number; reason?: string }[]>([]);
@@ -76,7 +75,7 @@
   let nextAdjId = 0;
 
   // --- UI state ---
-  let activeCategoryId = $state(MENU.categories[0].id);
+  let activeCategoryId = $state(DEFAULT_MENU.categories[0].id);
   let variantItem = $state<MenuItem | null>(null);
   type OptionsPickerState = { item: MenuItem; options: MenuOption[]; variants?: Array<{ id: string; label: string }>; baseId: string; baseName: string };
   let optionsPicker = $state<OptionsPickerState | null>(null);
@@ -129,18 +128,21 @@
   let statsAnimationTimer = 0;
 
   // --- Derived ---
+  const priceIndex = $derived(buildPriceIndex(menu));
+  const stockIndex = $derived(buildStockIdIndex(menu));
+
   const cartLines = $derived.by(() => {
     return Object.entries(cart)
       .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => {
-        const entry = PRICE_INDEX[id];
+        const entry = priceIndex[id];
         const price = entry?.price ?? 0;
         return { id, name: entry?.name ?? id, categoryLabel: entry?.categoryLabel ?? '', price, qty, subtotal: price * qty };
       });
   });
 
   const itemsTotal = $derived(cartLines.reduce((s, l) => s + l.subtotal, 0));
-  const copertoTotal = $derived(people * MENU.coperto.perPersona);
+  const copertoTotal = $derived(people * menu.coperto.perPersona);
   const adjustmentsTotal = $derived(adjustments.reduce((s, a) => s + a.amountCents, 0) / 100);
   const total = $derived(itemsTotal + copertoTotal + adjustmentsTotal);
   const cartIsEmpty = $derived(cartLines.length === 0);
@@ -176,7 +178,7 @@
 
     const lowStock = Object.entries(stock)
       .filter(([, remaining]) => remaining >= 0 && remaining <= LOW_STOCK_LIMIT)
-      .map(([id, remaining]) => ({ id, name: PRICE_INDEX[id]?.name ?? id, remaining }))
+      .map(([id, remaining]) => ({ id, name: priceIndex[id]?.name ?? id, remaining }))
       .sort((a, b) => a.remaining - b.remaining || a.name.localeCompare(b.name, 'it'))
       .slice(0, 4);
 
@@ -188,7 +190,7 @@
   function cartHeldForStock(stockId: string): number {
     let sum = 0;
     for (const [key, qty] of Object.entries(cart)) {
-      if (qty > 0 && stockIdForCartKey(key, STOCK_INDEX) === stockId) sum += qty;
+      if (qty > 0 && stockIdForCartKey(key, stockIndex) === stockId) sum += qty;
     }
     return sum;
   }
@@ -198,14 +200,14 @@
   // max of the broadcast hold and our local cart so a burst of clicks before the
   // hold round-trips can't push us past zero (checkout stays the hard backstop).
   function effectiveRemaining(key: string): number {
-    const stockId = stockIdForCartKey(key, STOCK_INDEX);
+    const stockId = stockIdForCartKey(key, stockIndex);
     if (!(stockId in stock)) return Infinity;
     const held = Math.max(reserved[stockId] ?? 0, cartHeldForStock(stockId));
     return stock[stockId] - held;
   }
 
   function flashEsaurito(id: string) {
-    const name = PRICE_INDEX[id]?.name ?? id;
+    const name = priceIndex[id]?.name ?? id;
     statusMessage = `${name} esaurito — non aggiunto`;
     setTimeout(() => { statusMessage = null; }, 3000);
   }
@@ -325,7 +327,7 @@
 
   // Returns the options for the category that contains this item.
   function categoryOptionsFor(itemId: string): MenuOption[] {
-    for (const cat of MENU.categories) {
+    for (const cat of menu.categories) {
       for (const group of cat.groups) {
         if (group.items.some((i) => i.id === itemId || i.variants?.some((v) => v.id === itemId))) {
           return cat.options ?? [];
@@ -454,7 +456,7 @@
     const usedByStock: Record<string, number> = {};
 
     for (const [id, qty] of payload.l) {
-      const stockId = stockIdForCartKey(id, STOCK_INDEX);
+      const stockId = stockIdForCartKey(id, stockIndex);
       if (!(stockId in stock)) { cart[id] = qty; continue; } // no limit
       const available = stock[stockId] - (reserved[stockId] ?? 0) - (usedByStock[stockId] ?? 0);
       const add = Math.max(0, Math.min(qty, available));
@@ -463,7 +465,7 @@
         usedByStock[stockId] = (usedByStock[stockId] ?? 0) + add;
       }
       if (add < qty) {
-        const name = PRICE_INDEX[id]?.name ?? id;
+        const name = priceIndex[id]?.name ?? id;
         (add === 0 ? dropped : reduced).push(name);
       }
     }
@@ -591,7 +593,7 @@
       if (!result.ok) {
         if (result.oversold?.length) {
           const names = result.oversold.map((id: string) => {
-            const entry = PRICE_INDEX[id];
+            const entry = priceIndex[id];
             return entry?.name ?? id;
           });
           statusMessage = `Esauriti: ${names.join(', ')} — rimuovi dal carrello`;
@@ -632,6 +634,15 @@
     }
   }
 
+  async function refreshCatalog() {
+    const result = await window.api.getCatalog();
+    const nextMenu = (result.catalog as Menu | undefined) ?? DEFAULT_MENU;
+    menu = nextMenu;
+    if (!nextMenu.categories.some((cat) => cat.id === activeCategoryId)) {
+      activeCategoryId = nextMenu.categories[0]?.id ?? '';
+    }
+  }
+
   onMount(() => {
     let liveStatsTimer = 0;
     let heartbeatTimer = 0;
@@ -648,6 +659,7 @@
       ]);
       tillName = settings.tillName || 'Cassa';
       paymentEnabled = payConfig.enabled;
+      await refreshCatalog();
 
       // Load initial stock + current cart holds
       stock = await window.api.getStock();
@@ -914,7 +926,7 @@
   <!-- Main split layout -->
   <div class="flex-1 flex overflow-hidden">
     <ItemBrowser
-      menu={MENU}
+      {menu}
       {cart}
       {stock}
       {reserved}
@@ -925,9 +937,9 @@
     />
     <CartPanel
       {cartLines}
-      categoryOrder={MENU.categories.map((c) => c.label)}
+      categoryOrder={menu.categories.map((c) => c.label)}
       {people}
-      copertoPerPerson={MENU.coperto.perPersona}
+      copertoPerPerson={menu.coperto.perPersona}
       {adjustments}
       {total}
       {completing}
@@ -1051,7 +1063,10 @@
 
   <!-- Catalog admin -->
   {#if catalogAdminOpen}
-    <CatalogAdmin onClose={() => catalogAdminOpen = false} />
+    <CatalogAdmin onClose={async () => {
+      catalogAdminOpen = false;
+      await refreshCatalog();
+    }} />
   {/if}
 
   <!-- Database backup / restore -->

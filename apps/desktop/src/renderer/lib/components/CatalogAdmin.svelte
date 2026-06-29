@@ -36,14 +36,30 @@
     setTimeout(() => { statusMsg = null; }, 3000);
   }
 
-  async function save() {
+  function errorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error && err.message) return err.message;
+    if (typeof err === 'string' && err) return err;
+    return fallback;
+  }
+
+  async function persistCatalog(): Promise<void> {
     if (!catalog) return;
+    const catalogSnapshot = $state.snapshot(catalog) as Menu;
+    const stationSnapshot = $state.snapshot(stations) as Record<string, string>;
+    const stationListSnapshot = $state.snapshot(stationList) as string[];
+    const result = await window.api.saveCatalog(catalogSnapshot, stationSnapshot, stationListSnapshot, copertoStation);
+    if (result && typeof result === 'object' && 'ok' in result && !result.ok) {
+      throw new Error('error' in result && typeof result.error === 'string' ? result.error : 'Errore salvataggio');
+    }
+  }
+
+  async function save() {
     saving = true;
     try {
-      await window.api.saveCatalog(catalog, stations, stationList, copertoStation);
+      await persistCatalog();
       showStatus('Salvato');
-    } catch {
-      showStatus('Errore salvataggio', false);
+    } catch (err) {
+      showStatus(errorMessage(err, 'Errore salvataggio'), false);
     } finally {
       saving = false;
     }
@@ -54,7 +70,7 @@
     exporting = true;
     try {
       // Save first so export reflects latest edits
-      await window.api.saveCatalog(catalog, stations, stationList, copertoStation);
+      await persistCatalog();
       const result = await window.api.exportCatalog();
       if (result.cancelled) {
         // user dismissed dialog — no message needed

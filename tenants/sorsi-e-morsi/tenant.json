@@ -4,7 +4,7 @@
     "name": "Sorsi e Morsi",
     "location": "Orentano",
     "shortName": "Sorsi e Morsi",
-    "tagline": "Food & drink dalle 19:00, a seguire musica e divertimento! Ordina e mostra il QR alla cassa.",
+    "tagline": "Food & drink dalle 19:00, a seguire musica e divertimento! Sfoglia il menù e ordina alla cassa.",
     "logo": "/sorsi-e-morsi-logo.png",
     "logoAlt": "Sorsi e Morsi in Piazza"
   },
@@ -47,6 +47,9 @@
   "network": {
     "serverPort": 7331,
     "defaultTillName": "Cassa 1"
+  },
+  "features": {
+    "qr": false
   },
   "storagePrefix": "sorsi",
   "desktop": {

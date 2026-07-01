@@ -67,6 +67,12 @@ export type TenantNetwork = {
   defaultTillName: string;
 };
 
+export type TenantFeatures = {
+  /** When false the customer web app is menu-only: the order flow stops at the
+   *  riepilogo and the QR confirmation step is hidden. Defaults to true. */
+  qr?: boolean;
+};
+
 export type TenantDesktop = {
   /** Bundle / appId for electron-builder, e.g. "it.sagra.gestionale". */
   appId: string;
@@ -89,6 +95,8 @@ export type TenantConfig = {
   receipt: TenantReceipt;
   stations: TenantStations;
   network: TenantNetwork;
+  /** Optional feature toggles; every flag defaults to enabled when omitted. */
+  features?: TenantFeatures;
   /** localStorage key prefix; kept as "sagra" for Orentano to preserve installs. */
   storagePrefix: string;
   desktop: TenantDesktop;

@@ -8,6 +8,10 @@ import type { Menu } from '$lib/types';
 
 export const tenant = tenantJson as TenantConfig;
 
+/** Whether the order flow ends with the QR step. When false the app is
+ *  menu-only and stops at the riepilogo (e.g. tenants without a till). */
+export const qrEnabled: boolean = tenant.features?.qr !== false;
+
 /** Cover charge per person (EUR), single-sourced from the menu. */
 export const copertoPerPersona: number = (menu as Menu).coperto?.perPersona ?? 0;
 

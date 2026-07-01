@@ -1,5 +1,6 @@
 <script lang="ts">
   import StepHeader from '$lib/components/StepHeader.svelte';
+  import { qrEnabled } from '$lib/config/tenant';
   import { MENU, clearOrder, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
 
@@ -45,7 +46,12 @@
   const isEmpty = $derived(linesByCategory.length === 0);
 </script>
 
-<StepHeader title="Il tuo ordine" subtitle="Controlla tutto prima di mostrare il QR alla cassa" />
+<StepHeader
+  title="Il tuo ordine"
+  subtitle={qrEnabled
+    ? 'Controlla tutto prima di mostrare il QR alla cassa'
+    : 'Controlla tutto e ordina alla cassa'}
+/>
 
 <div class="px-4 pb-32 max-w-2xl mx-auto w-full">
   {#if isEmpty}
@@ -106,12 +112,14 @@
       <div class="text-3xl font-bold tabular-nums">{formatEUR(t)}</div>
     </div>
 
-    <a
-      href="/qr"
-      class="block text-center w-full px-6 py-5 min-h-16 rounded-full bg-tomato hover:bg-tomato-dark text-white text-2xl font-bold shadow-lg"
-    >
-      Conferma e mostra il QR
-    </a>
+    {#if qrEnabled}
+      <a
+        href="/qr"
+        class="block text-center w-full px-6 py-5 min-h-16 rounded-full bg-tomato hover:bg-tomato-dark text-white text-2xl font-bold shadow-lg"
+      >
+        Conferma e mostra il QR
+      </a>
+    {/if}
 
     <button
       type="button"

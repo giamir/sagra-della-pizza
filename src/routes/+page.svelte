@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { clearOrder, count } from '$lib/stores/order.svelte';
-  import { tenant } from '$lib/config/tenant';
+  import { qrEnabled, tenant } from '$lib/config/tenant';
 
   const hasOrder = $derived(count() > 0);
   let cashierTaps = 0;
@@ -66,7 +66,9 @@
     </div>
 
     <p class="mt-10 text-sm text-ink/70">
-      Una volta confermato, mostra il QR all'addetto della cassa per pagare.
+      {qrEnabled
+        ? "Una volta confermato, mostra il QR all'addetto della cassa per pagare."
+        : "Prepara il tuo ordine e comunicalo all'addetto della cassa."}
     </p>
   </div>
 </div>

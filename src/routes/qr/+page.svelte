@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { qrEnabled } from '$lib/config/tenant';
   import { count, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
   import { encodeOrder } from '$lib/utils/payload';
@@ -26,7 +27,7 @@
   });
 
   $effect(() => {
-    if (count() === 0) goto('/ordina/riepilogo');
+    if (!qrEnabled || count() === 0) goto('/ordina/riepilogo');
   });
 </script>
 

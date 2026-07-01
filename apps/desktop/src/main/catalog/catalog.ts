@@ -36,17 +36,39 @@ export function saveStationOverrides(overrides: Record<string, string>): void {
   setSetting('station_overrides', JSON.stringify(normalized));
 }
 
-// A complete item-id → station map for every catalog item (and variant), with
-// overrides applied and the hardcoded map as fallback. The catalog admin uses
-// this so every item shows an explicit station (no "auto" fallthrough).
-export function getResolvedStations(): Record<string, string> {
-  const catalog = getCatalog();
-  const overrides = getStationOverrides();
+// Item-id → station declared in the catalog itself: the item's own `station`
+// first, then its category's. Variants inherit the resolved item station.
+// Tenant menus use this instead of the legacy hardcoded map in station-map.ts.
+function getDeclaredStations(catalog: Menu): Record<string, string> {
   const result: Record<string, string> = {};
   for (const cat of catalog.categories) {
     for (const group of cat.groups) {
       for (const item of group.items) {
-        const station = normalizeStation(overrides[item.id] ?? getStation(item.id));
+        const station = item.station ?? cat.station;
+        if (!station) continue;
+        result[item.id] = station;
+        if (item.variants) {
+          for (const v of item.variants) result[v.id] = station;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+// A complete item-id → station map for every catalog item (and variant), with
+// overrides applied, then catalog-declared stations, then the hardcoded map as
+// fallback. The catalog admin uses this so every item shows an explicit
+// station (no "auto" fallthrough).
+export function getResolvedStations(): Record<string, string> {
+  const catalog = getCatalog();
+  const overrides = getStationOverrides();
+  const declared = getDeclaredStations(catalog);
+  const result: Record<string, string> = {};
+  for (const cat of catalog.categories) {
+    for (const group of cat.groups) {
+      for (const item of group.items) {
+        const station = normalizeStation(overrides[item.id] ?? declared[item.id] ?? getStation(item.id));
         result[item.id] = station;
         if (item.variants) {
           for (const v of item.variants) {
@@ -59,13 +81,15 @@ export function getResolvedStations(): Record<string, string> {
   return result;
 }
 
-// Resolves station for a cart key, checking overrides first then the hardcoded
-// map. Composite option keys (e.g. `margherita||senza-mozzarella`) are decoded
-// to their base item id so options don't fall through to the "Altro" station.
+// Resolves station for a cart key, checking overrides first, then the
+// catalog-declared station, then the hardcoded map. Composite option keys
+// (e.g. `margherita||senza-mozzarella`) are decoded to their base item id so
+// options don't fall through to the "Altro" station.
 export function resolveStation(cartKey: string): string {
   const { itemId } = decodeCartKey(cartKey);
   const overrides = getStationOverrides();
-  return normalizeStation(overrides[itemId] ?? getStation(itemId));
+  const declared = getDeclaredStations(getCatalog());
+  return normalizeStation(overrides[itemId] ?? declared[itemId] ?? getStation(itemId));
 }
 
 export function getLivePriceIndex(): ReturnType<typeof buildPriceIndex> {

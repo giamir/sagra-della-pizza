@@ -3,6 +3,7 @@ export type MenuItem = {
   name: string;
   price: number;
   description?: string;
+  station?: string; // kitchen/print station for this item; overrides the category's station
   variants?: Array<{
     id: string;
     label: string;
@@ -28,6 +29,7 @@ export type MenuCategory = {
   id: string;
   label: string;
   subtitle?: string; // optional tagline shown under the category title in the ordering flow
+  station?: string; // default kitchen/print station for every item in this category
   groups: MenuGroup[];
   options?: MenuOption[]; // optional add-ons available for every item in this category
 };

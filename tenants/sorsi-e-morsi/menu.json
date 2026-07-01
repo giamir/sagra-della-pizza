@@ -2,34 +2,102 @@
   "coperto": { "perPersona": 1.50 },
   "categories": [
     {
-      "id": "sorsi",
-      "label": "Sorsi",
-      "subtitle": "Da bere, freschi",
+      "id": "bar",
+      "label": "Bar",
+      "station": "Bar",
       "groups": [
         {
           "label": "",
           "items": [
-            { "id": "birra-spina", "name": "Birra alla Spina 0,4 L", "price": 5.00 },
+            { "id": "coca-cola", "name": "Coca Cola", "price": 2.50 },
+            { "id": "estathe", "name": "Estathè", "price": 2.50 },
+            { "id": "fanta", "name": "Fanta", "price": 2.50 },
+            { "id": "birra", "name": "Birra", "price": 3.00 },
+            { "id": "acqua-500ml", "name": "Acqua 500 ml", "price": 1.00 },
+            { "id": "acqua-1l", "name": "Acqua 1 L", "price": 1.80 },
+            { "id": "prosecco", "name": "Prosecco", "price": 6.00 },
+            { "id": "caffe", "name": "Caffè", "price": 1.00 },
+            { "id": "vino-rosso", "name": "Vino Rosso", "price": 6.50 },
+            { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 },
             { "id": "spritz", "name": "Spritz", "price": 5.00 },
-            { "id": "vino", "name": "Vino (bicchiere)", "price": 2.50 },
-            { "id": "bibita", "name": "Bibita in Lattina", "price": 2.50 },
-            { "id": "acqua", "name": "Acqua (0,5 L)", "price": 1.00 }
+            { "id": "negroni", "name": "Negroni", "price": 5.00 },
+            { "id": "amaro", "name": "Amaro", "price": 5.00 },
+            { "id": "limoncello", "name": "Limoncello", "price": 5.00 },
+            { "id": "gin-lemon", "name": "Gin Lemon", "price": 5.00 },
+            { "id": "gin-tonic", "name": "Gin Tonic", "price": 5.00 }
           ]
         }
       ]
     },
     {
-      "id": "morsi",
-      "label": "Morsi",
-      "subtitle": "Da mangiare, caldi",
+      "id": "cucina",
+      "label": "Cucina",
+      "station": "Cucina",
       "groups": [
         {
           "label": "",
           "items": [
-            { "id": "panino-salsiccia", "name": "Panino con Salsiccia", "price": 5.00 },
-            { "id": "hamburger", "name": "Hamburger", "price": 6.00 },
+            {
+              "id": "antipasto-toscano",
+              "name": "Antipasto Toscano",
+              "price": 8.00,
+              "description": "Formaggio, olive, cipolle, salame, prosciutto, bruschetta"
+            },
             { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
-            { "id": "tagliere-misto", "name": "Tagliere Misto", "price": 12.00 }
+            { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 },
+            { "id": "fagioli", "name": "Fagioli", "price": 2.50 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pizzeria",
+      "label": "Pizzeria",
+      "station": "Pizzeria",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "pizza-margherita", "name": "Pizza Margherita", "price": 5.50 },
+            { "id": "pizza-marinara", "name": "Pizza Marinara", "price": 4.50 },
+            { "id": "pizza-wustel", "name": "Pizza Wustel", "price": 6.00 },
+            { "id": "pizza-cotto", "name": "Pizza Cotto", "price": 6.00 },
+            { "id": "pizza-salamino", "name": "Pizza Salamino", "price": 6.00 },
+            { "id": "pizza-funghi", "name": "Pizza Funghi", "price": 6.00 },
+            { "id": "pizza-funghi-salsiccia", "name": "Pizza Funghi e Salsiccia", "price": 6.50 },
+            { "id": "pizza-napoli", "name": "Napoli", "price": 6.00 },
+            { "id": "pizza-salsiccia", "name": "Pizza Salsiccia", "price": 6.00 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "griglia",
+      "label": "Griglia",
+      "station": "Griglia",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "rosticciana", "name": "Rosticciana", "price": 5.50, "description": "3 pz" },
+            { "id": "salsicce", "name": "Salsicce", "price": 4.00, "description": "3 pz" },
+            { "id": "bistecca-manzo", "name": "Bistecca di Manzo", "price": 18.00 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dolci",
+      "label": "Dolci",
+      "station": "Dolci",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "cocomero", "name": "Cocomero a Fette", "price": 0.00 },
+            { "id": "tiramisu", "name": "Tiramisù", "price": 5.00 },
+            { "id": "tartufo-bianco", "name": "Tartufo Bianco", "price": 6.00 },
+            { "id": "coppa-rum", "name": "Coppa al Rum", "price": 4.00 }
           ]
         }
       ]

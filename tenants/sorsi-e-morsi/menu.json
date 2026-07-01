@@ -94,7 +94,7 @@
         {
           "label": "",
           "items": [
-            { "id": "cocomero", "name": "Cocomero a Fette", "price": 0.00 },
+            { "id": "cocomero", "name": "Cocomero a Fette", "price": 3.00 },
             { "id": "tiramisu", "name": "Tiramisù", "price": 5.00 },
             { "id": "tartufo-bianco", "name": "Tartufo Bianco", "price": 6.00 },
             { "id": "coppa-rum", "name": "Coppa al Rum", "price": 4.00 }

@@ -9,11 +9,15 @@
     onCash,
     onCardApproved,
     onClose,
+    terminalEnabled = true,
   }: {
     totalCents: number;
     onCash: () => void;
     onCardApproved: (authCode: string) => void;
     onClose: () => void;
+    // Whether the Nexi/ECR17 terminal is configured. When false, "Carta" skips
+    // the terminal connection entirely and just records + prints the order.
+    terminalEnabled?: boolean;
   } = $props();
 
   let state = $state<PaymentState>('choose');
@@ -65,6 +69,12 @@
   }
 
   async function selectCard() {
+    // No Nexi terminal configured — don't try to connect. Record the order as a
+    // card payment and let the normal flow print it (payment taken elsewhere).
+    if (!terminalEnabled) {
+      onCardApproved('');
+      return;
+    }
     state = 'waiting';
     try {
       const result = await window.api.startPayment(totalCents);
@@ -135,6 +145,9 @@
           >
             <CreditCard size={32} class="text-blue-600" />
             <span class="font-bold text-gray-800">Carta</span>
+            {#if !terminalEnabled}
+              <span class="text-xs font-medium text-gray-400 -mt-1">Registra e stampa</span>
+            {/if}
           </button>
         </div>
         <button

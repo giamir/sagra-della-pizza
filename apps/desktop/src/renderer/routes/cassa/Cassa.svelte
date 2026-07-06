@@ -563,14 +563,13 @@
 
   // --- Complete order ---
 
-  // Called when cashier taps "Completa": show payment modal if ECR17 enabled, else go direct cash
+  // Called when cashier taps "Completa": always show the payment modal so the
+  // cashier can pick carta/contanti (and get the change calculator for cash).
+  // When the Nexi terminal isn't set up, the modal's "Carta" just records +
+  // prints without trying to connect to a terminal.
   function initiateOrder() {
     if (cartIsEmpty || completing) return;
-    if (paymentEnabled) {
-      paymentModalOpen = true;
-    } else {
-      finaliseOrder('cash');
-    }
+    paymentModalOpen = true;
   }
 
   async function finaliseOrder(paymentMethod: 'cash' | 'card' = 'cash') {
@@ -1019,6 +1018,7 @@
   {#if paymentModalOpen}
     <PaymentModal
       totalCents={Math.round(total * 100)}
+      terminalEnabled={paymentEnabled}
       onCash={() => finaliseOrder('cash')}
       onCardApproved={() => finaliseOrder('card')}
       onClose={() => paymentModalOpen = false}

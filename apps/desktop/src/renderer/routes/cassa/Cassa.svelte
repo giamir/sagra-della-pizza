@@ -714,6 +714,19 @@
       <span class="text-red-300 text-sm font-medium">{scanError}</span>
     {/if}
 
+    <!-- Outside-click backdrop for the stats popover. Must live here (a direct
+         child of the non-transformed header), NOT inside the translated wrapper
+         below — a transformed ancestor would scope this `fixed` element to the
+         button box instead of the viewport, so outside clicks wouldn't close it. -->
+    {#if liveStatsOpen}
+      <button
+        type="button"
+        class="fixed inset-0 z-40 cursor-default"
+        aria-label="Chiudi statistiche"
+        onclick={() => liveStatsOpen = false}
+      ></button>
+    {/if}
+
     <div
       class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
       class:z-50={liveStatsOpen}
@@ -735,13 +748,6 @@
       </button>
 
       {#if liveStatsOpen}
-        <button
-          type="button"
-          class="fixed inset-0 z-40 cursor-default"
-          aria-label="Chiudi statistiche"
-          onclick={() => liveStatsOpen = false}
-        ></button>
-
         <section class="absolute left-1/2 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 bg-white dark:bg-[#20242c] text-gray-900 rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-100">
             <div class="flex items-start justify-between gap-3">

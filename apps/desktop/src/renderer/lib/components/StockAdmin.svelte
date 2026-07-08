@@ -6,42 +6,52 @@
 
   let { onClose }: { onClose: () => void } = $props();
 
-  const MENU = menuData as Menu;
+  const DEFAULT_MENU = menuData as Menu;
 
-  type ItemRow = { id: string; name: string; categoryLabel: string };
+  // The live catalog drives the list — on a client till this is the host's
+  // catalog, so items added on any till (with their real ids) show up here.
+  let menu = $state<Menu>(DEFAULT_MENU);
 
-  const allItems: ItemRow[] = [];
-  for (const cat of MENU.categories) {
-    for (const group of cat.groups) {
-      for (const item of group.items) {
-        allItems.push({ id: item.id, name: item.name, categoryLabel: cat.label });
-      }
-    }
-  }
-
-  // Group by category for display
-  const categories = MENU.categories.map((cat) => ({
-    id: cat.id,
-    label: cat.label,
-    items: allItems.filter((i) => i.categoryLabel === cat.label)
-  }));
+  // Group by category for display, built from whatever catalog is live.
+  const categories = $derived(
+    menu.categories.map((cat) => ({
+      id: cat.id,
+      label: cat.label,
+      items: cat.groups.flatMap((group) =>
+        group.items.map((item) => ({ id: item.id, name: item.name }))
+      )
+    }))
+  );
 
   let stock = $state<Record<string, number>>({});
   let pendingQty = $state<Record<string, string>>({}); // input values per item
   let saving = $state<Record<string, boolean>>({});
-  let activeTab = $state(MENU.categories[0].id);
+  let activeTab = $state('');
 
   let unsubStock: (() => void) | null = null;
+  let unsubCatalog: (() => void) | null = null;
+
+  async function refreshCatalog() {
+    const result = await window.api.getCatalog();
+    menu = (result.catalog as Menu | undefined) ?? DEFAULT_MENU;
+    if (!menu.categories.some((cat) => cat.id === activeTab)) {
+      activeTab = menu.categories[0]?.id ?? '';
+    }
+  }
 
   onMount(async () => {
+    await refreshCatalog();
     stock = await window.api.getStock();
     // Keep the raw "rimasti" counts live as orders decrement stock elsewhere.
     // Admin shows the persisted remaining, not the cart-hold-netted figure.
     unsubStock = window.api.onStockUpdate(({ stock: s }) => { stock = s; });
+    // A catalog edit on any till changes which items exist here.
+    unsubCatalog = window.api.onCatalogUpdate(() => { void refreshCatalog(); });
   });
 
   onDestroy(() => {
     unsubStock?.();
+    unsubCatalog?.();
   });
 
   function stockLabel(id: string): string {

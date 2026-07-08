@@ -55,6 +55,11 @@ function startWsClient(hostUrl: string): void {
         for (const win of BrowserWindow.getAllWindows()) {
           win.webContents.send('stock:update', payload);
         }
+      } else if (msg.type === 'catalog') {
+        // Host catalog changed — tell this client's screens to re-read it.
+        for (const win of BrowserWindow.getAllWindows()) {
+          win.webContents.send('catalog:update');
+        }
       }
     } catch { /* ignore malformed messages */ }
   });

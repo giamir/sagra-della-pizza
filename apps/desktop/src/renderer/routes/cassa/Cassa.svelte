@@ -647,6 +647,7 @@
     let heartbeatTimer = 0;
     let unsubStock: (() => void) | null = null;
     let unsubIncoming: (() => void) | null = null;
+    let unsubCatalog: (() => void) | null = null;
 
     window.addEventListener('keydown', handleKeyInput);
 
@@ -683,6 +684,11 @@
       unsubIncoming = window.api.onIncomingOrder((payload) => {
         handleIncomingOrder(payload as Payload);
       });
+
+      // Host catalog changed (edited here or on another till) — re-read it.
+      unsubCatalog = window.api.onCatalogUpdate(() => {
+        void refreshCatalog();
+      });
     })();
 
     return () => {
@@ -696,6 +702,7 @@
       void window.api.setReservation([]); // release our hold on close
       unsubStock?.();
       unsubIncoming?.();
+      unsubCatalog?.();
     };
   });
 </script>

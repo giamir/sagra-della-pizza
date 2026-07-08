@@ -6,8 +6,10 @@ import { getDb, getSetting } from '../db/schema.js';
 import { getStock, setStock, resetStock, decrementStock } from '../db/stock.js';
 import { queryOrders, voidOrder } from '../db/reports.js';
 import { getCashFloats, setCashFloat } from '../db/cash.js';
-import { getCatalog, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
+import { getCatalog, saveCatalog, resetCatalog, getResolvedStations, saveStationOverrides, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
+import { getStations, saveStations, getCopertoStation, saveCopertoStation } from '../printing/station-map.js';
 import { getReservedTotals, setReservation, clearReservation } from './reservations.js';
+import type { Menu } from '@sagra/shared/types';
 import { isAdjKey, parseAdj, adjLabel } from '@sagra/shared/utils/adjustments';
 
 let _httpServer: ReturnType<typeof createServer> | null = null;
@@ -33,6 +35,38 @@ export function broadcastStock(): void {
   const { BrowserWindow } = require('electron') as typeof import('electron');
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('stock:update', payload);
+  }
+}
+
+// The catalog + station config every till renders from. The host is the single
+// source of truth: client tills fetch this and post their edits back here, so
+// every till shares identical item ids (see GET/POST /catalog).
+export function catalogPayload(): {
+  catalog: Menu;
+  stations: Record<string, string>;
+  stationList: string[];
+  copertoStation: string;
+} {
+  return {
+    catalog: getCatalog(),
+    stations: getResolvedStations(),
+    stationList: getStations(),
+    copertoStation: getCopertoStation()
+  };
+}
+
+// Push a catalog change to every till so open Cassa/Scorte/Catalogo screens
+// re-read it. Called after any save/reset, whether made here or by a client.
+export function broadcastCatalog(): void {
+  if (_wss) {
+    const msg = JSON.stringify({ type: 'catalog' });
+    for (const client of _wss.clients) {
+      if (client.readyState === WebSocket.OPEN) client.send(msg);
+    }
+  }
+  const { BrowserWindow } = require('electron') as typeof import('electron');
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('catalog:update');
   }
 }
 
@@ -65,8 +99,33 @@ export function startServer(port = 7331): void {
   // --- Health ---
   app.get('/ping', (_req, res) => res.json({ ok: true, role: 'host', version: electronApp.getVersion() }));
 
-  // --- Catalog ---
-  app.get('/catalog', (_req, res) => res.json({ menu: getCatalog() }));
+  // --- Catalog (host is the source of truth; clients read + write here) ---
+  app.get('/catalog', (_req, res) => res.json(catalogPayload()));
+
+  app.post('/catalog', (req, res) => {
+    const { catalog, stations, stationList, copertoStation } = req.body as {
+      catalog: Menu;
+      stations: Record<string, string>;
+      stationList?: string[];
+      copertoStation?: string;
+    };
+    if (!catalog || !Array.isArray(catalog.categories)) {
+      res.status(400).json({ ok: false, error: 'Catalogo non valido' });
+      return;
+    }
+    saveCatalog(catalog);
+    if (Array.isArray(stationList)) saveStations(stationList);
+    if (typeof copertoStation === 'string' && copertoStation) saveCopertoStation(copertoStation);
+    if (stations) saveStationOverrides(stations);
+    broadcastCatalog();
+    res.json({ ok: true });
+  });
+
+  app.post('/catalog/reset', (_req, res) => {
+    resetCatalog();
+    broadcastCatalog();
+    res.json({ ok: true, ...catalogPayload() });
+  });
 
   // --- Reports ---
   app.get('/orders', (req, res) => {

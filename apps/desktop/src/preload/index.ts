@@ -91,6 +91,11 @@ const api = {
     ipcRenderer.invoke('catalog:save', catalog, stations, stationList, copertoStation),
   exportCatalog: () => ipcRenderer.invoke('catalog:export'),
   resetCatalog: () => ipcRenderer.invoke('catalog:reset'),
+  onCatalogUpdate: (cb: () => void) => {
+    const listener = () => cb();
+    ipcRenderer.on('catalog:update', listener);
+    return () => ipcRenderer.removeListener('catalog:update', listener);
+  },
 
   // Database backup / restore
   exportDatabase: () => ipcRenderer.invoke('database:export'),

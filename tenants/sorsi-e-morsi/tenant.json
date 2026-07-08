@@ -35,7 +35,7 @@
     "footerLines": ["Non e' scontrino fiscale", "Grazie e buon divertimento!"]
   },
   "stations": {
-    "order": ["Bar", "Cucina", "Pizzeria", "Griglia", "Dolci"],
+    "order": ["Bar", "Cucina", "Crostini", "Pizzeria", "Griglia", "Dolci"],
     "copertoStation": "Bar",
     "aliases": {
       "Bevande": "Bar",

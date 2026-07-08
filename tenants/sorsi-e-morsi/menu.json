@@ -16,7 +16,6 @@
             { "id": "birra", "name": "Birra", "price": 3.00 },
             { "id": "acqua-500ml", "name": "Acqua 500 ml", "price": 1.00 },
             { "id": "acqua-1l", "name": "Acqua 1 L", "price": 1.80 },
-            { "id": "prosecco", "name": "Prosecco", "price": 6.00 },
             { "id": "caffe", "name": "Caffè", "price": 1.00 },
             { "id": "vino-rosso", "name": "Vino Rosso", "price": 6.50 },
             { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 }
@@ -25,28 +24,21 @@
       ]
     },
     {
-      "id": "cucina",
-      "label": "Cucina",
+      "id": "antipasti",
+      "label": "Antipasti",
       "station": "Cucina",
-      "options": [
-        { "id": "ketchup", "label": "Ketchup", "priceDelta": 0.00, "customizableOnly": true },
-        { "id": "maionese", "label": "Maionese", "priceDelta": 0.00, "customizableOnly": true }
-      ],
       "groups": [
         {
           "label": "",
           "items": [
+            { "id": "crostini", "name": "Crostini", "price": 4.00, "description": "2 Romana + 2 Salsiccia", "station": "Crostini" },
             {
               "id": "antipasto-toscano",
               "name": "Antipasto Toscano",
               "price": 8.00,
               "description": "Formaggio, olive, cipolle, salame, prosciutto, bruschetta"
             },
-            { "id": "crostini", "name": "Crostini", "price": 4.00, "description": "2 Romana + 2 Salsiccia" },
-            { "id": "hot-dog", "name": "Hot Dog", "price": 5.00, "customizable": true },
-            { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
-            { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 },
-            { "id": "fagioli", "name": "Fagioli", "price": 2.50 }
+            { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 }
           ]
         }
       ]
@@ -80,10 +72,15 @@
       "id": "griglia",
       "label": "Griglia",
       "station": "Griglia",
+      "options": [
+        { "id": "ketchup", "label": "Ketchup", "priceDelta": 0.00, "customizableOnly": true },
+        { "id": "maionese", "label": "Maionese", "priceDelta": 0.00, "customizableOnly": true }
+      ],
       "groups": [
         {
           "label": "",
           "items": [
+            { "id": "hot-dog", "name": "Hot Dog", "price": 5.00, "customizable": true },
             { "id": "rosticciana", "name": "Rosticciana", "price": 5.50, "description": "3 pz" },
             { "id": "salsicce", "name": "Salsicce", "price": 4.00, "description": "3 pz" },
             {
@@ -97,6 +94,22 @@
                 { "id": "bistecca-manzo-ben-cotta", "label": "Ben cotta" }
               ]
             }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "contorni",
+      "label": "Contorni",
+      "station": "Cucina",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "fagioli", "name": "Fagioli", "price": 2.50 },
+            { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
+            { "id": "insalata", "name": "Insalata", "price": 2.50 },
+            { "id": "pomodori", "name": "Pomodori", "price": 2.50 }
           ]
         }
       ]

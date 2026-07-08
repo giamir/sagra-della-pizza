@@ -16,7 +16,6 @@
             { "id": "birra", "name": "Birra", "price": 3.00 },
             { "id": "acqua-500ml", "name": "Acqua 500 ml", "price": 1.00 },
             { "id": "acqua-1l", "name": "Acqua 1 L", "price": 1.80 },
-            { "id": "caffe", "name": "Caffè", "price": 1.00 },
             { "id": "vino-rosso", "name": "Vino Rosso", "price": 6.50 },
             { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 }
           ]
@@ -126,6 +125,26 @@
             { "id": "tiramisu", "name": "Tiramisù", "price": 5.00 },
             { "id": "tartufo-bianco", "name": "Tartufo Bianco", "price": 6.00 },
             { "id": "coppa-rum", "name": "Coppa al Rum", "price": 4.00 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cocktail-caffe",
+      "label": "Cocktail e Caffè",
+      "station": "Cocktail e Caffè",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "spritz", "name": "Spritz", "price": 5.00 },
+            { "id": "negroni", "name": "Negroni", "price": 5.00 },
+            { "id": "gin-lemon", "name": "Gin Lemon", "price": 5.00 },
+            { "id": "gin-tonic", "name": "Gin Tonic", "price": 5.00 },
+            { "id": "amaro", "name": "Amaro", "price": 5.00 },
+            { "id": "limoncello", "name": "Limoncello", "price": 5.00 },
+            { "id": "prosecco", "name": "Prosecco", "price": 6.00 },
+            { "id": "caffe", "name": "Caffè", "price": 1.00 }
           ]
         }
       ]

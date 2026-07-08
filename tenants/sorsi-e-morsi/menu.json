@@ -18,13 +18,7 @@
             { "id": "prosecco", "name": "Prosecco", "price": 6.00 },
             { "id": "caffe", "name": "Caffè", "price": 1.00 },
             { "id": "vino-rosso", "name": "Vino Rosso", "price": 6.50 },
-            { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 },
-            { "id": "spritz", "name": "Spritz", "price": 5.00 },
-            { "id": "negroni", "name": "Negroni", "price": 5.00 },
-            { "id": "amaro", "name": "Amaro", "price": 5.00 },
-            { "id": "limoncello", "name": "Limoncello", "price": 5.00 },
-            { "id": "gin-lemon", "name": "Gin Lemon", "price": 5.00 },
-            { "id": "gin-tonic", "name": "Gin Tonic", "price": 5.00 }
+            { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 }
           ]
         }
       ]
@@ -43,6 +37,8 @@
               "price": 8.00,
               "description": "Formaggio, olive, cipolle, salame, prosciutto, bruschetta"
             },
+            { "id": "crostini", "name": "Crostini", "price": 4.00, "description": "2 Romana + 2 Salsiccia" },
+            { "id": "hot-dog", "name": "Hot Dog", "price": 5.00 },
             { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
             { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 },
             { "id": "fagioli", "name": "Fagioli", "price": 2.50 }

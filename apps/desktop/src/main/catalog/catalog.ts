@@ -20,6 +20,14 @@ export function saveCatalog(catalog: Menu): void {
   setSetting('catalog_json', JSON.stringify(catalog));
 }
 
+// Drops this till's locally-saved catalog so getCatalog() falls back to the
+// menu bundled with the installed app version. Used to adopt a menu shipped in
+// an app update (e.g. new options/variants the in-app editor can't express).
+// Station overrides are left untouched — they are this machine's print routing.
+export function resetCatalog(): void {
+  setSetting('catalog_json', '');
+}
+
 export function getStationOverrides(): Record<string, string> {
   const raw = getSetting('station_overrides');
   if (!raw) return {};

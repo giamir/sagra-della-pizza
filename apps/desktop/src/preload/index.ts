@@ -90,6 +90,7 @@ const api = {
   saveCatalog: (catalog: unknown, stations: unknown, stationList: unknown, copertoStation: unknown) =>
     ipcRenderer.invoke('catalog:save', catalog, stations, stationList, copertoStation),
   exportCatalog: () => ipcRenderer.invoke('catalog:export'),
+  resetCatalog: () => ipcRenderer.invoke('catalog:reset'),
 
   // Database backup / restore
   exportDatabase: () => ipcRenderer.invoke('database:export'),

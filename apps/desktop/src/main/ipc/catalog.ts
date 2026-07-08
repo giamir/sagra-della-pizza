@@ -2,7 +2,7 @@ import { ipcMain, dialog, app } from 'electron';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import type { Menu } from '@sagra/shared/types';
-import { getCatalog, saveCatalog, getResolvedStations, saveStationOverrides } from '../catalog/catalog.js';
+import { getCatalog, saveCatalog, resetCatalog, getResolvedStations, saveStationOverrides } from '../catalog/catalog.js';
 import { getStations, saveStations, getCopertoStation, saveCopertoStation } from '../printing/station-map.js';
 
 export function registerCatalogHandlers(): void {
@@ -27,6 +27,17 @@ export function registerCatalogHandlers(): void {
     if (typeof copertoStation === 'string' && copertoStation) saveCopertoStation(copertoStation);
     saveStationOverrides(stations);
     return { ok: true };
+  });
+
+  ipcMain.handle('catalog:reset', () => {
+    resetCatalog();
+    return {
+      ok: true,
+      catalog: getCatalog(),
+      stations: getResolvedStations(),
+      stationList: getStations(),
+      copertoStation: getCopertoStation()
+    };
   });
 
   ipcMain.handle('catalog:export', async () => {

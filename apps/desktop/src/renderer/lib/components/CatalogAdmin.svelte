@@ -17,6 +17,7 @@
   let activeTab = $state('');
   let saving = $state(false);
   let exporting = $state(false);
+  let resetting = $state(false);
   let statusMsg = $state<{ text: string; ok: boolean } | null>(null);
 
   // Options offered in the per-item dropdown: the managed stations plus the catch-all.
@@ -83,6 +84,31 @@
       showStatus('Errore esportazione', false);
     } finally {
       exporting = false;
+    }
+  }
+
+  // Drops this till's saved catalog and reloads the menu bundled with the
+  // installed app version — the way to adopt options/variants shipped in an
+  // update that the in-app editor can't express.
+  async function resetToBundled() {
+    if (!confirm(
+      'Ripristinare il menu predefinito di questa versione?\n\n' +
+      'Le modifiche fatte qui nel Catalogo verranno sostituite dal menu incluso nell’app. ' +
+      'Ordini e incassi NON vengono toccati.'
+    )) return;
+    resetting = true;
+    try {
+      const result = await window.api.resetCatalog();
+      catalog = result.catalog as Menu;
+      stations = result.stations as Record<string, string>;
+      stationList = (result.stationList as string[] | undefined) ?? [];
+      copertoStation = (result.copertoStation as string | undefined) ?? stationList[0] ?? '';
+      activeTab = catalog.categories[0]?.id ?? '';
+      showStatus('Menu predefinito ripristinato');
+    } catch (err) {
+      showStatus(errorMessage(err, 'Errore ripristino'), false);
+    } finally {
+      resetting = false;
     }
   }
 
@@ -307,6 +333,14 @@
         class="px-3 py-1 rounded text-xs font-bold bg-white dark:bg-[#20242c] text-green-900 hover:bg-green-100 disabled:opacity-40"
       >
         {exporting ? '…' : 'Esporta menu.json'}
+      </button>
+      <button
+        type="button"
+        onclick={resetToBundled}
+        disabled={resetting || !catalog}
+        class="px-3 py-1 rounded text-xs font-bold border border-amber-500 text-amber-200 hover:bg-amber-800/40 disabled:opacity-40"
+      >
+        {resetting ? '…' : 'Ripristina menu predefinito'}
       </button>
     </div>
   </div>

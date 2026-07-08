@@ -10,6 +10,7 @@
           "label": "",
           "items": [
             { "id": "coca-cola", "name": "Coca Cola", "price": 2.50 },
+            { "id": "coca-cola-zero", "name": "Coca Cola Zero", "price": 2.50 },
             { "id": "estathe", "name": "Estathè", "price": 2.50 },
             { "id": "fanta", "name": "Fanta", "price": 2.50 },
             { "id": "birra", "name": "Birra", "price": 3.00 },

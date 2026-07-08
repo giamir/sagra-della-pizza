@@ -6,6 +6,7 @@ import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { getSetting, setSetting } from '../db/schema.js';
 import { getStations, normalizeStation } from './station-map.js';
+import type { EuroMode } from './escpos.js';
 
 export type StationConfig = {
   name: string;
@@ -24,6 +25,7 @@ export type PrinterConfig = {
   usbWriteMode: 'auto' | 'cups' | 'file';
   usbPrintCommand: 'lp' | 'lpr';
   usbRawOption: string;
+  euroMode: EuroMode; // how the € sign is encoded — printers vary (see escpos.ts)
   stations: StationConfig[];
 };
 
@@ -45,6 +47,7 @@ const DEFAULTS: PrinterConfig = {
   usbWriteMode: 'auto',
   usbPrintCommand: 'lp',
   usbRawOption: 'raw',
+  euroMode: 'pc858',
   stations: []
 };
 

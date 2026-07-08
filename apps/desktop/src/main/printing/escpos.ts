@@ -1,17 +1,33 @@
 // Raw ESC/POS command builder. No external dependencies — uses Node built-ins only.
 // Targets standard Epson-compatible thermal printers over TCP (port 9100).
 
+// How the euro sign is rendered — printers vary in which code page they honor.
+//  'pc858'   ESC t 19, € at 0xD5 (Epson default; works on most genuine Epsons)
+//  'wpc1252' ESC t 16, € at 0x80 (Windows-1252; the most widely supported page)
+//  'none'    no code-page switch, € printed as a space (guaranteed on any printer)
+export type EuroMode = 'pc858' | 'wpc1252' | 'none';
+
+// [code-page byte for ESC t, byte to emit for €] per mode.
+const EURO_MODES: Record<EuroMode, { codePage: number; euroByte: number }> = {
+  pc858: { codePage: 19, euroByte: 0xd5 },
+  wpc1252: { codePage: 16, euroByte: 0x80 },
+  none: { codePage: 0, euroByte: 0x20 } // PC437, € → space
+};
+
 export class EscPos {
   private buf: number[] = [];
   readonly width: number; // chars per line at normal size
+  private euro: { codePage: number; euroByte: number };
 
-  constructor(width = 42) {
+  constructor(width = 42, euroMode: EuroMode = 'pc858') {
     this.width = width;
+    this.euro = EURO_MODES[euroMode] ?? EURO_MODES.pc858;
   }
 
   // --- Printer control ---
-  // ESC @ reset, then ESC t 19 selects code page PC858 (has the euro sign at 0xD5).
-  init(): this { return this.b(0x1b, 0x40, 0x1b, 0x74, 19); }
+  // ESC @ reset, then ESC t n selects the code page that carries the euro sign
+  // for the configured mode (see EURO_MODES).
+  init(): this { return this.b(0x1b, 0x40, 0x1b, 0x74, this.euro.codePage); }
 
   // Partial cut with 3-line feed
   cut(): this { return this.b(0x1d, 0x56, 0x42, 0x03); }
@@ -45,7 +61,7 @@ export class EscPos {
     const plain = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
     for (let i = 0; i < plain.length; i++) {
       const code = plain.charCodeAt(i);
-      if (code === 0x20ac) { this.buf.push(0xd5); continue; } // € lives at 0xD5 in PC858
+      if (code === 0x20ac) { this.buf.push(this.euro.euroByte); continue; } // € position depends on code page
       this.buf.push(code & 0xff);
     }
     return this;

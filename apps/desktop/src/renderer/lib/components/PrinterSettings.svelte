@@ -16,13 +16,14 @@
     usbWriteMode: 'auto' | 'cups' | 'file';
     usbPrintCommand: 'lp' | 'lpr';
     usbRawOption: string;
+    euroMode: 'pc858' | 'wpc1252' | 'none';
     stations: StationConfig[];
   };
 
   let config = $state<Config>({
     enabled: false, connectionType: 'tcp', host: '192.168.1.100', port: 9100,
     usbTarget: '', width: 42, tcpTimeoutMs: 5000, tcpCloseDelayMs: 200,
-    usbWriteMode: 'auto', usbPrintCommand: 'lp', usbRawOption: 'raw', stations: []
+    usbWriteMode: 'auto', usbPrintCommand: 'lp', usbRawOption: 'raw', euroMode: 'pc858', stations: []
   });
   let saving = $state(false);
   let testing = $state(false);
@@ -289,6 +290,17 @@
             <option value={42}>42 col · 80 mm</option>
             <option value={48}>48 col · 80 mm (Epson TM-T20III)</option>
           </select>
+        </label>
+
+        <!-- Euro sign encoding (shared) — switch if € prints as a wrong glyph -->
+        <label class="block">
+          <span class="text-sm font-semibold text-gray-700">Simbolo €</span>
+          <select bind:value={config.euroMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+            <option value="pc858">PC858 (predefinito)</option>
+            <option value="wpc1252">Windows-1252</option>
+            <option value="none">Senza simbolo</option>
+          </select>
+          <span class="mt-1 block text-xs text-gray-500">Se il € viene stampato come un altro carattere, prova un'altra opzione e stampa una prova.</span>
         </label>
 
         <div class="rounded-lg border border-gray-200 overflow-hidden">

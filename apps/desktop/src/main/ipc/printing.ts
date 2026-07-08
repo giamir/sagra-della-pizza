@@ -65,12 +65,12 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
   // One ticket per station that has items and is enabled (no logo on kitchen tickets)
   for (const [station, lines] of byStation) {
     if (!enabledStations.has(station)) continue;
-    const ticket = buildStationTicket(order, station, lines, width, copertoStation);
+    const ticket = buildStationTicket(order, station, lines, width, copertoStation, config.euroMode);
     await send(ticket);
   }
 
   // Courtesy receipt last — logo only here
-  const receipt = buildReceipt(order, width, copertoCents());
+  const receipt = buildReceipt(order, width, copertoCents(), config.euroMode);
   await send(withLogo(receipt));
 }
 

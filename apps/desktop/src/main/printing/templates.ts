@@ -1,4 +1,4 @@
-import { EscPos } from './escpos.js';
+import { EscPos, type EuroMode } from './escpos.js';
 import { STATION_ORDER, normalizeStation } from './station-constants.js';
 import { isAdjKey } from '@sagra/shared/utils/adjustments';
 import { tenant } from '../config/tenant.js';
@@ -39,8 +39,8 @@ function tableAndRowLine(width: number): string {
 }
 
 // One ticket for a single station.
-export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42, copertoStation = 'Bevande'): Buffer {
-  const e = new EscPos(width);
+export function buildStationTicket(order: PrintOrder, station: string, lines: PrintLine[], width = 42, copertoStation = 'Bevande', euroMode: EuroMode = 'pc858'): Buffer {
+  const e = new EscPos(width, euroMode);
 
   e.init().align('center');
   for (const h of tenant.receipt.headerLines) e.line(h);
@@ -76,8 +76,8 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
 }
 
 // Courtesy receipt: full itemised list with prices.
-export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAULT_COPERTO_CENTS): Buffer {
-  const e = new EscPos(width);
+export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAULT_COPERTO_CENTS, euroMode: EuroMode = 'pc858'): Buffer {
+  const e = new EscPos(width, euroMode);
   const copertoTotal = order.people * copertoCents;
 
   e.init().align('center').bold(true);

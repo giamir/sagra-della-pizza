@@ -24,11 +24,14 @@
       const isNormaleWithOptions = baseKey === item.id && optionIds.length > 0;
       const variant = item.variants?.find((v) => v.id === baseKey);
       if (!isNormaleWithOptions && !variant) continue;
-      let label = variant ? variant.label : 'Normale';
-      if (optionIds.length) {
-        const optLabels = optionIds.map((oid) => categoryOptions.find((o) => o.id === oid)?.label ?? oid);
-        label += ` (${optLabels.join(', ')})`;
-      }
+      const optLabels = optionIds.map((oid) => categoryOptions.find((o) => o.id === oid)?.label ?? oid);
+      // Variant items keep their cottura label (with any options in parens);
+      // option-only items (no variants) just list the options.
+      let label = variant
+        ? optLabels.length
+          ? `${variant.label} (${optLabels.join(', ')})`
+          : variant.label
+        : optLabels.join(', ');
       lines.push({ key, label, qty });
     }
     return lines;

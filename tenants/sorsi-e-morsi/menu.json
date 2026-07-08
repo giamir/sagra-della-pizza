@@ -27,6 +27,10 @@
       "id": "cucina",
       "label": "Cucina",
       "station": "Cucina",
+      "options": [
+        { "id": "ketchup", "label": "Ketchup", "priceDelta": 0.00, "customizableOnly": true },
+        { "id": "maionese", "label": "Maionese", "priceDelta": 0.00, "customizableOnly": true }
+      ],
       "groups": [
         {
           "label": "",
@@ -38,7 +42,7 @@
               "description": "Formaggio, olive, cipolle, salame, prosciutto, bruschetta"
             },
             { "id": "crostini", "name": "Crostini", "price": 4.00, "description": "2 Romana + 2 Salsiccia" },
-            { "id": "hot-dog", "name": "Hot Dog", "price": 5.00 },
+            { "id": "hot-dog", "name": "Hot Dog", "price": 5.00, "customizable": true },
             { "id": "patatine-fritte", "name": "Patatine Fritte", "price": 3.50 },
             { "id": "prosciutto-melone", "name": "Prosciutto e Melone", "price": 6.50 },
             { "id": "fagioli", "name": "Fagioli", "price": 2.50 }
@@ -50,19 +54,23 @@
       "id": "pizzeria",
       "label": "Pizzeria",
       "station": "Pizzeria",
+      "options": [
+        { "id": "senza-mozzarella", "label": "s/mozzarella", "priceDelta": 0.00, "customizableOnly": true },
+        { "id": "senza-pomodoro", "label": "s/pomodoro", "priceDelta": 0.00, "customizableOnly": true }
+      ],
       "groups": [
         {
           "label": "",
           "items": [
-            { "id": "pizza-margherita", "name": "Pizza Margherita", "price": 5.50 },
+            { "id": "pizza-margherita", "name": "Pizza Margherita", "price": 5.50, "customizable": true },
             { "id": "pizza-marinara", "name": "Pizza Marinara", "price": 4.50 },
-            { "id": "pizza-wustel", "name": "Pizza Wustel", "price": 6.00 },
-            { "id": "pizza-cotto", "name": "Pizza Cotto", "price": 6.00 },
-            { "id": "pizza-salamino", "name": "Pizza Salamino", "price": 6.00 },
-            { "id": "pizza-funghi", "name": "Pizza Funghi", "price": 6.00 },
-            { "id": "pizza-funghi-salsiccia", "name": "Pizza Funghi e Salsiccia", "price": 6.50 },
-            { "id": "pizza-napoli", "name": "Napoli", "price": 6.00 },
-            { "id": "pizza-salsiccia", "name": "Pizza Salsiccia", "price": 6.00 }
+            { "id": "pizza-wustel", "name": "Pizza Wustel", "price": 6.00, "customizable": true },
+            { "id": "pizza-cotto", "name": "Pizza Cotto", "price": 6.00, "customizable": true },
+            { "id": "pizza-salamino", "name": "Pizza Salamino", "price": 6.00, "customizable": true },
+            { "id": "pizza-funghi", "name": "Pizza Funghi", "price": 6.00, "customizable": true },
+            { "id": "pizza-funghi-salsiccia", "name": "Pizza Funghi e Salsiccia", "price": 6.50, "customizable": true },
+            { "id": "pizza-napoli", "name": "Napoli", "price": 6.00, "customizable": true },
+            { "id": "pizza-salsiccia", "name": "Pizza Salsiccia", "price": 6.00, "customizable": true }
           ]
         }
       ]
@@ -77,7 +85,17 @@
           "items": [
             { "id": "rosticciana", "name": "Rosticciana", "price": 5.50, "description": "3 pz" },
             { "id": "salsicce", "name": "Salsicce", "price": 4.00, "description": "3 pz" },
-            { "id": "bistecca-manzo", "name": "Bistecca di Manzo", "price": 18.00 }
+            {
+              "id": "bistecca-manzo",
+              "name": "Bistecca di Manzo",
+              "price": 18.00,
+              "description": "Scegli il tipo di cottura",
+              "variants": [
+                { "id": "bistecca-manzo-al-sangue", "label": "Al sangue" },
+                { "id": "bistecca-manzo-normale", "label": "Normale" },
+                { "id": "bistecca-manzo-ben-cotta", "label": "Ben cotta" }
+              ]
+            }
           ]
         }
       ]

@@ -3,42 +3,63 @@
   import { qrEnabled } from '$lib/config/tenant';
   import { MENU, clearOrder, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
+  import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
 
   const linesByCategory = $derived.by(() => {
-    const out: Array<{
-      categoryLabel: string;
-      categoryId: string;
-      lines: Array<{ id: string; name: string; price: number; qty: number }>;
-    }> = [];
-    for (const cat of MENU.categories) {
-      const lines: Array<{ id: string; name: string; price: number; qty: number }> = [];
+    // Single source of truth for names/prices — includes composite keys that
+    // carry variants and/or add-on options (e.g. "hot-dog||ketchup,maionese").
+    const idx = buildPriceIndex(MENU);
+
+    // Map every base item/variant id to its category, preserving menu order so
+    // both the categories and the lines within them stay in menu sequence.
+    const base = new Map<string, { catId: string; catLabel: string; catOrd: number; itemOrd: number }>();
+    let itemOrd = 0;
+    MENU.categories.forEach((cat, catOrd) => {
       for (const group of cat.groups) {
         for (const item of group.items) {
-          if (item.variants?.length) {
-            if (item.optionalVariants) {
-              const qty = order.lines[item.id] ?? 0;
-              if (qty > 0) lines.push({ id: item.id, name: item.name, price: item.price, qty });
-            }
-            for (const variant of item.variants) {
-              const qty = order.lines[variant.id] ?? 0;
-              if (qty > 0) {
-                lines.push({
-                  id: variant.id,
-                  name: `${item.name} - ${variant.label}`,
-                  price: item.price,
-                  qty
-                });
-              }
-            }
-          } else {
-            const qty = order.lines[item.id] ?? 0;
-            if (qty > 0) lines.push({ id: item.id, name: item.name, price: item.price, qty });
+          base.set(item.id, { catId: cat.id, catLabel: cat.label, catOrd, itemOrd: itemOrd++ });
+          for (const variant of item.variants ?? []) {
+            base.set(variant.id, { catId: cat.id, catLabel: cat.label, catOrd, itemOrd: itemOrd++ });
           }
         }
       }
-      if (lines.length) out.push({ categoryLabel: cat.label, categoryId: cat.id, lines });
+    });
+
+    const byCat = new Map<
+      string,
+      {
+        categoryId: string;
+        categoryLabel: string;
+        catOrd: number;
+        lines: Array<{ id: string; name: string; price: number; qty: number; itemOrd: number }>;
+      }
+    >();
+    for (const [key, qty] of Object.entries(order.lines)) {
+      if (qty <= 0) continue;
+      const { itemId } = decodeCartKey(key);
+      const cat = base.get(itemId);
+      const info = idx[key];
+      if (!cat || !info) continue;
+      if (!byCat.has(cat.catId)) {
+        byCat.set(cat.catId, {
+          categoryId: cat.catId,
+          categoryLabel: cat.catLabel,
+          catOrd: cat.catOrd,
+          lines: []
+        });
+      }
+      byCat.get(cat.catId)!.lines.push({ id: key, name: info.name, price: info.price, qty, itemOrd: cat.itemOrd });
     }
-    return out;
+
+    return [...byCat.values()]
+      .sort((a, b) => a.catOrd - b.catOrd)
+      .map((c) => ({
+        categoryId: c.categoryId,
+        categoryLabel: c.categoryLabel,
+        lines: c.lines
+          .sort((a, b) => a.itemOrd - b.itemOrd || a.name.localeCompare(b.name))
+          .map(({ id, name, price, qty }) => ({ id, name, price, qty }))
+      }));
   });
 
   const t = $derived(total());

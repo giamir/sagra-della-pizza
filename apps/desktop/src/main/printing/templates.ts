@@ -21,8 +21,17 @@ export type PrintOrder = {
   lines: PrintLine[];
 };
 
-function eur(cents: number): string {
-  return cents < 0 ? `-€${(Math.abs(cents) / 100).toFixed(2)}` : `€${(cents / 100).toFixed(2)}`;
+// `symbol` is prepended to the amount. It is either the € glyph (rendered per the
+// printer's code page) or the literal "EUR " for printers that can't print €.
+// The symbol is baked into the returned string so column-width math stays correct.
+function eur(cents: number, symbol = '€'): string {
+  const amount = (Math.abs(cents) / 100).toFixed(2);
+  return cents < 0 ? `-${symbol}${amount}` : `${symbol}${amount}`;
+}
+
+// The price symbol for a given euro mode: the € glyph, or "EUR " as plain ASCII.
+function euroSymbol(euroMode: EuroMode): string {
+  return euroMode === 'eur' ? 'EUR ' : '€';
 }
 
 function formatTime(iso: string): string {
@@ -79,6 +88,7 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
 export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAULT_COPERTO_CENTS, euroMode: EuroMode = 'pc858'): Buffer {
   const e = new EscPos(width, euroMode);
   const copertoTotal = order.people * copertoCents;
+  const sym = euroSymbol(euroMode);
 
   e.init().align('center').bold(true);
   for (const h of tenant.receipt.headerLines) e.line(h);
@@ -92,24 +102,24 @@ export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAU
 
   for (const l of order.lines) {
     if (isAdjKey(l.itemId)) continue;
-    const subtotal = eur(l.unitPriceCents * l.qty);
+    const subtotal = eur(l.unitPriceCents * l.qty, sym);
     const label = `${l.qty}x ${l.name}`;
     e.columns(label, subtotal);
   }
 
   e.separator('-');
   if (order.people > 0) {
-    e.columns(`${order.people} cop. (${eur(copertoCents)} cad.)`, eur(copertoTotal));
+    e.columns(`${order.people} cop. (${eur(copertoCents, sym)} cad.)`, eur(copertoTotal, sym));
   }
 
   for (const l of order.lines) {
     if (!isAdjKey(l.itemId)) continue;
-    e.columns(l.name, eur(l.unitPriceCents));
+    e.columns(l.name, eur(l.unitPriceCents, sym));
   }
 
   e.separator('=')
     .bold(true)
-    .columns('TOTALE', eur(order.totalCents))
+    .columns('TOTALE', eur(order.totalCents, sym))
     .bold(false)
     .separator('=')
     .feed()

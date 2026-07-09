@@ -16,7 +16,7 @@
     usbWriteMode: 'auto' | 'cups' | 'file';
     usbPrintCommand: 'lp' | 'lpr';
     usbRawOption: string;
-    euroMode: 'pc858' | 'wpc1252' | 'none';
+    euroMode: 'pc858' | 'wpc1252' | 'none' | 'eur';
     stations: StationConfig[];
   };
 
@@ -298,9 +298,10 @@
           <select bind:value={config.euroMode} class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
             <option value="pc858">PC858 (predefinito)</option>
             <option value="wpc1252">Windows-1252</option>
+            <option value="eur">Testo "EUR"</option>
             <option value="none">Senza simbolo</option>
           </select>
-          <span class="mt-1 block text-xs text-gray-500">Se il € viene stampato come un altro carattere, prova un'altra opzione e stampa una prova.</span>
+          <span class="mt-1 block text-xs text-gray-500">Se il € viene stampato come un altro carattere, prova un'altra opzione e stampa una prova. "Testo EUR" scrive la parola EUR al posto del simbolo e funziona su qualsiasi stampante.</span>
         </label>
 
         <div class="rounded-lg border border-gray-200 overflow-hidden">

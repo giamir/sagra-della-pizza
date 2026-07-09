@@ -5,13 +5,18 @@
 //  'pc858'   ESC t 19, € at 0xD5 (Epson default; works on most genuine Epsons)
 //  'wpc1252' ESC t 16, € at 0x80 (Windows-1252; the most widely supported page)
 //  'none'    no code-page switch, € printed as a space (guaranteed on any printer)
-export type EuroMode = 'pc858' | 'wpc1252' | 'none';
+//  'eur'     the literal text "EUR" instead of a glyph — pure ASCII, works on any
+//            printer/code page. The substitution happens in the price formatter so
+//            column widths stay correct (see templates.ts `eur()`); the symbol byte
+//            below is never reached in this mode.
+export type EuroMode = 'pc858' | 'wpc1252' | 'none' | 'eur';
 
 // [code-page byte for ESC t, byte to emit for €] per mode.
 const EURO_MODES: Record<EuroMode, { codePage: number; euroByte: number }> = {
   pc858: { codePage: 19, euroByte: 0xd5 },
   wpc1252: { codePage: 16, euroByte: 0x80 },
-  none: { codePage: 0, euroByte: 0x20 } // PC437, € → space
+  none: { codePage: 0, euroByte: 0x20 }, // PC437, € → space
+  eur: { codePage: 0, euroByte: 0x20 } // PC437; € rendered as "EUR" text upstream
 };
 
 export class EscPos {

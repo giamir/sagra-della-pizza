@@ -34,12 +34,27 @@
 
   const stockIdIndex = $derived(buildStockIdIndex(menu));
 
+  // Every item across the menu, keyed by id — used to resolve a chooser's choices.
+  const itemsById = $derived(
+    Object.fromEntries(
+      menu.categories.flatMap((c) => c.groups.flatMap((g) => g.items.map((i) => [i.id, i])))
+    ) as Record<string, MenuItem>
+  );
+
+  // The real (hidden) items a chooser presents; empty for non-chooser items.
+  function choicesOf(item: MenuItem): MenuItem[] {
+    return (item.choices ?? []).map((id) => itemsById[id]).filter(Boolean) as MenuItem[];
+  }
+
   function stockIdFor(itemId: string): string {
     return stockIdIndex[itemId] ?? itemId;
   }
 
   // Count all cart entries for this item, including option-combo variants (key = `id||opt1,opt2`).
+  // A chooser sums the cart quantity of each of its choices.
   function cartQty(item: MenuItem): number {
+    const choices = choicesOf(item);
+    if (choices.length) return choices.reduce((sum, c) => sum + cartQty(c), 0);
     const ids = item.variants?.length
       ? [...(item.optionalVariants ? [item.id] : []), ...item.variants.map((v) => v.id)]
       : [item.id];
@@ -59,11 +74,27 @@
   }
 
   // Esaurito once every remaining unit is either sold or already held in a cart.
+  // A chooser is esaurito only when every one of its choices is esaurito.
   function isSoldOut(item: MenuItem): boolean {
+    const choices = choicesOf(item);
+    if (choices.length) return choices.every((c) => isSoldOut(c));
     return effectiveRemaining(item) === 0;
   }
 
+  // Choices can differ in price (Acqua 500 ml / 1 L), so a chooser shows "da €X".
+  function priceLabel(item: MenuItem): string {
+    const choices = choicesOf(item);
+    if (choices.length) {
+      const prices = choices.map((c) => c.price);
+      const min = Math.min(...prices);
+      return prices.every((p) => p === min) ? formatEUR(min) : `da ${formatEUR(min)}`;
+    }
+    return formatEUR(item.price);
+  }
+
+  // No aggregate "N rimasti" badge on a chooser — each choice shows its own in the picker.
   function stockLabel(item: MenuItem): string | null {
+    if (item.choices?.length) return null;
     const remaining = effectiveRemaining(item);
     if (remaining <= 0) return null;
     return `${remaining} rimasti`;
@@ -99,7 +130,7 @@
         </p>
       {/if}
       <div class="grid grid-cols-2 gap-2 mb-1">
-        {#each group.items as item}
+        {#each group.items.filter((i) => !i.hidden) as item}
           {@const qty = cartQty(item)}
           {@const soldOut = isSoldOut(item)}
           {@const itemOpts = optionsForItem(item, categoryOptions[activeCategory.id] ?? [])}
@@ -130,8 +161,13 @@
                 {item.variants.map((v) => v.label).join(' · ')}
               </span>
             {/if}
+            {#if item.choices?.length}
+              <span class="block text-xs text-gray-400 mt-1">
+                {choicesOf(item).map((c) => c.name).join(' · ')}
+              </span>
+            {/if}
             <span class="block mt-1 text-xs font-semibold" class:text-gray-500={!soldOut} class:text-gray-400={soldOut}>
-              {soldOut ? 'Esaurito' : formatEUR(item.price)}
+              {soldOut ? 'Esaurito' : priceLabel(item)}
             </span>
 
             {#if remainingLabel && !soldOut}

@@ -17,7 +17,9 @@
       </h2>
     {/if}
     <ul class="bg-cream-50 rounded-lg">
-      {#each group.items as item (item.id)}
+      <!-- Chooser groups are a till-only convenience; the customer menu lists the
+           real items (the chooser's choices) directly. -->
+      {#each group.items.filter((i) => !i.choices) as item (item.id)}
         <li>
           <ItemRow {item} categoryOptions={category.options ?? []} />
         </li>

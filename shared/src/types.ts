@@ -11,6 +11,8 @@ export type MenuItem = {
   optionalVariants?: boolean; // when true, the base item is orderable alongside its variants
   customizable?: boolean; // when true, this item exposes its category's add-on options
   excludeOptions?: string[]; // category option ids that don't apply to this item
+  hidden?: boolean; // when true, not shown as its own till button (reached only via a chooser)
+  choices?: string[]; // ids of sibling items this chooser presents; each choice keeps its own price and stock
 };
 
 export type MenuGroup = {

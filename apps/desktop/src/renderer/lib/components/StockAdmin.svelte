@@ -18,7 +18,11 @@
       id: cat.id,
       label: cat.label,
       items: cat.groups.flatMap((group) =>
-        group.items.map((item) => ({ id: item.id, name: item.name }))
+        group.items
+          // Chooser groups (e.g. Acqua) hold no stock themselves; their choices
+          // are separate hidden items that each carry their own scorte line.
+          .filter((item) => !item.choices)
+          .map((item) => ({ id: item.id, name: item.name }))
       )
     }))
   );

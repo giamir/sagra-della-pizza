@@ -9,13 +9,20 @@
         {
           "label": "",
           "items": [
-            { "id": "coca-cola", "name": "Coca Cola", "price": 2.50 },
-            { "id": "coca-cola-zero", "name": "Coca Cola Zero", "price": 2.50 },
-            { "id": "estathe", "name": "Estathè", "price": 2.50 },
+            { "id": "coca-cola", "name": "Coca Cola", "price": 2.50, "choices": ["coca-cola-normale", "coca-cola-zero"] },
+            { "id": "coca-cola-normale", "name": "Coca Cola", "price": 2.50, "hidden": true },
+            { "id": "coca-cola-zero", "name": "Coca Cola Zero", "price": 2.50, "hidden": true },
+            { "id": "estathe", "name": "Estathè", "price": 2.50, "choices": ["estathe-pesca", "estathe-limone"] },
+            { "id": "estathe-pesca", "name": "Estathè Pesca", "price": 2.50, "hidden": true },
+            { "id": "estathe-limone", "name": "Estathè Limone", "price": 2.50, "hidden": true },
             { "id": "fanta", "name": "Fanta", "price": 2.50 },
             { "id": "birra", "name": "Birra", "price": 3.00 },
-            { "id": "acqua-500ml", "name": "Acqua 500 ml", "price": 1.00 },
-            { "id": "acqua-1l", "name": "Acqua 1 L", "price": 1.80 },
+            { "id": "acqua-500ml", "name": "Acqua 500 ml", "price": 1.00, "choices": ["acqua-500ml-naturale", "acqua-500ml-gassata"] },
+            { "id": "acqua-500ml-naturale", "name": "Acqua Naturale 500 ml", "price": 1.00, "hidden": true },
+            { "id": "acqua-500ml-gassata", "name": "Acqua Gassata 500 ml", "price": 1.00, "hidden": true },
+            { "id": "acqua-1l", "name": "Acqua 1 L", "price": 1.80, "choices": ["acqua-1l-naturale", "acqua-1l-gassata"] },
+            { "id": "acqua-1l-naturale", "name": "Acqua Naturale 1 L", "price": 1.80, "hidden": true },
+            { "id": "acqua-1l-gassata", "name": "Acqua Gassata 1 L", "price": 1.80, "hidden": true },
             { "id": "vino-rosso", "name": "Vino Rosso", "price": 6.50 },
             { "id": "vino-bianco", "name": "Vino Bianco", "price": 6.50 }
           ]

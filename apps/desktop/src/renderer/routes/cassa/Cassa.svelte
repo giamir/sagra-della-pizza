@@ -12,6 +12,7 @@
   import ItemBrowser from './ItemBrowser.svelte';
   import CartPanel from './CartPanel.svelte';
   import VariantPicker from './VariantPicker.svelte';
+  import ChooserPicker from './ChooserPicker.svelte';
   import OptionsPicker from './OptionsPicker.svelte';
   import AdjustmentModal from './AdjustmentModal.svelte';
   import PrintPreview from '$lib/components/PrintPreview.svelte';
@@ -77,6 +78,7 @@
   // --- UI state ---
   let activeCategoryId = $state(DEFAULT_MENU.categories[0].id);
   let variantItem = $state<MenuItem | null>(null);
+  let chooserItem = $state<MenuItem | null>(null);
   type OptionsPickerState = { item: MenuItem; options: MenuOption[]; variants?: Array<{ id: string; label: string }>; baseId: string; baseName: string };
   let optionsPicker = $state<OptionsPickerState | null>(null);
   let scanMode = $state(false);
@@ -130,6 +132,27 @@
   // --- Derived ---
   const priceIndex = $derived(buildPriceIndex(menu));
   const stockIndex = $derived(buildStockIdIndex(menu));
+  const itemsById = $derived(
+    Object.fromEntries(
+      menu.categories.flatMap((c) => c.groups.flatMap((g) => g.items.map((i) => [i.id, i])))
+    ) as Record<string, MenuItem>
+  );
+
+  // The choices a chooser presents, each with its own price and live stock. -1
+  // remaining means "no limit"; soldOut choices are shown disabled in the picker.
+  function chooserChoices(item: MenuItem) {
+    return (item.choices ?? []).map((id) => {
+      const child = itemsById[id];
+      const rem = effectiveRemaining(id);
+      return {
+        id,
+        name: child?.name ?? priceIndex[id]?.name ?? id,
+        price: child?.price ?? priceIndex[id]?.price ?? 0,
+        remaining: rem === Infinity ? -1 : Math.max(0, rem),
+        soldOut: rem <= 0
+      };
+    });
+  }
 
   const cartLines = $derived.by(() => {
     return Object.entries(cart)
@@ -339,7 +362,10 @@
 
   // --- Item tap: variant picker or direct add ---
   function handleItemTap(item: MenuItem) {
-    if (item.variants?.length && !item.optionalVariants) {
+    if (item.choices?.length) {
+      // Chooser: cashier picks one of the real (hidden) items behind this button.
+      chooserItem = item;
+    } else if (item.variants?.length && !item.optionalVariants) {
       // Required variants (e.g. bianca/rossa) must be chosen before adding.
       variantItem = item;
     } else {
@@ -974,6 +1000,16 @@
       item={variantItem}
       onSelect={handleVariantSelect}
       onClose={() => variantItem = null}
+    />
+  {/if}
+
+  <!-- Chooser picker modal (Acqua 500 ml / 1 L, Coca Cola / Zero, Estathè Pesca / Limone) -->
+  {#if chooserItem}
+    <ChooserPicker
+      item={chooserItem}
+      choices={chooserChoices(chooserItem)}
+      onSelect={(id) => { addItem(id); chooserItem = null; }}
+      onClose={() => chooserItem = null}
     />
   {/if}
 

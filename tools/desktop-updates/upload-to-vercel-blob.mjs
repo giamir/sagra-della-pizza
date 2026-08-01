@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { put } from '@vercel/blob';
+import { pruneOldVersions } from './prune-blob-versions.mjs';
 
 const distDir = process.argv[2] ?? 'apps/desktop/dist';
 const prefix = process.env.DESKTOP_UPDATE_BLOB_PREFIX ?? 'desktop-updates';
@@ -77,4 +78,21 @@ for (const file of files) {
   for (const uploadName of uploadNames) {
     await uploadFileAs(file, uploadName);
   }
+}
+
+// Each release adds ~1.3 GB that nothing used to remove, so stores grew without
+// bound (sagra reached 43 GB / 40 releases before the first cleanup). Prune here
+// so every build leaves the store at the retention limit. Set
+// DESKTOP_UPDATE_KEEP_VERSIONS=0 to skip.
+const keep = Number(process.env.DESKTOP_UPDATE_KEEP_VERSIONS ?? 3);
+if (Number.isInteger(keep) && keep > 0) {
+  console.log(`\nPruning old releases (keeping ${keep})…`);
+  try {
+    await pruneOldVersions({ token: process.env.BLOB_READ_WRITE_TOKEN, keep, dryRun: false });
+  } catch (err) {
+    // Never fail a release because cleanup failed — the artifacts are already up.
+    console.warn(`Prune skipped: ${err.message}`);
+  }
+} else {
+  console.log('\nPruning disabled (DESKTOP_UPDATE_KEEP_VERSIONS).');
 }

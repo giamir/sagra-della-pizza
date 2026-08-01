@@ -52,6 +52,17 @@ Key facts that make this safe:
 App rollback on Windows = manually run the older installer. `allowDowngrade=false` only
 stops the *auto*-updater from downgrading; a manual install is unaffected.
 
+> **Only the last 3 releases are kept on the update store.** Each release is ~1.3 GB per
+> tenant and nothing used to remove them, so `tools/desktop-updates/upload-to-vercel-blob.mjs`
+> now prunes to the 3 most recent after every build (override with
+> `DESKTOP_UPDATE_KEEP_VERSIONS`). Those 3 are listed under "versioni precedenti" on the
+> tenant's `/download` page. **If you need to roll back further than 3 releases, use the USB
+> stick copy** — the installer will no longer be downloadable. Keep the pre-staged USB stick
+> current for exactly this reason.
+>
+> To prune manually: `BLOB_READ_WRITE_TOKEN=… node tools/desktop-updates/prune-blob-versions.mjs --keep 3`
+> (dry run by default; add `--apply`).
+
 ### Case 1 — new version misbehaves, data looks intact (most common)
 
 1. Close the app on the affected till.

@@ -1,0 +1,57 @@
+{
+  "id": "bigne",
+  "brand": {
+    "name": "Sagra del Bignè",
+    "location": "Orentano",
+    "shortName": "Sagra Bignè",
+    "tagline": "Sfoglia il menù e ordina alla cassa.",
+    "logo": "/ente-carnevale-dei-bambini.png",
+    "logoAlt": "Ente Carnevale dei Bambini"
+  },
+  "theme": {
+    "colors": {
+      "cream-50": "#fbf3e0",
+      "cream-100": "#f6e9c8",
+      "cream-200": "#ecdba4",
+      "ink": "#1f3a2a",
+      "leaf": "#2c5e3f",
+      "leaf-dark": "#1f4530",
+      "tomato": "#c0392b",
+      "tomato-dark": "#8e2820",
+      "focus": "#f59e0b"
+    },
+    "themeColor": "#2c5e3f",
+    "backgroundColor": "#fbf3e0"
+  },
+  "locale": {
+    "lang": "it",
+    "intl": "it-IT",
+    "currency": "EUR"
+  },
+  "receipt": {
+    "headerLines": ["Sagra del Bignè", "Orentano"],
+    "customerCopyLabel": "Copia Cliente",
+    "footerLines": ["Non e' scontrino fiscale", "Grazie e arrivederci!"]
+  },
+  "stations": {
+    "order": ["Bignè", "Bar"],
+    "copertoStation": "Bar",
+    "aliases": {}
+  },
+  "network": {
+    "serverPort": 7331,
+    "defaultTillName": "Cassa 1"
+  },
+  "features": {
+    "qr": false,
+    "coperto": false
+  },
+  "storagePrefix": "bigne",
+  "desktop": {
+    "appId": "it.orentano.bigne",
+    "productName": "Sagra del Bignè",
+    "author": "Sagra del Bignè",
+    "updateFeedUrl": "https://bigne.orentano.news/desktop-updates",
+    "downloadPageUrl": "https://bigne.orentano.news/download"
+  }
+}

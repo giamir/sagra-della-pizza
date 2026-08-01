@@ -1,0 +1,68 @@
+{
+  "coperto": {
+    "perPersona": 0
+  },
+  "categories": [
+    {
+      "id": "bigne",
+      "label": "Bignè",
+      "subtitle": "Quale sacchetto vuoi?",
+      "station": "Bignè",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            { "id": "bigne-crema", "name": "Bignè alla Crema", "price": 4.0 },
+            { "id": "bigne-cioccolato", "name": "Bignè al Cioccolato", "price": 4.0 },
+            {
+              "id": "bigne-misti",
+              "name": "Bignè Misti",
+              "price": 4.0,
+              "description": "2 crema + 2 cioccolato"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bar",
+      "label": "Bar",
+      "subtitle": "Cosa beviamo?",
+      "station": "Bar",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            {
+              "id": "acqua-500ml",
+              "name": "Acqua 500 ml",
+              "price": 1.0,
+              "choices": ["acqua-500ml-naturale", "acqua-500ml-gassata"]
+            },
+            { "id": "acqua-500ml-naturale", "name": "Acqua Naturale 500 ml", "price": 1.0, "hidden": true },
+            { "id": "acqua-500ml-gassata", "name": "Acqua Gassata 500 ml", "price": 1.0, "hidden": true },
+            {
+              "id": "acqua-1l",
+              "name": "Acqua 1 L",
+              "price": 1.8,
+              "choices": ["acqua-1l-naturale", "acqua-1l-gassata"]
+            },
+            { "id": "acqua-1l-naturale", "name": "Acqua Naturale 1 L", "price": 1.8, "hidden": true },
+            { "id": "acqua-1l-gassata", "name": "Acqua Gassata 1 L", "price": 1.8, "hidden": true },
+            {
+              "id": "coca-cola",
+              "name": "Coca Cola",
+              "price": 2.5,
+              "choices": ["coca-cola-normale", "coca-cola-zero"]
+            },
+            { "id": "coca-cola-normale", "name": "Coca Cola", "price": 2.5, "hidden": true },
+            { "id": "coca-cola-zero", "name": "Coca Cola Zero", "price": 2.5, "hidden": true },
+            { "id": "fanta", "name": "Fanta", "price": 2.5 },
+            { "id": "birra", "name": "Birra", "price": 3.0 },
+            { "id": "caffe", "name": "Caffè", "price": 1.2 }
+          ]
+        }
+      ]
+    }
+  ]
+}

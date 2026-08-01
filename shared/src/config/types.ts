@@ -71,6 +71,11 @@ export type TenantFeatures = {
   /** When false the customer web app is menu-only: the order flow stops at the
    *  riepilogo and the QR confirmation step is hidden. Defaults to true. */
   qr?: boolean;
+  /** When false the cover charge concept disappears entirely: no Persone step in
+   *  the web wizard, no Coperto line on the riepilogo, no Coperto row or catalog
+   *  tab in the till, no coperti on tickets. Orders are stored with `people = 0`.
+   *  For events without table service. Defaults to true. */
+  coperto?: boolean;
 };
 
 export type TenantDesktop = {

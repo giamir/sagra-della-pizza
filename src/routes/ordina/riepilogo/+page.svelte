@@ -1,6 +1,6 @@
 <script lang="ts">
   import StepHeader from '$lib/components/StepHeader.svelte';
-  import { qrEnabled } from '$lib/config/tenant';
+  import { copertoEnabled, qrEnabled } from '$lib/config/tenant';
   import { MENU, clearOrder, order, total } from '$lib/stores/order.svelte';
   import { formatEUR } from '$lib/utils/currency';
   import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
@@ -80,24 +80,26 @@
       Non hai ancora scelto niente. Torna indietro e aggiungi qualcosa!
     </p>
   {:else}
-    <ul class="mb-3 border-y border-cream-200">
-      <li class="grid grid-cols-[2rem_1fr_auto_auto] items-center gap-2 py-1.5">
-        <div
-          class="text-sm font-bold tabular-nums text-leaf"
-          aria-label={`Quantità: ${order.people}`}
-        >
-          {order.people}×
-        </div>
-        <div class="min-w-0 truncate text-sm font-semibold text-ink">Coperto</div>
-        <a
-          href="/ordina/persone"
-          class="text-xs text-leaf underline underline-offset-2"
-        >
-          Modifica
-        </a>
-        <div class="text-sm font-bold tabular-nums text-ink">{formatEUR(copertoTot)}</div>
-      </li>
-    </ul>
+    {#if copertoEnabled}
+      <ul class="mb-3 border-y border-cream-200">
+        <li class="grid grid-cols-[2rem_1fr_auto_auto] items-center gap-2 py-1.5">
+          <div
+            class="text-sm font-bold tabular-nums text-leaf"
+            aria-label={`Quantità: ${order.people}`}
+          >
+            {order.people}×
+          </div>
+          <div class="min-w-0 truncate text-sm font-semibold text-ink">Coperto</div>
+          <a
+            href="/ordina/persone"
+            class="text-xs text-leaf underline underline-offset-2"
+          >
+            Modifica
+          </a>
+          <div class="text-sm font-bold tabular-nums text-ink">{formatEUR(copertoTot)}</div>
+        </li>
+      </ul>
+    {/if}
 
     {#each linesByCategory as cat (cat.categoryId)}
       <section class="mb-3">

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { isAdjKey } from '@sagra/shared/utils/adjustments';
+  import { copertoEnabled } from '@sagra/shared/config/features';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
   import PrintPreview from './PrintPreview.svelte';
   import { ArrowLeft, X, RefreshCw, Banknote, CreditCard, ChevronUp, ChevronDown } from 'lucide-svelte';
@@ -695,7 +696,7 @@
               <p>${htmlEscape(rangeLabel)} · generato ${htmlEscape(generatedAt)}</p>
             </div>
             <div>
-              <p>${filteredOrders.length} ordini · ${totalCovers} coperti</p>
+              <p>${filteredOrders.length} ordini${copertoEnabled ? ` · ${totalCovers} coperti` : ''}</p>
               <p>${formatEUR(totalRevenue / 100)} incasso totale</p>
             </div>
           </header>
@@ -860,10 +861,12 @@
             <p class="text-2xl font-bold text-gray-800">{filteredOrders.length}</p>
             <p class="text-xs text-gray-500 mt-1 font-medium">Ordini</p>
           </div>
-          <div class="bg-gray-50 rounded-xl p-4 text-center">
-            <p class="text-2xl font-bold text-gray-800">{totalCovers}</p>
-            <p class="text-xs text-gray-500 mt-1 font-medium">Coperti</p>
-          </div>
+          {#if copertoEnabled}
+            <div class="bg-gray-50 rounded-xl p-4 text-center">
+              <p class="text-2xl font-bold text-gray-800">{totalCovers}</p>
+              <p class="text-xs text-gray-500 mt-1 font-medium">Coperti</p>
+            </div>
+          {/if}
           <div class="bg-gray-50 rounded-xl p-4 text-center">
             <p class="text-lg font-bold text-gray-800">
               <span class="text-gray-600 inline-flex items-center gap-1"><Banknote size={18} /> {formatEUR(cashRevenue / 100)}</span>
@@ -1006,7 +1009,9 @@
                 <tr class="text-xs text-gray-400 border-b border-gray-100">
                   <th class="text-left px-4 py-2 font-medium">Cassa</th>
                   <th class="text-right px-4 py-2 font-medium">Ordini</th>
-                  <th class="text-right px-4 py-2 font-medium">Coperti</th>
+                  {#if copertoEnabled}
+                    <th class="text-right px-4 py-2 font-medium">Coperti</th>
+                  {/if}
                   <th class="text-right px-4 py-2 font-medium">Contanti</th>
                   <th class="text-right px-4 py-2 font-medium">Carta</th>
                   <th class="text-right px-4 py-2 font-medium">Totale</th>
@@ -1017,7 +1022,9 @@
                   <tr class="border-b border-gray-50 last:border-0">
                     <td class="px-4 py-2 font-medium text-gray-800">{row.tillName}</td>
                     <td class="px-4 py-2 text-right text-gray-600">{row.orders}</td>
-                    <td class="px-4 py-2 text-right text-gray-600">{row.covers}</td>
+                    {#if copertoEnabled}
+                      <td class="px-4 py-2 text-right text-gray-600">{row.covers}</td>
+                    {/if}
                     <td class="px-4 py-2 text-right text-gray-700">
                       <span class="font-semibold">{formatEUR(row.cashCents / 100)}</span>
                       <span class="ml-1 text-xs text-gray-400">({row.cashOrders})</span>
@@ -1218,10 +1225,12 @@
                   <span class="block text-xs font-semibold text-gray-400">Ordini</span>
                   <span class="font-black text-gray-900">{filteredOrders.length}</span>
                 </div>
-                <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
-                  <span class="block text-xs font-semibold text-gray-400">Coperti</span>
-                  <span class="font-black text-gray-900">{totalCovers}</span>
-                </div>
+                {#if copertoEnabled}
+                  <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
+                    <span class="block text-xs font-semibold text-gray-400">Coperti</span>
+                    <span class="font-black text-gray-900">{totalCovers}</span>
+                  </div>
+                {/if}
                 <div class="rounded-lg bg-gray-50 px-3 py-2 text-right">
                   <span class="block text-xs font-semibold text-gray-400">Articoli diversi</span>
                   <span class="font-black text-gray-900">{soldItems.length}</span>
@@ -1309,7 +1318,9 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <span class="text-sm font-semibold text-gray-800">{order.tillName}</span>
-                  <span class="text-xs text-gray-400 ml-2">{order.people} cop.</span>
+                  {#if copertoEnabled}
+                    <span class="text-xs text-gray-400 ml-2">{order.people} cop.</span>
+                  {/if}
                 </div>
                 <div class="shrink-0 flex items-center gap-2">
                   {#if order.paymentMethod === 'card'}

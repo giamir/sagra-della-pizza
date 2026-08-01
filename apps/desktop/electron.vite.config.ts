@@ -24,6 +24,7 @@ export default defineConfig({
         '@sagra/shared/utils/adjustments': resolve(sharedSrc, 'utils/adjustments.ts'),
         '@sagra/shared/data/menu.json': resolve(sharedSrc, 'data/menu.json'),
         '@sagra/shared/config/types': resolve(sharedSrc, 'config/types.ts'),
+        '@sagra/shared/config/features': resolve(sharedSrc, 'config/features.ts'),
         '@sagra/shared/config/tenant.json': resolve(sharedSrc, 'config/tenant.json')
       }
     }
@@ -42,6 +43,7 @@ export default defineConfig({
         '@sagra/shared/utils/adjustments': resolve(sharedSrc, 'utils/adjustments.ts'),
         '@sagra/shared/data/menu.json': resolve(sharedSrc, 'data/menu.json'),
         '@sagra/shared/config/types': resolve(sharedSrc, 'config/types.ts'),
+        '@sagra/shared/config/features': resolve(sharedSrc, 'config/features.ts'),
         '@sagra/shared/config/tenant.json': resolve(sharedSrc, 'config/tenant.json'),
         $lib: resolve(__dirname, 'src/renderer/lib')
       }

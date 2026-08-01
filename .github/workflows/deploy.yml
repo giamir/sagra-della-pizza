@@ -32,10 +32,12 @@ jobs:
           SELECTED: ${{ github.event.inputs.tenant }}
           SAGRA_ID: ${{ vars.VERCEL_PROJECT_ID_SAGRA }}
           SORSI_ID: ${{ vars.VERCEL_PROJECT_ID_SORSI }}
+          BIGNE_ID: ${{ vars.VERCEL_PROJECT_ID_BIGNE }}
         run: |
-          all=$(jq -c -n --arg sagra "$SAGRA_ID" --arg sorsi "$SORSI_ID" '[
+          all=$(jq -c -n --arg sagra "$SAGRA_ID" --arg sorsi "$SORSI_ID" --arg bigne "$BIGNE_ID" '[
             {tenant:"sagra-della-pizza", project_id:$sagra},
-            {tenant:"sorsi-e-morsi",     project_id:$sorsi}
+            {tenant:"sorsi-e-morsi",     project_id:$sorsi},
+            {tenant:"bigne",             project_id:$bigne}
           ]')
           if [ -n "$SELECTED" ]; then
             all=$(echo "$all" | jq -c --arg t "$SELECTED" '[.[] | select(.tenant==$t)]')

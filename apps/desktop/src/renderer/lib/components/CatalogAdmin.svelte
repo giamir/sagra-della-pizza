@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Menu, MenuCategory, MenuGroup, MenuItem } from '@sagra/shared/types';
+  import { copertoEnabled } from '@sagra/shared/config/features';
   import { ArrowLeft, ChevronUp, ChevronDown, X } from 'lucide-svelte';
 
   let { onClose }: { onClose: () => void } = $props();
@@ -364,17 +365,19 @@
         </button>
       {/each}
       <!-- Coperto tab -->
-      <button
-        type="button"
-        onclick={() => activeTab = '__coperto__'}
-        class="shrink-0 px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px"
-        class:border-green-700={'__coperto__' === activeTab}
-        class:text-green-900={'__coperto__' === activeTab}
-        class:border-transparent={'__coperto__' !== activeTab}
-        class:text-gray-500={'__coperto__' !== activeTab}
-      >
-        Coperto
-      </button>
+      {#if copertoEnabled}
+        <button
+          type="button"
+          onclick={() => activeTab = '__coperto__'}
+          class="shrink-0 px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px"
+          class:border-green-700={'__coperto__' === activeTab}
+          class:text-green-900={'__coperto__' === activeTab}
+          class:border-transparent={'__coperto__' !== activeTab}
+          class:text-gray-500={'__coperto__' !== activeTab}
+        >
+          Coperto
+        </button>
+      {/if}
       <!-- Stazioni tab -->
       <button
         type="button"
@@ -403,7 +406,7 @@
 
     <!-- Content area -->
     <div class="flex-1 overflow-y-auto px-4 py-4">
-      {#if activeTab === '__coperto__'}
+      {#if copertoEnabled && activeTab === '__coperto__'}
         <!-- Coperto editor -->
         <div class="max-w-xs">
           <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Coperto per persona</p>

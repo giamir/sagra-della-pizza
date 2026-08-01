@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MENU } from '$lib/stores/order.svelte';
-  import { tenant, storageKey } from '$lib/config/tenant';
+  import { copertoEnabled, tenant, storageKey } from '$lib/config/tenant';
   import { formatEUR } from '$lib/utils/currency';
   import { decodeOrder } from '$lib/utils/payload';
   import { buildPriceIndex, decodeCartKey } from '@sagra/shared/utils/pricing';
@@ -709,14 +709,16 @@
       {/if}
     </div>
   {:else}
-    <div class="sticky top-0 z-10 bg-cream-50 pb-3">
-      <div class="bg-cream-100 rounded-lg px-4 py-3">
-        <div class="text-sm uppercase tracking-wide text-leaf font-semibold">Coperti</div>
-        <div class="text-2xl font-bold text-ink">
-          {payload.p} {payload.p === 1 ? 'persona' : 'persone'}
+    {#if copertoEnabled}
+      <div class="sticky top-0 z-10 bg-cream-50 pb-3">
+        <div class="bg-cream-100 rounded-lg px-4 py-3">
+          <div class="text-sm uppercase tracking-wide text-leaf font-semibold">Coperti</div>
+          <div class="text-2xl font-bold text-ink">
+            {payload.p} {payload.p === 1 ? 'persona' : 'persone'}
+          </div>
         </div>
       </div>
-    </div>
+    {/if}
 
     <section class="bg-white border-2 border-leaf rounded-xl p-4 mb-5">
       <div class="flex items-center justify-between gap-3">
@@ -774,21 +776,23 @@
       </p>
     </div>
 
-    <section class="mb-5">
-      <h2 class="text-lg font-bold uppercase tracking-wide text-tomato mb-2">Coperto</h2>
-      <div class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg">
-        <span class="text-3xl font-bold tabular-nums w-14 shrink-0 text-tomato">
-          {payload.p}×
-        </span>
-        <span class="flex-1 min-w-0">
-          <span class="block text-xl font-semibold text-ink leading-tight">Coperto</span>
-          <span class="block text-sm text-leaf mt-1">
-            {formatEUR(MENU.coperto.perPersona)} cad. ·
-            {formatEUR(MENU.coperto.perPersona * payload.p)}
+    {#if copertoEnabled}
+      <section class="mb-5">
+        <h2 class="text-lg font-bold uppercase tracking-wide text-tomato mb-2">Coperto</h2>
+        <div class="w-full flex items-center gap-3 px-3 py-4 text-left min-h-20 bg-cream-100 rounded-lg">
+          <span class="text-3xl font-bold tabular-nums w-14 shrink-0 text-tomato">
+            {payload.p}×
           </span>
-        </span>
-      </div>
-    </section>
+          <span class="flex-1 min-w-0">
+            <span class="block text-xl font-semibold text-ink leading-tight">Coperto</span>
+            <span class="block text-sm text-leaf mt-1">
+              {formatEUR(MENU.coperto.perPersona)} cad. ·
+              {formatEUR(MENU.coperto.perPersona * payload.p)}
+            </span>
+          </span>
+        </div>
+      </section>
+    {/if}
 
     {#each categories as category (category.id)}
       <section class="mb-5">

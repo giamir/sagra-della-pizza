@@ -9,6 +9,7 @@
   import type { Payload, MenuItem, MenuOption } from '@sagra/shared/types';
   import menuData from '@sagra/shared/data/menu.json';
   import type { Menu } from '@sagra/shared/types';
+  import { copertoEnabled } from '@sagra/shared/config/features';
   import ItemBrowser from './ItemBrowser.svelte';
   import CartPanel from './CartPanel.svelte';
   import VariantPicker from './VariantPicker.svelte';
@@ -67,7 +68,10 @@
 
   // --- Cart state ---
   let cart = $state<Record<string, number>>({});
-  let people = $state(1);
+  // Tenants without a coperto keep this at 0: every total, ticket and receipt
+  // derives the cover charge from it, so 0 removes the charge everywhere.
+  const DEFAULT_PEOPLE = copertoEnabled ? 1 : 0;
+  let people = $state(DEFAULT_PEOPLE);
   let menu = $state<Menu>(DEFAULT_MENU);
   // Ad-hoc adjustments (surplus / discount). Held separately from `cart` so they
   // never touch stock reservations; encoded into the order lines only at submit.
@@ -259,7 +263,7 @@
   function clearCart() {
     for (const k of Object.keys(cart)) delete cart[k];
     adjustments = [];
-    people = 1;
+    people = DEFAULT_PEOPLE;
     orderSource = 'manual';
     statusMessage = null;
   }
@@ -274,6 +278,7 @@
   }
 
   function setPeople(n: number) {
+    if (!copertoEnabled) return;
     people = Math.max(0, Math.min(30, n));
   }
 
@@ -496,7 +501,7 @@
       }
     }
 
-    people = payload.p;
+    people = copertoEnabled ? payload.p : 0;
     orderSource = 'qr';
     qrLoadTick++;
     stopScan();
@@ -772,7 +777,7 @@
         class:statsPop={statsIncreased}
         aria-expanded={liveStatsOpen}
       >
-        Oggi {formatCents(liveStats.revenueCents)} · {liveStats.covers} coperti
+        Oggi {formatCents(liveStats.revenueCents)}{#if copertoEnabled} · {liveStats.covers} coperti{/if}
         {#if statsIncreased && statsDeltaCents > 0}
           <span class="statsDelta absolute left-1/2 top-0 -translate-x-1/2 rounded-full bg-lime-300 px-2 py-0.5 text-[11px] font-black text-[#052e16] shadow-lg">
             +{formatCents(statsDeltaCents)}
@@ -797,7 +802,7 @@
               </button>
             </div>
             <p class="mt-1 text-sm font-semibold text-gray-700">
-              {liveStats.orderCount} ordini · {liveStats.covers} coperti · {formatCents(liveStats.averageCents)} medio
+              {liveStats.orderCount} ordini{#if copertoEnabled} · {liveStats.covers} coperti{/if} · {formatCents(liveStats.averageCents)} medio
             </p>
             {#if statsLoading}
               <p class="mt-1 text-xs font-semibold text-gray-400">Aggiornamento…</p>
@@ -1092,7 +1097,7 @@
             cart[id] = qty;
           }
         }
-        people = p;
+        people = copertoEnabled ? p : 0;
         orderSource = 'manual';
         reportsOpen = false;
         statusMessage = 'Ordine annullato — correggi e riconferma';

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { adjLabel } from '@sagra/shared/utils/adjustments';
+  import { copertoEnabled } from '@sagra/shared/config/features';
   import { Camera, ReceiptText } from 'lucide-svelte';
 
   type CartLine = { id: string; name: string; categoryLabel: string; price: number; qty: number; subtotal: number };
@@ -97,28 +98,30 @@
     <div class="space-y-3">
 
       <!-- Coperto (always first, before menu groups) -->
-      <ul class="space-y-1">
-        <li class="flex items-center gap-2 bg-white dark:bg-[#20242c] rounded-lg px-2 py-2 border border-gray-100">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold leading-tight truncate">Coperto</p>
-            <p class="text-xs text-gray-500">{formatEUR(copertoPerPerson)} × {people} = {formatEUR(copertoTotal)}</p>
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onclick={() => onSetPeople(people - 1)}
-              disabled={people <= 0}
-              class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 font-bold text-base leading-none"
-            >−</button>
-            <span class="w-6 text-center text-sm font-bold tabular-nums">{people}</span>
-            <button
-              type="button"
-              onclick={() => onSetPeople(people + 1)}
-              class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold text-base leading-none"
-            >+</button>
-          </div>
-        </li>
-      </ul>
+      {#if copertoEnabled}
+        <ul class="space-y-1">
+          <li class="flex items-center gap-2 bg-white dark:bg-[#20242c] rounded-lg px-2 py-2 border border-gray-100">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold leading-tight truncate">Coperto</p>
+              <p class="text-xs text-gray-500">{formatEUR(copertoPerPerson)} × {people} = {formatEUR(copertoTotal)}</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onclick={() => onSetPeople(people - 1)}
+                disabled={people <= 0}
+                class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 font-bold text-base leading-none"
+              >−</button>
+              <span class="w-6 text-center text-sm font-bold tabular-nums">{people}</span>
+              <button
+                type="button"
+                onclick={() => onSetPeople(people + 1)}
+                class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold text-base leading-none"
+              >+</button>
+            </div>
+          </li>
+        </ul>
+      {/if}
 
       {#if isEmpty}
         <div class="flex flex-col items-center justify-center gap-3 pt-10 text-gray-400">

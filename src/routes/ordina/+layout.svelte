@@ -1,19 +1,15 @@
 <script lang="ts">
   import RunningTotal from '$lib/components/RunningTotal.svelte';
   import SectionNav from '$lib/components/SectionNav.svelte';
+  import { FIRST_STEP_HREF, ORDER_STEPS } from '$lib/config/steps';
   import { MENU } from '$lib/stores/order.svelte';
   import { page } from '$app/state';
 
-  // Linear step order generated from the active menu: persone → categories → riepilogo.
-  const order = [
-    '/ordina/persone',
-    ...MENU.categories.map((c) => `/ordina/${c.id}`),
-    '/ordina/riepilogo'
-  ];
+  const order = ORDER_STEPS.map((s) => s.href);
   const lastCategoryHref =
     MENU.categories.length > 0
       ? `/ordina/${MENU.categories[MENU.categories.length - 1].id}`
-      : '/ordina/persone';
+      : FIRST_STEP_HREF;
 
   const nextHref = $derived.by(() => {
     const idx = order.indexOf(page.url.pathname);

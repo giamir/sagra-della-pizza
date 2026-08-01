@@ -24,6 +24,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN
           - tenant: sorsi-e-morsi
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
+          - tenant: bigne
+            blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
     steps:
       - uses: actions/checkout@v4
 
@@ -89,6 +91,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN
           - tenant: sorsi-e-morsi
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
+          - tenant: bigne
+            blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
     steps:
       - uses: actions/checkout@v4
 
@@ -143,6 +147,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN
           - tenant: sorsi-e-morsi
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
+          - tenant: bigne
+            blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
     steps:
       - uses: actions/checkout@v4
 

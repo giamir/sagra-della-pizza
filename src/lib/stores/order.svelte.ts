@@ -1,20 +1,27 @@
 import menu from '@sagra/shared/data/menu.json';
 import type { Menu, OrderState } from '$lib/types';
 import { computeTotal, itemsCount } from '$lib/utils/pricing';
-import { storageKey } from '$lib/config/tenant';
+import { copertoEnabled, storageKey } from '$lib/config/tenant';
 
 const STORAGE_KEY = storageKey('order-v1');
 const MENU = menu as Menu;
 
+// Tenants without a cover charge keep people at 0 — computeTotal multiplies the
+// two, so this (not a zero `coperto.perPersona`) is what keeps the charge out of
+// every total, the QR payload and the till.
+const DEFAULT_PEOPLE = copertoEnabled ? 2 : 0;
+
 function loadInitial(): OrderState {
-  if (typeof localStorage === 'undefined') return { people: 2, lines: {} };
+  if (typeof localStorage === 'undefined') return { people: DEFAULT_PEOPLE, lines: {} };
   try {
     const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return { people: 2, lines: {} };
+    if (!raw) return { people: DEFAULT_PEOPLE, lines: {} };
     const parsed = JSON.parse(raw) as OrderState;
     if (typeof parsed.people !== 'number' || typeof parsed.lines !== 'object') {
-      return { people: 2, lines: {} };
+      return { people: DEFAULT_PEOPLE, lines: {} };
     }
+    // Scrub carts saved before the flag was turned off.
+    if (!copertoEnabled) parsed.people = 0;
     const legacySteakQty = parsed.lines['bistecca-manzo'];
     if (legacySteakQty > 0) {
       parsed.lines['bistecca-manzo-normale'] =
@@ -25,7 +32,7 @@ function loadInitial(): OrderState {
     sessionStorage.removeItem(STORAGE_KEY);
     return parsed;
   } catch {
-    return { people: 2, lines: {} };
+    return { people: DEFAULT_PEOPLE, lines: {} };
   }
 }
 
@@ -41,6 +48,7 @@ export function persist() {
 }
 
 export function setPeople(n: number) {
+  if (!copertoEnabled) return;
   order.people = Math.max(1, Math.min(20, Math.floor(n)));
   persist();
 }
@@ -69,7 +77,7 @@ export function setQty(id: string, qty: number) {
 }
 
 export function clearOrder() {
-  order.people = 2;
+  order.people = DEFAULT_PEOPLE;
   for (const k of Object.keys(order.lines)) delete order.lines[k];
   persist();
 }

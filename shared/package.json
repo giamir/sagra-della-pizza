@@ -12,6 +12,7 @@
     "./utils/adjustments": "./src/utils/adjustments.ts",
     "./data/menu.json": "./src/data/menu.json",
     "./config/types": "./src/config/types.ts",
+    "./config/features": "./src/config/features.ts",
     "./config/tenant.json": "./src/config/tenant.json"
   }
 }

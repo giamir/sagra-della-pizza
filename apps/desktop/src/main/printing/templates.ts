@@ -194,9 +194,11 @@ export function buildPreviewText(
     receiptRows.push(`${label}${' '.repeat(gap)}${sub}`);
   }
   receiptRows.push(sep('-'));
-  const copStr = eur(copertoTotal);
-  const copLabel = `${order.people} coperti`;
-  receiptRows.push(`${copLabel}${' '.repeat(Math.max(1, width - copLabel.length - copStr.length))}${copStr}`);
+  if (order.people > 0) {
+    const copStr = eur(copertoTotal);
+    const copLabel = `${order.people} coperti`;
+    receiptRows.push(`${copLabel}${' '.repeat(Math.max(1, width - copLabel.length - copStr.length))}${copStr}`);
+  }
   for (const l of order.lines) {
     if (!isAdjKey(l.itemId)) continue;
     const sub = eur(l.unitPriceCents);

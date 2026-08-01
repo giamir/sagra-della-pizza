@@ -38,11 +38,21 @@ See `shared/src/config/types.ts` (`TenantConfig`) for the full typed schema. Key
 - `receipt` — `headerLines`, `customerCopyLabel`, `footerLines` (printed on tickets/receipts).
 - `stations` — `order` (print order), `copertoStation`, `aliases` (legacy→canonical station names).
 - `network` — `serverPort`, `defaultTillName`.
+- `features` — optional toggles; **every flag defaults to enabled when omitted**, so existing
+  tenants need no changes. `qr: false` makes the web app menu-only (the flow stops at the
+  riepilogo). `coperto: false` removes the cover charge concept entirely — no Persone step in the
+  web wizard, no Coperto line on the riepilogo, no Coperto row or catalog tab in the till, no
+  coperti on tickets; orders are stored with `people = 0`, which is what keeps the charge out of
+  every total. Use it for events without table service (e.g. `bigne`).
 - `storagePrefix` — namespaces web localStorage keys (kept `sagra` for the existing install).
 - `desktop` — `appId`, `productName`, `author`, `updateFeedUrl`, `downloadPageUrl`.
 
-The cover charge is **single-sourced** from `menu.json` (`coperto.perPersona`); the UI and
-receipts derive from it — do not duplicate it in `tenant.json`.
+The cover charge *amount* is **single-sourced** from `menu.json` (`coperto.perPersona`); the UI
+and receipts derive from it — do not duplicate it in `tenant.json`. Whether the cover charge
+exists at all is a separate question, answered by `features.coperto` above. Set `perPersona: 0`
+too when you disable it (the key is required by the `Menu` type), but the flag is what does the
+real work: the amount is editable at runtime from the till's Catalogo, so a zero there is not a
+durable guarantee.
 
 ### Menu structure drives the ordering flow
 
@@ -64,6 +74,20 @@ npm run use-tenant <slug>
 
 This copies the overlay over the active files. Run it before every build/deploy for that
 association. It is idempotent. CI for a given association should run it as the first build step.
+
+Note it only *overwrites* — files left in `static/` by a previously activated tenant (e.g. the
+other association's logo) are not deleted. Harmless, but don't be surprised by them.
+
+## 2b. Register the tenant in CI
+
+The tenant list is enumerated in the workflows, so a new overlay is invisible to CI until you
+add it in **both** places:
+
+- `.github/workflows/deploy.yml` — the `prepare` job's `jq` matrix, plus a
+  `VERCEL_PROJECT_ID_<NAME>` repo variable holding the new Vercel project's ID.
+- `.github/workflows/build.yml` — **all three** matrices (`build-mac`, `build-win`,
+  `build-win7`), plus a `BLOB_READ_WRITE_TOKEN_<NAME>` repo secret for the tenant's Blob store
+  (that's where installers and the update feed land).
 
 ## 3. Deploy the web app (Vercel)
 

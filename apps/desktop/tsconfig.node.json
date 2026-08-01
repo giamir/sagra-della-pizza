@@ -19,6 +19,7 @@
       "@sagra/shared/utils/adjustments": ["../../shared/src/utils/adjustments.ts"],
       "@sagra/shared/data/menu.json": ["../../shared/src/data/menu.json"],
       "@sagra/shared/config/types": ["../../shared/src/config/types.ts"],
+      "@sagra/shared/config/features": ["../../shared/src/config/features.ts"],
       "@sagra/shared/config/tenant.json": ["../../shared/src/config/tenant.json"]
     }
   },

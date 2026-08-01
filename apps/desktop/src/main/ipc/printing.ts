@@ -5,6 +5,7 @@ import { buildStationTicket, buildReceipt, buildPreviewText, groupByStation, typ
 import { getStations, getCopertoStation } from '../printing/station-map.js';
 import { buildLogoBuf } from '../printing/logo.js';
 import { getCatalog } from '../catalog/catalog.js';
+import { copertoEnabled } from '../config/tenant.js';
 import type { PrinterConfig, UsbPrinterEntry } from '../printing/service.js';
 
 // Live cover charge (cents) from the editable catalog, single-sourced from the menu.
@@ -116,7 +117,7 @@ export function registerPrintingHandlers(): void {
     const order: PrintOrder = {
       id: 0,
       createdAt: new Date().toISOString(),
-      people: 2,
+      people: copertoEnabled ? 2 : 0,
       totalCents: 1750,
       lines: [
         { itemId: 'margherita', name: 'Margherita', qty: 1, unitPriceCents: 550, station: 'Pizza' },

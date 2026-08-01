@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { clearOrder, count } from '$lib/stores/order.svelte';
+  import { FIRST_STEP_HREF } from '$lib/config/steps';
   import { qrEnabled, tenant } from '$lib/config/tenant';
 
   const hasOrder = $derived(count() > 0);
@@ -49,7 +50,7 @@
 
     <div class="mt-10 flex flex-col gap-4">
       <a
-        href="/ordina/persone"
+        href={FIRST_STEP_HREF}
         class="inline-flex items-center justify-center px-8 py-4 min-h-16 rounded-full bg-tomato hover:bg-tomato-dark text-white text-2xl font-bold shadow-lg"
       >
         {hasOrder ? 'Continua il tuo ordine' : 'Inizia il tuo ordine'}

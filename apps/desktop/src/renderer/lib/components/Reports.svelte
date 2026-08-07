@@ -395,6 +395,20 @@
   };
   let history = $state<CashHistoryEntry[]>([]);
 
+  // The storico respects the header's date filter: a Da/A range keeps only the
+  // business days inside it, "Oggi" (and "Ultima ora") the current business
+  // day; "Tutto" shows the whole festival.
+  const filteredHistory = $derived.by((): CashHistoryEntry[] => {
+    if (effectiveRange) {
+      return history.filter((h) => h.date >= effectiveRange.from && h.date <= effectiveRange.to);
+    }
+    if (period === 'today' || period === 'hour') {
+      const key = businessDayKey();
+      return history.filter((h) => h.date === key);
+    }
+    return history;
+  });
+
   async function loadHistory() {
     try {
       const result = await window.api.getCashHistory();
@@ -1377,8 +1391,8 @@
 
       {:else if tab === 'chiusure'}
         <!-- Storico chiusure: day-by-day closings with discrepancies -->
-        {#if history.length === 0}
-          <div class="flex items-center justify-center h-40 text-gray-400">Nessuna chiusura registrata</div>
+        {#if filteredHistory.length === 0}
+          <div class="flex items-center justify-center h-40 text-gray-400">Nessuna chiusura nel periodo selezionato</div>
         {:else}
           <div class="px-4 py-4">
             <div class="border border-gray-100 rounded-xl overflow-hidden">
@@ -1401,7 +1415,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {#each history as h (h.date + '|' + h.tillName)}
+                    {#each filteredHistory as h (h.date + '|' + h.tillName)}
                       {@const hExpected = historyExpected(h)}
                       {@const hDiff = h.countedCents == null ? null : h.countedCents - hExpected}
                       <tr class="border-b border-gray-50 last:border-0">

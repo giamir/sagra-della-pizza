@@ -26,6 +26,7 @@ export type PrinterConfig = {
   usbPrintCommand: 'lp' | 'lpr';
   usbRawOption: string;
   euroMode: EuroMode; // how the € sign is encoded — printers vary (see escpos.ts)
+  printReceipt: boolean; // whether the courtesy "copia cliente" prints after the comande
   stations: StationConfig[];
 };
 
@@ -48,6 +49,7 @@ const DEFAULTS: PrinterConfig = {
   usbPrintCommand: 'lp',
   usbRawOption: 'raw',
   euroMode: 'pc858',
+  printReceipt: true,
   stations: []
 };
 

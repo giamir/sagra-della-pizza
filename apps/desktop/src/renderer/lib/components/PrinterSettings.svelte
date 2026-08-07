@@ -17,13 +17,15 @@
     usbPrintCommand: 'lp' | 'lpr';
     usbRawOption: string;
     euroMode: 'pc858' | 'wpc1252' | 'none' | 'eur';
+    printReceipt: boolean;
     stations: StationConfig[];
   };
 
   let config = $state<Config>({
     enabled: false, connectionType: 'tcp', host: '192.168.1.100', port: 9100,
     usbTarget: '', width: 42, tcpTimeoutMs: 5000, tcpCloseDelayMs: 200,
-    usbWriteMode: 'auto', usbPrintCommand: 'lp', usbRawOption: 'raw', euroMode: 'pc858', stations: []
+    usbWriteMode: 'auto', usbPrintCommand: 'lp', usbRawOption: 'raw', euroMode: 'pc858',
+    printReceipt: true, stations: []
   });
   let saving = $state(false);
   let testing = $state(false);
@@ -395,6 +397,18 @@
           <p class="text-xs text-gray-400 mt-1.5">Le stazioni abilitate ricevono una comanda separata per ogni ordine.</p>
         </div>
       {/if}
+
+      <!-- Customer receipt -->
+      <div class:opacity-40={!config.enabled} class:pointer-events-none={!config.enabled}>
+        <span class="mb-2 block text-sm font-semibold text-gray-700">Scontrino</span>
+        <div class="rounded-lg border border-gray-200">
+          <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50">
+            <input type="checkbox" bind:checked={config.printReceipt} class="w-4 h-4 accent-green-800" />
+            <span class="text-sm font-medium text-gray-800">Copia cliente</span>
+          </label>
+        </div>
+        <p class="text-xs text-gray-400 mt-1.5">Se disattivata, dopo le comande non viene stampata la copia di cortesia con i prezzi.</p>
+      </div>
 
       <!-- Status message -->
       {#if message}

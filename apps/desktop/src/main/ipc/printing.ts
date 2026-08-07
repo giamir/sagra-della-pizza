@@ -70,9 +70,12 @@ async function doPrint(order: PrintOrder, config: PrinterConfig): Promise<void> 
     await send(ticket);
   }
 
-  // Courtesy receipt last — logo only here
-  const receipt = buildReceipt(order, width, copertoCents(), config.euroMode);
-  await send(withLogo(receipt));
+  // Courtesy receipt last — logo only here. Optional: some events hand out
+  // only the comande and skip the copia cliente entirely.
+  if (config.printReceipt) {
+    const receipt = buildReceipt(order, width, copertoCents(), config.euroMode);
+    await send(withLogo(receipt));
+  }
 }
 
 async function printPrintOrder(order: PrintOrder): Promise<{ ok: boolean; error?: string; preview?: ReturnType<typeof buildPreviewText> }> {

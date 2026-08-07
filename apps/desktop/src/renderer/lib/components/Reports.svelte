@@ -250,34 +250,46 @@
     return parseEuro(cashByTill[till]?.fondo ?? '');
   }
 
-  // Banknote denominations (euro), largest first; coins are entered as a single lump.
-  const NOTE_DENOMS = [500, 200, 100, 50, 20, 10, 5];
-  // Session-only count per till: how many of each note + a coins euro string. Not
+  // Guided count (kontorno-style): every banknote AND coin denomination gets its
+  // own piece count — no more coins-as-a-lump. Largest first, values in cents.
+  const DENOMS = [
+    { cents: 50000, label: '500' },
+    { cents: 20000, label: '200' },
+    { cents: 10000, label: '100' },
+    { cents: 5000, label: '50' },
+    { cents: 2000, label: '20' },
+    { cents: 1000, label: '10' },
+    { cents: 500, label: '5' },
+    { cents: 200, label: '2' },
+    { cents: 100, label: '1' },
+    { cents: 50, label: '0,50' },
+    { cents: 20, label: '0,20' },
+    { cents: 10, label: '0,10' },
+    { cents: 5, label: '0,05' },
+    { cents: 2, label: '0,02' },
+    { cents: 1, label: '0,01' }
+  ];
+  // Session-only piece counts per till, keyed by denomination cents. Not
   // persisted (we store only the computed total), so it's empty when reopening a closing.
-  let denomCounts = $state<Record<string, { notes: Record<number, string>; coins: string }>>({});
+  let denomCounts = $state<Record<string, Record<number, string>>>({});
 
-  function denomEntry(till: string): { notes: Record<number, string>; coins: string } {
-    return denomCounts[till] ?? { notes: {}, coins: '' };
+  function denomEntry(till: string): Record<number, string> {
+    return denomCounts[till] ?? {};
   }
-  function noteQty(till: string, denom: number): number {
-    const n = Number.parseInt(denomEntry(till).notes[denom] ?? '', 10);
+  function denomQty(till: string, cents: number): number {
+    const n = Number.parseInt(denomEntry(till)[cents] ?? '', 10);
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
-  function noteSubtotalCents(till: string, denom: number): number {
-    return noteQty(till, denom) * denom * 100;
-  }
-  function coinsCentsOf(till: string): number {
-    return parseEuro(denomEntry(till).coins);
+  function denomSubtotalCents(till: string, cents: number): number {
+    return denomQty(till, cents) * cents;
   }
   function hasDenomInput(till: string): boolean {
     const e = denomEntry(till);
-    return e.coins.trim() !== '' || NOTE_DENOMS.some((d) => (e.notes[d] ?? '').trim() !== '');
+    return DENOMS.some((d) => (e[d.cents] ?? '').trim() !== '');
   }
-  // Counted cash built from the note/coin breakdown.
+  // Counted cash built from the piece-count breakdown.
   function denomCountedCents(till: string): number {
-    let cents = coinsCentsOf(till);
-    for (const d of NOTE_DENOMS) cents += noteSubtotalCents(till, d);
-    return cents;
+    return DENOMS.reduce((sum, d) => sum + denomSubtotalCents(till, d.cents), 0);
   }
   // Effective counted cash used for the difference and for persistence: the live
   // breakdown when the operator has entered any note/coin, otherwise the saved total
@@ -292,13 +304,8 @@
     const cur = cashByTill[till] ?? { fondo: '', counted: '' };
     cashByTill = { ...cashByTill, [till]: { ...cur, [field]: value } };
   }
-  function updateNote(till: string, denom: number, value: string) {
-    const e = denomEntry(till);
-    denomCounts = { ...denomCounts, [till]: { ...e, notes: { ...e.notes, [denom]: value } } };
-  }
-  function updateCoins(till: string, value: string) {
-    const e = denomEntry(till);
-    denomCounts = { ...denomCounts, [till]: { ...e, coins: value } };
+  function updateDenom(till: string, cents: number, value: string) {
+    denomCounts = { ...denomCounts, [till]: { ...denomEntry(till), [cents]: value } };
   }
 
   async function loadCash() {
@@ -312,6 +319,10 @@
         map[f.tillName] = { fondo: centsToInput(f.fondoCents), counted: centsToInput(f.countedCents) };
       }
       cashByTill = map;
+      // Piece counts are session state for ONE closing: drop them whenever the
+      // floats reload (day switch), or a stale breakdown would silently
+      // override the freshly loaded saved totals.
+      denomCounts = {};
       cashError = null;
     } catch (e) {
       cashError = e instanceof Error ? e.message : 'Errore';
@@ -933,41 +944,28 @@
                           <span class="tabular-nums">{formatEUR((row.cashCents + row.cardCents) / 100)}</span>
                         </div>
 
-                        <!-- Cash count by banknote denomination + coins lump -->
+                        <!-- Guided count: one piece-count per denomination, coins included -->
                         <div class="border-t border-gray-200 pt-2">
                           <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Conteggio contanti</p>
                           <div class="space-y-1">
-                            {#each NOTE_DENOMS as note}
+                            {#each DENOMS as denom (denom.cents)}
+                              {#if denom.cents === 200}
+                                <p class="pt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Monete</p>
+                              {/if}
                               <div class="flex items-center gap-2">
-                                <span class="w-10 text-gray-500 tabular-nums">€{note}</span>
+                                <span class="w-12 text-gray-500 tabular-nums">€{denom.label}</span>
                                 <span class="text-gray-300">×</span>
                                 <input
                                   inputmode="numeric"
-                                  value={denomEntry(row.tillName).notes[note] ?? ''}
-                                  oninput={(e) => updateNote(row.tillName, note, e.currentTarget.value)}
+                                  value={denomEntry(row.tillName)[denom.cents] ?? ''}
+                                  oninput={(e) => updateDenom(row.tillName, denom.cents, e.currentTarget.value)}
                                   onblur={() => saveCash(row.tillName)}
                                   placeholder="0"
                                   class="w-14 rounded border border-gray-300 py-0.5 px-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
                                 />
-                                <span class="ml-auto w-20 text-right tabular-nums text-gray-400">{noteQty(row.tillName, note) ? formatEUR(noteSubtotalCents(row.tillName, note) / 100) : '—'}</span>
+                                <span class="ml-auto w-20 text-right tabular-nums text-gray-400">{denomQty(row.tillName, denom.cents) ? formatEUR(denomSubtotalCents(row.tillName, denom.cents) / 100) : '—'}</span>
                               </div>
                             {/each}
-                            <label class="flex items-center gap-2">
-                              <span class="w-10 text-gray-500">Monete</span>
-                              <span class="text-transparent">×</span>
-                              <span class="relative">
-                                <span class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">€</span>
-                                <input
-                                  inputmode="decimal"
-                                  value={denomEntry(row.tillName).coins}
-                                  oninput={(e) => updateCoins(row.tillName, e.currentTarget.value)}
-                                  onblur={() => saveCash(row.tillName)}
-                                  placeholder="0,00"
-                                  class="w-14 rounded border border-gray-300 py-0.5 pl-5 pr-1 text-right tabular-nums focus:border-green-600 focus:outline-none"
-                                />
-                              </span>
-                              <span class="ml-auto w-20"></span>
-                            </label>
                           </div>
                         </div>
 

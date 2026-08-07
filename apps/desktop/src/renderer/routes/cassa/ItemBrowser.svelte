@@ -100,6 +100,7 @@
   const bandEdgeClasses: Record<BandColour, string> = {
     lampone: 'border-l-rose-500',
     rame: 'border-l-orange-500',
+    bruno: 'border-l-amber-800',
     ambra: 'border-l-amber-400',
     oliva: 'border-l-lime-600',
     verde: 'border-l-green-600',
@@ -112,6 +113,7 @@
   const bandWashClasses: Record<BandColour, string> = {
     lampone: 'bg-linear-to-r from-rose-500/10 to-rose-500/5',
     rame: 'bg-linear-to-r from-orange-500/10 to-orange-500/5',
+    bruno: 'bg-linear-to-r from-amber-800/10 to-amber-800/5',
     ambra: 'bg-linear-to-r from-amber-400/10 to-amber-400/5',
     oliva: 'bg-linear-to-r from-lime-600/10 to-lime-600/5',
     verde: 'bg-linear-to-r from-green-600/10 to-green-600/5',

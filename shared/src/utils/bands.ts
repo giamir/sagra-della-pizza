@@ -11,6 +11,7 @@
 export const BAND_COLOURS = [
   'lampone',
   'rame',
+  'bruno',
   'ambra',
   'oliva',
   'verde',

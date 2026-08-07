@@ -22,7 +22,7 @@
               "id": "bigne-cioccolato",
               "name": "Bignè al Cioccolato",
               "price": 4.0,
-              "band": "rame"
+              "band": "bruno"
             },
             {
               "id": "bigne-misti",
@@ -143,7 +143,8 @@
             {
               "id": "caffe",
               "name": "Caffè",
-              "price": 1.0
+              "price": 1.0,
+              "band": "bruno"
             }
           ]
         }

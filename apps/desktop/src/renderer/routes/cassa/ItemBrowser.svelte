@@ -135,15 +135,18 @@
 <div class="flex flex-col w-[58%] border-r border-gray-200 bg-white dark:bg-[#20242c] overflow-hidden">
 
   <!-- Category tabs -->
-  <div class="shrink-0 flex gap-1 px-2 pt-2 pb-1 overflow-x-auto bg-gray-50 border-b border-gray-200">
+  <!-- min-h-[52px] keeps every tab a comfortable finger target even with a
+       one-word label; the inactive state gets its own surface (not bare text)
+       so the touch area reads as a button in both light and dark mode. -->
+  <div class="shrink-0 flex gap-1.5 px-2 pt-2 pb-1 overflow-x-auto bg-gray-50 dark:bg-[#181b21] border-b border-gray-200">
     {#each menu.categories as cat}
       <button
         type="button"
         onclick={() => onCategoryChange(cat.id)}
-        class={`shrink-0 px-4 py-2 rounded-t text-sm font-bold transition-colors ${
+        class={`shrink-0 min-h-[52px] px-6 py-2.5 rounded-t-lg text-base font-bold transition-colors ${
           cat.id === activeCategoryId
-            ? 'bg-white dark:bg-[#20242c] text-green-900 dark:text-green-300 border border-gray-200 border-b-white dark:border-b-[#20242c]'
-            : 'text-gray-500 hover:text-gray-800'
+            ? 'bg-green-700 text-white border-2 border-green-700'
+            : 'bg-gray-100 dark:bg-[#262b34] text-gray-800 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-[#2e3440]'
         }`}
       >
         {cat.label}

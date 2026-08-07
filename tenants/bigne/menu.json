@@ -45,6 +45,28 @@
           "label": "",
           "items": [
             {
+              "id": "acqua-500ml",
+              "name": "Acqua 500 ml",
+              "price": 1.0,
+              "choices": [
+                "acqua-500ml-naturale",
+                "acqua-500ml-gassata"
+              ],
+              "band": "blu"
+            },
+            {
+              "id": "acqua-500ml-naturale",
+              "name": "Acqua Naturale 500 ml",
+              "price": 1.0,
+              "hidden": true
+            },
+            {
+              "id": "acqua-500ml-gassata",
+              "name": "Acqua Gassata 500 ml",
+              "price": 1.0,
+              "hidden": true
+            },
+            {
               "id": "coca-cola",
               "name": "Coca Cola",
               "price": 2.5,
@@ -117,28 +139,6 @@
               "name": "Birra Artigianale IPA",
               "price": 6.0,
               "band": "rame"
-            },
-            {
-              "id": "acqua-500ml",
-              "name": "Acqua 500 ml",
-              "price": 1.0,
-              "choices": [
-                "acqua-500ml-naturale",
-                "acqua-500ml-gassata"
-              ],
-              "band": "blu"
-            },
-            {
-              "id": "acqua-500ml-naturale",
-              "name": "Acqua Naturale 500 ml",
-              "price": 1.0,
-              "hidden": true
-            },
-            {
-              "id": "acqua-500ml-gassata",
-              "name": "Acqua Gassata 500 ml",
-              "price": 1.0,
-              "hidden": true
             },
             {
               "id": "caffe",

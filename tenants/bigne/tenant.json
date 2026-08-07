@@ -21,7 +21,8 @@
       "focus": "#f59e0b"
     },
     "themeColor": "#2c5e3f",
-    "backgroundColor": "#fbf3e0"
+    "backgroundColor": "#fbf3e0",
+    "tillAccent": "#8f6b3f"
   },
   "locale": {
     "lang": "it",

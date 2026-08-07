@@ -255,7 +255,7 @@
           <button
             type="button"
             onclick={onCash}
-            class="flex-1 px-4 py-3 rounded-xl bg-green-700 text-white font-bold hover:bg-green-800"
+            class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700"
           >Completa ordine</button>
         </div>
 

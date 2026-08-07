@@ -222,7 +222,7 @@
       type="button"
       onclick={onComplete}
       disabled={isEmpty || completing}
-      class="w-full py-3 rounded-lg bg-red-700 hover:bg-red-800 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base transition-colors"
+      class="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base transition-colors"
     >
       {completing ? 'Salvataggio…' : 'Completa ordine'}
     </button>

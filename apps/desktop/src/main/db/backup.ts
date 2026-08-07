@@ -42,6 +42,8 @@ type CashFloatRow = {
   fondo_cents: number;
   counted_cents: number | null;
   updated_at: string;
+  closed_at?: string | null;
+  takings_cash_cents?: number | null;
 };
 
 export interface DbBundle {
@@ -208,8 +210,8 @@ export function importBundle(bundle: unknown): { orders: number } {
       }
 
       const insertFloat = db.prepare(`
-        INSERT INTO cash_floats (till_name, business_date, fondo_cents, counted_cents, updated_at)
-        VALUES (@till_name, @business_date, @fondo_cents, @counted_cents, @updated_at)
+        INSERT INTO cash_floats (till_name, business_date, fondo_cents, counted_cents, updated_at, closed_at, takings_cash_cents)
+        VALUES (@till_name, @business_date, @fondo_cents, @counted_cents, @updated_at, @closed_at, @takings_cash_cents)
       `);
       for (const c of bundle.cash_floats) {
         insertFloat.run({
@@ -217,7 +219,10 @@ export function importBundle(bundle: unknown): { orders: number } {
           business_date: c.business_date,
           fondo_cents: c.fondo_cents ?? 0,
           counted_cents: c.counted_cents ?? null,
-          updated_at: c.updated_at
+          updated_at: c.updated_at,
+          // Absent in bundles exported before the finalization columns existed.
+          closed_at: c.closed_at ?? null,
+          takings_cash_cents: c.takings_cash_cents ?? null
         });
       }
 

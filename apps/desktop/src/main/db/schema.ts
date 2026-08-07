@@ -82,6 +82,16 @@ function migrate(db: Database.Database): void {
     `);
     db.pragma('user_version = 3');
   }
+
+  if (version < 4) {
+    // Finalized closings: closed_at marks the chiusura as locked, and
+    // takings_cash_cents pins the day's cash takings at close time so a
+    // late-syncing or voided order can't silently change an already-counted
+    // drawer's expected amount.
+    try { db.exec(`ALTER TABLE cash_floats ADD COLUMN closed_at TEXT`); } catch { /* already exists */ }
+    try { db.exec(`ALTER TABLE cash_floats ADD COLUMN takings_cash_cents INTEGER`); } catch { /* already exists */ }
+    db.pragma('user_version = 4');
+  }
 }
 
 export function getSetting(key: string): string | null {

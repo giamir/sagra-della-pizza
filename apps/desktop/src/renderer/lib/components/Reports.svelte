@@ -329,17 +329,25 @@
     updateCashField(till, section, sectionHasPieces(till, section) ? centsToInput(sectionPiecesCents(till, section)) : '');
   }
 
+  // Finalized closings for the loaded day: present only when a till is closed.
+  // `takings` is the cash figure pinned at close time — the expected amount uses
+  // it instead of the live sum, so late edits to orders can't move a closed day.
+  let closedByTill = $state<Record<string, { closedAt: string; takings: number }>>({});
+
   async function loadCash() {
     const date = businessDate;
-    if (!date) { cashByTill = {}; return; }
+    if (!date) { cashByTill = {}; closedByTill = {}; return; }
     try {
       const result = await window.api.getCashFloats(date);
       if (!result.ok) { cashError = result.error ?? 'Errore'; return; }
       const map: Record<string, { fondo: string; counted: string; notes: string; coins: string }> = {};
+      const closed: Record<string, { closedAt: string; takings: number }> = {};
       for (const f of result.floats) {
         map[f.tillName] = { fondo: centsToInput(f.fondoCents), counted: centsToInput(f.countedCents), notes: '', coins: '' };
+        if (f.closedAt != null) closed[f.tillName] = { closedAt: f.closedAt, takings: f.takingsCashCents ?? 0 };
       }
       cashByTill = map;
+      closedByTill = closed;
       // Piece counts are session state for ONE closing: drop them whenever the
       // floats reload (day switch), or a stale breakdown would silently
       // override the freshly loaded saved totals.
@@ -370,7 +378,68 @@
     } catch (e) {
       cashError = e instanceof Error ? e.message : 'Errore salvataggio';
     }
+    void loadHistory();
   }
+
+  // --- Storico chiusure: every business day per till, with closing state ---
+  type CashHistoryEntry = {
+    date: string;
+    tillName: string;
+    cashCents: number;
+    orders: number;
+    fondoCents: number;
+    countedCents: number | null;
+    closedAt: string | null;
+    takingsCashCents: number | null;
+  };
+  let history = $state<CashHistoryEntry[]>([]);
+
+  async function loadHistory() {
+    try {
+      const result = await window.api.getCashHistory();
+      if (result.ok) history = result.history;
+    } catch { /* the storico is best-effort; the closing UI reports its own errors */ }
+  }
+
+  // Finalize a till's day: persist the current figures first, then lock the row
+  // pinning the live cash takings as the day's expected amount.
+  async function closeDay(till: string, takingsCashCents: number) {
+    const date = businessDate;
+    if (!date) return;
+    await saveCash(till);
+    try {
+      const result = await window.api.closeCashDay(till, date, takingsCashCents);
+      cashError = result.ok ? null : (result.error ?? 'Errore chiusura');
+    } catch (e) {
+      cashError = e instanceof Error ? e.message : 'Errore chiusura';
+    }
+    await loadCash();
+    await loadHistory();
+  }
+
+  async function reopenDay(till: string) {
+    const date = businessDate;
+    if (!date) return;
+    try {
+      const result = await window.api.reopenCashDay(till, date);
+      cashError = result.ok ? null : (result.error ?? 'Errore riapertura');
+    } catch (e) {
+      cashError = e instanceof Error ? e.message : 'Errore riapertura';
+    }
+    await loadCash();
+    await loadHistory();
+  }
+
+  function historyExpected(h: CashHistoryEntry): number {
+    return h.fondoCents + (h.takingsCashCents ?? h.cashCents);
+  }
+  function formatClosedAt(iso: string): string {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  onMount(loadHistory);
 
   // Reload the fondo values whenever the active day changes.
   $effect(() => { businessDate; loadCash(); });
@@ -927,11 +996,18 @@
               {:else}
                 <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
                   {#each byTill as row}
-                    {@const expected = fondoCentsOf(row.tillName) + row.cashCents}
+                    {@const closedInfo = closedByTill[row.tillName]}
+                    {@const cashTakings = closedInfo?.takings ?? row.cashCents}
+                    {@const expected = fondoCentsOf(row.tillName) + cashTakings}
                     {@const counted = countedCentsOf(row.tillName)}
                     {@const diff = counted == null ? null : counted - expected}
-                    <div class="rounded-xl border border-gray-200 p-4">
-                      <p class="mb-3 font-bold text-gray-800">{row.tillName}</p>
+                    <div class="rounded-xl border p-4" class:border-gray-200={!closedInfo} class:border-green-300={!!closedInfo} class:bg-green-50={!!closedInfo}>
+                      <div class="mb-3 flex items-center justify-between gap-2">
+                        <p class="font-bold text-gray-800">{row.tillName}</p>
+                        {#if closedInfo}
+                          <span class="rounded-full bg-green-700 px-2 py-0.5 text-xs font-bold text-white">Chiusa</span>
+                        {/if}
+                      </div>
                       <div class="space-y-2 text-sm">
                         <label class="flex items-center justify-between gap-2">
                           <span class="text-gray-500">Fondo cassa</span>
@@ -940,16 +1016,17 @@
                             <input
                               inputmode="decimal"
                               value={cashByTill[row.tillName]?.fondo ?? ''}
-                              oninput={(e) => updateCashField(row.tillName, 'fondo', e.currentTarget.value)}
+                              disabled={!!closedInfo}
+                                oninput={(e) => updateCashField(row.tillName, 'fondo', e.currentTarget.value)}
                               onblur={() => saveCash(row.tillName)}
                               placeholder="0,00"
-                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                             />
                           </span>
                         </label>
                         <div class="flex items-center justify-between text-gray-600">
-                          <span>+ Incasso contanti</span>
-                          <span class="tabular-nums">{formatEUR(row.cashCents / 100)}</span>
+                          <span>+ Incasso contanti{#if closedInfo}<span class="ml-1 text-[10px] uppercase tracking-wide text-gray-400">(bloccato alla chiusura)</span>{/if}</span>
+                          <span class="tabular-nums">{formatEUR(cashTakings / 100)}</span>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-2">
                           <span class="font-semibold text-gray-700">= Attesi in cassa</span>
@@ -977,10 +1054,11 @@
                               <input
                                 inputmode="decimal"
                                 value={cashEntry(row.tillName).notes}
+                                disabled={!!closedInfo}
                                 oninput={(e) => updateCashField(row.tillName, 'notes', e.currentTarget.value)}
                                 onblur={() => saveCash(row.tillName)}
                                 placeholder="0,00"
-                                class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                                class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                               />
                             </span>
                           </label>
@@ -991,10 +1069,11 @@
                               <input
                                 inputmode="decimal"
                                 value={cashEntry(row.tillName).coins}
+                                disabled={!!closedInfo}
                                 oninput={(e) => updateCashField(row.tillName, 'coins', e.currentTarget.value)}
                                 onblur={() => saveCash(row.tillName)}
                                 placeholder="0,00"
-                                class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                                class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right tabular-nums focus:border-green-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                               />
                             </span>
                           </label>
@@ -1013,10 +1092,11 @@
                                   <input
                                     inputmode="numeric"
                                     value={denomEntry(row.tillName)[denom.cents] ?? ''}
-                                    oninput={(e) => updateDenom(row.tillName, denom.cents, e.currentTarget.value)}
+                                    disabled={!!closedInfo}
+                                oninput={(e) => updateDenom(row.tillName, denom.cents, e.currentTarget.value)}
                                     onblur={() => saveCash(row.tillName)}
                                     placeholder="0"
-                                    class="w-14 rounded border border-gray-300 py-0.5 px-2 text-right tabular-nums focus:border-green-600 focus:outline-none"
+                                    class="w-14 rounded border border-gray-300 py-0.5 px-2 text-right tabular-nums focus:border-green-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                                   />
                                   <span class="ml-auto w-20 text-right tabular-nums text-gray-400">{denomQty(row.tillName, denom.cents) ? formatEUR(denomSubtotalCents(row.tillName, denom.cents) / 100) : '—'}</span>
                                 </div>
@@ -1032,10 +1112,11 @@
                             <input
                               inputmode="decimal"
                               value={cashEntry(row.tillName).counted}
-                              oninput={(e) => updateCashField(row.tillName, 'counted', e.currentTarget.value)}
+                              disabled={!!closedInfo}
+                                oninput={(e) => updateCashField(row.tillName, 'counted', e.currentTarget.value)}
                               onblur={() => saveCash(row.tillName)}
                               placeholder="0,00"
-                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right font-bold tabular-nums focus:border-green-600 focus:outline-none"
+                              class="w-24 rounded border border-gray-300 py-1 pl-5 pr-2 text-right font-bold tabular-nums focus:border-green-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                             />
                           </span>
                         </label>
@@ -1049,11 +1130,84 @@
                             >{diff > 0 ? '+' : ''}{formatEUR(diff / 100)}</span>
                           </div>
                         {/if}
+
+                        {#if closedInfo}
+                          <div class="flex items-center justify-between gap-2 border-t border-gray-200 pt-2">
+                            <span class="text-xs text-gray-500">Chiusa il {formatClosedAt(closedInfo.closedAt)}</span>
+                            <button
+                              type="button"
+                              onclick={() => reopenDay(row.tillName)}
+                              class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100"
+                            >Riapri</button>
+                          </div>
+                        {:else}
+                          <button
+                            type="button"
+                            onclick={() => closeDay(row.tillName, row.cashCents)}
+                            disabled={counted == null}
+                            class="w-full rounded-lg bg-green-700 py-2 text-sm font-bold text-white transition-colors hover:bg-green-800 disabled:bg-gray-200 disabled:text-gray-400"
+                            title={counted == null ? 'Inserisci prima i contanti contati' : undefined}
+                          >Chiudi giornata</button>
+                        {/if}
                       </div>
                     </div>
                   {/each}
                 </div>
               {/if}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Storico chiusure: day-by-day closings with discrepancies -->
+        {#if history.length > 0}
+          <div class="px-4 pb-2">
+            <div class="border border-gray-100 rounded-xl overflow-hidden">
+              <div class="flex items-center justify-between bg-gray-50 px-4 py-2">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Storico chiusure</p>
+                <p class="text-xs text-gray-400">Giorno gestionale (dalle 6:00)</p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-xs text-gray-400 border-b border-gray-100">
+                      <th class="text-left px-4 py-2 font-medium">Giorno</th>
+                      <th class="text-left px-4 py-2 font-medium">Cassa</th>
+                      <th class="text-right px-4 py-2 font-medium">Fondo</th>
+                      <th class="text-right px-4 py-2 font-medium">Contanti</th>
+                      <th class="text-right px-4 py-2 font-medium">Attesi</th>
+                      <th class="text-right px-4 py-2 font-medium">Contati</th>
+                      <th class="text-right px-4 py-2 font-medium">Differenza</th>
+                      <th class="text-right px-4 py-2 font-medium">Stato</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each history as h (h.date + '|' + h.tillName)}
+                      {@const hExpected = historyExpected(h)}
+                      {@const hDiff = h.countedCents == null ? null : h.countedCents - hExpected}
+                      <tr class="border-b border-gray-50 last:border-0">
+                        <td class="px-4 py-2 font-medium text-gray-800 tabular-nums">{h.date}</td>
+                        <td class="px-4 py-2 text-gray-600">{h.tillName}</td>
+                        <td class="px-4 py-2 text-right text-gray-600 tabular-nums">{formatEUR(h.fondoCents / 100)}</td>
+                        <td class="px-4 py-2 text-right text-gray-700 tabular-nums">{formatEUR((h.takingsCashCents ?? h.cashCents) / 100)}</td>
+                        <td class="px-4 py-2 text-right font-semibold text-gray-700 tabular-nums">{formatEUR(hExpected / 100)}</td>
+                        <td class="px-4 py-2 text-right font-semibold text-gray-800 tabular-nums">{h.countedCents == null ? '—' : formatEUR(h.countedCents / 100)}</td>
+                        <td class="px-4 py-2 text-right font-bold tabular-nums" class:text-green-700={hDiff === 0} class:text-red-600={hDiff != null && hDiff !== 0} class:text-gray-400={hDiff == null}>
+                          {hDiff == null ? '—' : `${hDiff > 0 ? '+' : ''}${formatEUR(hDiff / 100)}`}
+                        </td>
+                        <td class="px-4 py-2 text-right">
+                          {#if h.closedAt}
+                            <span class="rounded-full bg-green-700 px-2 py-0.5 text-xs font-bold text-white">Chiusa</span>
+                          {:else if h.countedCents != null}
+                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">Conteggiata</span>
+                          {:else}
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-500">Aperta</span>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         {/if}

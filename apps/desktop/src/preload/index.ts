@@ -58,6 +58,10 @@ const api = {
   getCashFloats: (date: string) => ipcRenderer.invoke('cash:get', date),
   setCashFloat: (tillName: string, date: string, fondoCents: number, countedCents: number | null) =>
     ipcRenderer.invoke('cash:set', tillName, date, fondoCents, countedCents),
+  getCashHistory: () => ipcRenderer.invoke('cash:history'),
+  closeCashDay: (tillName: string, date: string, takingsCashCents: number) =>
+    ipcRenderer.invoke('cash:close', tillName, date, takingsCashCents),
+  reopenCashDay: (tillName: string, date: string) => ipcRenderer.invoke('cash:reopen', tillName, date),
 
   // Payment terminal (ECR17 / Nexi Ingenico)
   getPaymentConfig: () => ipcRenderer.invoke('payment:config:get'),

@@ -5,7 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { getDb, getSetting } from '../db/schema.js';
 import { getStock, setStock, resetStock, decrementStock } from '../db/stock.js';
 import { queryOrders, voidOrder } from '../db/reports.js';
-import { getCashFloats, setCashFloat } from '../db/cash.js';
+import { getCashFloats, setCashFloat, closeCashDay, reopenCashDay, getCashHistory } from '../db/cash.js';
 import { getCatalog, saveCatalog, resetCatalog, getResolvedStations, saveStationOverrides, getLivePriceIndex, resolveStation, resolveStockItemId } from '../catalog/catalog.js';
 import { getStations, saveStations, getCopertoStation, saveCopertoStation } from '../printing/station-map.js';
 import { getReservedTotals, setReservation, clearReservation } from './reservations.js';
@@ -161,6 +161,34 @@ export function startServer(port = 7331): void {
       return;
     }
     setCashFloat(tillName, date, fondoCents, typeof countedCents === 'number' ? countedCents : null);
+    res.json({ ok: true });
+  });
+
+  app.get('/cash-history', (_req, res) => {
+    res.json({ history: getCashHistory() });
+  });
+
+  app.post('/cash-close', (req, res) => {
+    const { tillName, date, takingsCashCents } = req.body as {
+      tillName?: string;
+      date?: string;
+      takingsCashCents?: number;
+    };
+    if (!tillName || !date || typeof takingsCashCents !== 'number') {
+      res.status(400).json({ ok: false, error: 'Payload non valido' });
+      return;
+    }
+    closeCashDay(tillName, date, takingsCashCents);
+    res.json({ ok: true });
+  });
+
+  app.post('/cash-reopen', (req, res) => {
+    const { tillName, date } = req.body as { tillName?: string; date?: string };
+    if (!tillName || !date) {
+      res.status(400).json({ ok: false, error: 'Payload non valido' });
+      return;
+    }
+    reopenCashDay(tillName, date);
     res.json({ ok: true });
   });
 

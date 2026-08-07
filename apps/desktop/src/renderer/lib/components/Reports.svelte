@@ -228,18 +228,13 @@
   let cashByTill = $state<Record<string, { fondo: string; counted: string }>>({});
   let cashError = $state<string | null>(null);
 
-  function localDateKey(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-
   // The single day the closing applies to, or null for multi-day views ("Tutto" / range).
+  // Follows the 06:00 virtual midnight: a chiusura done at 00:30 files under the
+  // evening's date, matching the business-day range the figures cover.
   const businessDate = $derived.by((): string | null => {
     if (effectiveRange) return isSingleDay ? effectiveRange.from : null;
     if (period === 'all') return null;
-    return localDateKey(new Date());
+    return businessDayKey();
   });
 
   function parseEuro(s: string): number {

@@ -66,22 +66,22 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
   // of the left-aligned ones on 48-column paper and reads as misprinted.
   e.align('left').separator('=');
 
-  // Full double-size (width AND height) so the comanda reads from a distance.
-  // Double-wide chars halve the columns per line, so names truncate at width/2.
-  e.doubleSize(true);
-  const lineCols = Math.floor(width / 2);
+  // Double height + bold across the whole line: ESC/POS has no 1.5× width, and
+  // full double-size halves the columns and truncates real item names — the
+  // thicker bold strokes give the extra legibility without losing width.
+  e.doubleHeight(true).bold(true);
   for (const l of lines) {
     if (isAdjKey(l.itemId)) continue; // never print adjustments on prep tickets
     const qtyStr = `${l.qty}x`;
-    const maxName = lineCols - qtyStr.length - 2;
+    const maxName = width - qtyStr.length - 2;
     const name = l.name.length > maxName ? l.name.slice(0, maxName - 1) + '…' : l.name;
-    e.bold(true).text(`${qtyStr}  `).bold(false).line(name);
+    e.line(`${qtyStr}  ${name}`);
   }
 
   if (normalizeStation(station) === copertoStation && order.people > 0) {
-    e.bold(true).text(`${order.people}x  `).bold(false).line('Coperti');
+    e.line(`${order.people}x  Coperti`);
   }
-  e.doubleSize(false);
+  e.bold(false).doubleHeight(false);
 
   e.feed().separator('=').feed(3).cut();
   return e.toBuffer();

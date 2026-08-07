@@ -395,18 +395,21 @@
   };
   let history = $state<CashHistoryEntry[]>([]);
 
-  // The storico respects the header's date filter: a Da/A range keeps only the
+  // The storico respects the header's filters: a Da/A range keeps only the
   // business days inside it, "Oggi" (and "Ultima ora") the current business
-  // day; "Tutto" shows the whole festival.
+  // day, "Tutto" the whole festival; the till dropdown narrows to one cassa.
+  // History rows carry raw DB till names, so they go through the same tillKey
+  // normalization the dropdown values are built from.
   const filteredHistory = $derived.by((): CashHistoryEntry[] => {
+    let rows = history;
     if (effectiveRange) {
-      return history.filter((h) => h.date >= effectiveRange.from && h.date <= effectiveRange.to);
-    }
-    if (period === 'today' || period === 'hour') {
+      rows = rows.filter((h) => h.date >= effectiveRange.from && h.date <= effectiveRange.to);
+    } else if (period === 'today' || period === 'hour') {
       const key = businessDayKey();
-      return history.filter((h) => h.date === key);
+      rows = rows.filter((h) => h.date === key);
     }
-    return history;
+    if (tillFilter) rows = rows.filter((h) => tillKey(h) === tillFilter);
+    return rows;
   });
 
   async function loadHistory() {

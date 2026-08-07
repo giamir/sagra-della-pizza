@@ -62,7 +62,9 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     .line(formatTime(order.createdAt))
     .feed();
   if (filaTavoloEnabled) e.line(tableAndRowLine(width)).feed();
-  e.separator('=').align('left');
+  // Left-align BEFORE the separator: a centered 42-char rule sits 3 chars right
+  // of the left-aligned ones on 48-column paper and reads as misprinted.
+  e.align('left').separator('=');
 
   e.doubleHeight(true);
   for (const l of lines) {
@@ -92,8 +94,8 @@ export function buildReceipt(order: PrintOrder, width = 42, copertoCents = DEFAU
   for (const h of tenant.receipt.headerLines) e.line(h);
   e.line(tenant.receipt.customerCopyLabel)
     .bold(false)
-    .separator('=')
     .align('left')
+    .separator('=')
     .line(formatTime(order.createdAt))
     .line(`Ordine #${order.id}`)
     .separator('-');

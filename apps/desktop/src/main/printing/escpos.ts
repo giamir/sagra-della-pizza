@@ -19,6 +19,19 @@ const EURO_MODES: Record<EuroMode, { codePage: number; euroByte: number }> = {
   eur: { codePage: 0, euroByte: 0x20 } // PC437; € rendered as "EUR" text upstream
 };
 
+// Italian accents in the IBM code pages. The lowercase set sits at 0x80–0x9F,
+// identical in PC437, PC850 and PC858; the uppercase set exists only in
+// PC850/PC858 (PC437 has box-drawing there).
+const LOW_CP_ACCENTS: Record<string, number> = {
+  é: 0x82, â: 0x83, ä: 0x84, à: 0x85, ç: 0x87, ê: 0x88, ë: 0x89, è: 0x8a,
+  ï: 0x8b, î: 0x8c, ì: 0x8d, É: 0x90, ô: 0x93, ö: 0x94, ò: 0x95, û: 0x96,
+  ù: 0x97, ü: 0x81
+};
+const HIGH_CP850_ACCENTS: Record<string, number> = {
+  Á: 0xb5, Â: 0xb6, À: 0xb7, Ê: 0xd2, Ë: 0xd3, È: 0xd4, Í: 0xd6, Î: 0xd7,
+  Ï: 0xd8, Ì: 0xde, Ó: 0xe0, Ô: 0xe2, Ò: 0xe3, Ú: 0xe9, Û: 0xea, Ù: 0xeb
+};
+
 export class EscPos {
   private buf: number[] = [];
   readonly width: number; // chars per line at normal size
@@ -61,15 +74,36 @@ export class EscPos {
   }
 
   // --- Text output ---
-  // Strips diacritics so Italian accented chars print correctly on all code pages.
+  // Accented chars print via their code-page byte when the page has them;
+  // anything unmapped falls back to its diacritic-stripped ASCII base, so an
+  // exotic character degrades to "e" instead of garbage.
   text(s: string): this {
-    const plain = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    for (let i = 0; i < plain.length; i++) {
-      const code = plain.charCodeAt(i);
+    // NFC so a decomposed "e + ◌̀" from any source matches the map keys.
+    const composed = s.normalize('NFC');
+    for (const ch of composed) {
+      const code = ch.codePointAt(0)!;
       if (code === 0x20ac) { this.buf.push(this.euro.euroByte); continue; } // € position depends on code page
-      this.buf.push(code & 0xff);
+      if (code <= 0x7f) { this.buf.push(code); continue; }
+      const mapped = this.accentByte(ch);
+      if (mapped != null) { this.buf.push(mapped); continue; }
+      const plain = ch.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      for (let i = 0; i < plain.length; i++) this.buf.push(plain.charCodeAt(i) & 0xff);
     }
     return this;
+  }
+
+  // Code-page byte for an accented char, or null when the page lacks it.
+  private accentByte(ch: string): number | null {
+    if (this.euro.codePage === 16) {
+      // Windows-1252: Latin-1 chars map to their own code point.
+      const code = ch.charCodeAt(0);
+      return ch.length === 1 && code <= 0xff ? code : null;
+    }
+    // PC437/PC850/PC858 share the lowercase accents at 0x80–0x9F.
+    const low = LOW_CP_ACCENTS[ch];
+    if (low != null) return low;
+    // The uppercase accents exist only in PC850/PC858 (code page 19 here).
+    return this.euro.codePage === 19 ? (HIGH_CP850_ACCENTS[ch] ?? null) : null;
   }
 
   line(s = ''): this { return this.text(s).feed(); }

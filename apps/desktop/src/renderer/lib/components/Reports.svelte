@@ -48,10 +48,11 @@
     { key: 'today', label: 'Oggi' },
     { key: 'all',   label: 'Tutto' },
   ];
-  const TABS: { key: 'summary' | 'items' | 'orders'; label: string }[] = [
+  const TABS: { key: 'summary' | 'items' | 'orders' | 'chiusure'; label: string }[] = [
     { key: 'summary', label: 'Riepilogo' },
     { key: 'items',   label: 'Articoli' },
     { key: 'orders',  label: 'Ordini' },
+    { key: 'chiusure', label: 'Chiusure' },
   ];
   let period = $state<Period>('today');
   // YYYY-MM-DD strings; when either is set, the range overrides the period quick-filter.
@@ -60,7 +61,7 @@
   let toDate = $state('');
   // When set, scopes the whole report to a single till (matches a tillKey()). '' = all tills.
   let tillFilter = $state('');
-  let tab = $state<'summary' | 'items' | 'orders'>('summary');
+  let tab = $state<'summary' | 'items' | 'orders' | 'chiusure'>('summary');
   let orders = $state<ReportOrder[]>([]);
   let loading = $state(false);
   let error = $state<string | null>(null);
@@ -945,7 +946,7 @@
         <div class="flex items-center justify-center h-40 text-gray-400">Caricamento…</div>
       {:else if error}
         <div class="flex items-center justify-center h-40 text-red-500">{error}</div>
-      {:else if filteredOrders.length === 0}
+      {:else if filteredOrders.length === 0 && tab !== 'chiusure'}
         <div class="flex items-center justify-center h-40 text-gray-400">
           {tillFilter
             ? `Nessun ordine per ${tillFilter} nel periodo selezionato`
@@ -1158,60 +1159,6 @@
           </div>
         {/if}
 
-        <!-- Storico chiusure: day-by-day closings with discrepancies -->
-        {#if history.length > 0}
-          <div class="px-4 pb-2">
-            <div class="border border-gray-100 rounded-xl overflow-hidden">
-              <div class="flex items-center justify-between bg-gray-50 px-4 py-2">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Storico chiusure</p>
-                <p class="text-xs text-gray-400">Giorno gestionale (dalle 6:00)</p>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="text-xs text-gray-400 border-b border-gray-100">
-                      <th class="text-left px-4 py-2 font-medium">Giorno</th>
-                      <th class="text-left px-4 py-2 font-medium">Cassa</th>
-                      <th class="text-right px-4 py-2 font-medium">Fondo</th>
-                      <th class="text-right px-4 py-2 font-medium">Contanti</th>
-                      <th class="text-right px-4 py-2 font-medium">Attesi</th>
-                      <th class="text-right px-4 py-2 font-medium">Contati</th>
-                      <th class="text-right px-4 py-2 font-medium">Differenza</th>
-                      <th class="text-right px-4 py-2 font-medium">Stato</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {#each history as h (h.date + '|' + h.tillName)}
-                      {@const hExpected = historyExpected(h)}
-                      {@const hDiff = h.countedCents == null ? null : h.countedCents - hExpected}
-                      <tr class="border-b border-gray-50 last:border-0">
-                        <td class="px-4 py-2 font-medium text-gray-800 tabular-nums">{h.date}</td>
-                        <td class="px-4 py-2 text-gray-600">{h.tillName}</td>
-                        <td class="px-4 py-2 text-right text-gray-600 tabular-nums">{formatEUR(h.fondoCents / 100)}</td>
-                        <td class="px-4 py-2 text-right text-gray-700 tabular-nums">{formatEUR((h.takingsCashCents ?? h.cashCents) / 100)}</td>
-                        <td class="px-4 py-2 text-right font-semibold text-gray-700 tabular-nums">{formatEUR(hExpected / 100)}</td>
-                        <td class="px-4 py-2 text-right font-semibold text-gray-800 tabular-nums">{h.countedCents == null ? '—' : formatEUR(h.countedCents / 100)}</td>
-                        <td class="px-4 py-2 text-right font-bold tabular-nums" class:text-green-700={hDiff === 0} class:text-red-600={hDiff != null && hDiff !== 0} class:text-gray-400={hDiff == null}>
-                          {hDiff == null ? '—' : `${hDiff > 0 ? '+' : ''}${formatEUR(hDiff / 100)}`}
-                        </td>
-                        <td class="px-4 py-2 text-right">
-                          {#if h.closedAt}
-                            <span class="rounded-full bg-green-700 px-2 py-0.5 text-xs font-bold text-white">Chiusa</span>
-                          {:else if h.countedCents != null}
-                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">Conteggiata</span>
-                          {:else}
-                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-500">Aperta</span>
-                          {/if}
-                        </td>
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        {/if}
-
         <div class="grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2">
 
           <!-- By till -->
@@ -1419,6 +1366,63 @@
                     {:else}
                       <tr>
                         <td colspan="4" class="px-3 py-6 text-center text-sm text-gray-400">Nessuna fascia con ordini</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+      {:else if tab === 'chiusure'}
+        <!-- Storico chiusure: day-by-day closings with discrepancies -->
+        {#if history.length === 0}
+          <div class="flex items-center justify-center h-40 text-gray-400">Nessuna chiusura registrata</div>
+        {:else}
+          <div class="px-4 py-4">
+            <div class="border border-gray-100 rounded-xl overflow-hidden">
+              <div class="flex items-center justify-between bg-gray-50 px-4 py-2">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Storico chiusure</p>
+                <p class="text-xs text-gray-400">Giorno gestionale (dalle 6:00)</p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-xs text-gray-400 border-b border-gray-100">
+                      <th class="text-left px-4 py-2 font-medium">Giorno</th>
+                      <th class="text-left px-4 py-2 font-medium">Cassa</th>
+                      <th class="text-right px-4 py-2 font-medium">Fondo</th>
+                      <th class="text-right px-4 py-2 font-medium">Contanti</th>
+                      <th class="text-right px-4 py-2 font-medium">Attesi</th>
+                      <th class="text-right px-4 py-2 font-medium">Contati</th>
+                      <th class="text-right px-4 py-2 font-medium">Differenza</th>
+                      <th class="text-right px-4 py-2 font-medium">Stato</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each history as h (h.date + '|' + h.tillName)}
+                      {@const hExpected = historyExpected(h)}
+                      {@const hDiff = h.countedCents == null ? null : h.countedCents - hExpected}
+                      <tr class="border-b border-gray-50 last:border-0">
+                        <td class="px-4 py-2 font-medium text-gray-800 tabular-nums">{h.date}</td>
+                        <td class="px-4 py-2 text-gray-600">{h.tillName}</td>
+                        <td class="px-4 py-2 text-right text-gray-600 tabular-nums">{formatEUR(h.fondoCents / 100)}</td>
+                        <td class="px-4 py-2 text-right text-gray-700 tabular-nums">{formatEUR((h.takingsCashCents ?? h.cashCents) / 100)}</td>
+                        <td class="px-4 py-2 text-right font-semibold text-gray-700 tabular-nums">{formatEUR(hExpected / 100)}</td>
+                        <td class="px-4 py-2 text-right font-semibold text-gray-800 tabular-nums">{h.countedCents == null ? '—' : formatEUR(h.countedCents / 100)}</td>
+                        <td class="px-4 py-2 text-right font-bold tabular-nums" class:text-green-700={hDiff === 0} class:text-red-600={hDiff != null && hDiff !== 0} class:text-gray-400={hDiff == null}>
+                          {hDiff == null ? '—' : `${hDiff > 0 ? '+' : ''}${formatEUR(hDiff / 100)}`}
+                        </td>
+                        <td class="px-4 py-2 text-right">
+                          {#if h.closedAt}
+                            <span class="rounded-full bg-green-700 px-2 py-0.5 text-xs font-bold text-white">Chiusa</span>
+                          {:else if h.countedCents != null}
+                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">Conteggiata</span>
+                          {:else}
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-500">Aperta</span>
+                          {/if}
+                        </td>
                       </tr>
                     {/each}
                   </tbody>

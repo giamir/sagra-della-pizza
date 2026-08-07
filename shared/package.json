@@ -10,6 +10,7 @@
     "./utils/stock": "./src/utils/stock.ts",
     "./utils/currency": "./src/utils/currency.ts",
     "./utils/adjustments": "./src/utils/adjustments.ts",
+    "./utils/bands": "./src/utils/bands.ts",
     "./data/menu.json": "./src/data/menu.json",
     "./config/types": "./src/config/types.ts",
     "./config/features": "./src/config/features.ts",

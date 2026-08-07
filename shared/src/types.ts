@@ -13,6 +13,7 @@ export type MenuItem = {
   excludeOptions?: string[]; // category option ids that don't apply to this item
   hidden?: boolean; // when true, not shown as its own till button (reached only via a chooser)
   choices?: string[]; // ids of sibling items this chooser presents; each choice keeps its own price and stock
+  band?: string; // fascia colore token painted on the till tile (see utils/bands.ts); presentational only
 };
 
 export type MenuGroup = {

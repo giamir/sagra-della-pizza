@@ -2,6 +2,7 @@
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { optionsForItem } from '@sagra/shared/utils/pricing';
   import { buildStockIdIndex } from '@sagra/shared/utils/stock';
+  import { normalizeBand, type BandColour } from '@sagra/shared/utils/bands';
   import type { Menu, MenuItem, MenuOption } from '@sagra/shared/types';
 
   let {
@@ -92,6 +93,35 @@
     return formatEUR(item.price);
   }
 
+  // Fascia colore (Kontorno-style): the token resolves through these static
+  // records, so an unknown value can never reach a class string. The band is a
+  // 6px left border on its own rounded overlay (not the tile's real border,
+  // which the qty/soldout states repaint), plus a faint wash across the tile.
+  const bandEdgeClasses: Record<BandColour, string> = {
+    lampone: 'border-l-rose-500',
+    rame: 'border-l-orange-500',
+    ambra: 'border-l-amber-400',
+    oliva: 'border-l-lime-600',
+    verde: 'border-l-green-600',
+    smeraldo: 'border-l-emerald-500',
+    blu: 'border-l-sky-500',
+    indaco: 'border-l-indigo-500',
+    viola: 'border-l-violet-500',
+    ciclamino: 'border-l-pink-500'
+  };
+  const bandWashClasses: Record<BandColour, string> = {
+    lampone: 'bg-linear-to-r from-rose-500/10 to-rose-500/5',
+    rame: 'bg-linear-to-r from-orange-500/10 to-orange-500/5',
+    ambra: 'bg-linear-to-r from-amber-400/10 to-amber-400/5',
+    oliva: 'bg-linear-to-r from-lime-600/10 to-lime-600/5',
+    verde: 'bg-linear-to-r from-green-600/10 to-green-600/5',
+    smeraldo: 'bg-linear-to-r from-emerald-500/10 to-emerald-500/5',
+    blu: 'bg-linear-to-r from-sky-500/10 to-sky-500/5',
+    indaco: 'bg-linear-to-r from-indigo-500/10 to-indigo-500/5',
+    viola: 'bg-linear-to-r from-violet-500/10 to-violet-500/5',
+    ciclamino: 'bg-linear-to-r from-pink-500/10 to-pink-500/5'
+  };
+
   // No aggregate "N rimasti" badge on a chooser — each choice shows its own in the picker.
   function stockLabel(item: MenuItem): string | null {
     if (item.choices?.length) return null;
@@ -135,12 +165,17 @@
           {@const soldOut = isSoldOut(item)}
           {@const itemOpts = optionsForItem(item, categoryOptions[activeCategory.id] ?? [])}
           {@const remainingLabel = stockLabel(item)}
+          {@const band = normalizeBand(item.band)}
+          <!-- pl-[18px] = px-3 (12px) + the 6px band: the label gutter is
+               measured from the inside of the band, not the tile's edge. -->
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
           <div
             role="button"
             tabindex={soldOut ? -1 : 0}
             onclick={() => !soldOut && onItemTap(item)}
-            class="relative text-left rounded-lg border-2 px-3 py-3 transition-colors select-none"
+            class={`relative text-left rounded-lg border-2 px-3 py-3 transition-colors select-none ${
+              band && !soldOut ? `pl-[18px] ${bandWashClasses[band]}` : ''
+            }`}
             class:active:scale-[0.97]={!soldOut}
             class:border-green-700={qty > 0 && !soldOut}
             class:bg-green-50={qty > 0 && !soldOut}
@@ -152,6 +187,15 @@
             class:cursor-not-allowed={soldOut}
             class:cursor-pointer={!soldOut}
           >
+            {#if band && !soldOut}
+              <!-- Own rounded overlay so the band tapers with the corner radius
+                   and survives the tile's border repaint on selection.
+                   aria-hidden: purely a visual grouping aid. -->
+              <span
+                aria-hidden="true"
+                class={`pointer-events-none absolute inset-0 rounded-md border-l-[6px] ${bandEdgeClasses[band]}`}
+              ></span>
+            {/if}
             <span class="block pr-7 text-base font-bold leading-tight" class:text-gray-900={!soldOut} class:text-gray-400={soldOut}>{item.name}</span>
             {#if item.description}
               <span class="block text-xs text-gray-400 mt-0.5 leading-tight">{item.description}</span>

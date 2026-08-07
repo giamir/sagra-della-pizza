@@ -17,3 +17,8 @@ export const qrEnabled: boolean = tenant.features?.qr !== false;
  *  row/tab in the till and no coperti on printed tickets; orders are stored with
  *  `people = 0`, which is what keeps the charge out of every total. */
 export const copertoEnabled: boolean = tenant.features?.coperto !== false;
+
+/** Whether station tickets carry the handwritten "Fila: __  Tavolo: __" line.
+ *  When false the line (and its surrounding blank row) is simply not printed —
+ *  for events without queue/table service. */
+export const filaTavoloEnabled: boolean = tenant.features?.filaTavolo !== false;

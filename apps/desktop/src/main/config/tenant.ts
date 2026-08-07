@@ -7,4 +7,4 @@ export const tenant = tenantJson as TenantConfig;
 
 // Feature flags resolve their "absent means enabled" default in one shared
 // place; re-exported here so main-process code doesn't re-derive it.
-export { copertoEnabled, qrEnabled } from '@sagra/shared/config/features';
+export { copertoEnabled, qrEnabled, filaTavoloEnabled } from '@sagra/shared/config/features';

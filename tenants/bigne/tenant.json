@@ -29,12 +29,21 @@
     "currency": "EUR"
   },
   "receipt": {
-    "headerLines": ["Sagra del Bignè", "Orentano"],
+    "headerLines": [
+      "Sagra del Bignè",
+      "Orentano"
+    ],
     "customerCopyLabel": "Copia Cliente",
-    "footerLines": ["Non e' scontrino fiscale", "Grazie e arrivederci!"]
+    "footerLines": [
+      "Non e' scontrino fiscale",
+      "Grazie e arrivederci!"
+    ]
   },
   "stations": {
-    "order": ["Bignè", "Bar"],
+    "order": [
+      "Bignè",
+      "Bar"
+    ],
     "copertoStation": "Bar",
     "aliases": {}
   },
@@ -44,7 +53,8 @@
   },
   "features": {
     "qr": false,
-    "coperto": false
+    "coperto": false,
+    "filaTavolo": false
   },
   "storagePrefix": "bigne",
   "desktop": {

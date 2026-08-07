@@ -76,6 +76,9 @@ export type TenantFeatures = {
    *  tab in the till, no coperti on tickets. Orders are stored with `people = 0`.
    *  For events without table service. Defaults to true. */
   coperto?: boolean;
+  /** When false, station tickets omit the handwritten "Fila: __  Tavolo: __"
+   *  line. For events without queue/table service. Defaults to true. */
+  filaTavolo?: boolean;
 };
 
 export type TenantDesktop = {

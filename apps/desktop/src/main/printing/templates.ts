@@ -1,7 +1,7 @@
 import { EscPos, type EuroMode } from './escpos.js';
 import { STATION_ORDER, normalizeStation } from './station-constants.js';
 import { isAdjKey } from '@sagra/shared/utils/adjustments';
-import { tenant } from '../config/tenant.js';
+import { tenant, filaTavoloEnabled } from '../config/tenant.js';
 
 const DEFAULT_COPERTO_CENTS = 150;
 
@@ -60,11 +60,9 @@ export function buildStationTicket(order: PrintOrder, station: string, lines: Pr
     .line(`ORD #${order.id}`)
     .bold(false)
     .line(formatTime(order.createdAt))
-    .feed()
-    .line(tableAndRowLine(width))
-    .feed()
-    .separator('=')
-    .align('left');
+    .feed();
+  if (filaTavoloEnabled) e.line(tableAndRowLine(width)).feed();
+  e.separator('=').align('left');
 
   e.doubleHeight(true);
   for (const l of lines) {
@@ -170,8 +168,7 @@ export function buildPreviewText(
       `ORD #${order.id}`,
       formatTime(order.createdAt),
       '',
-      tableAndRowLine(width),
-      '',
+      ...(filaTavoloEnabled ? [tableAndRowLine(width), ''] : []),
       sep('=')
     ];
     for (const l of lines) {

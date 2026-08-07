@@ -4,11 +4,12 @@ import { app } from 'electron';
 
 function getLogoPath(): string {
   // In production the logo is in process.resourcesPath (bundled via extraResources).
-  // In dev it lives next to the source in resources/.
+  // In dev the bundle runs from out/main/, so resources/ is two levels up
+  // (apps/desktop/resources — the tenant overlay writes the active logo there).
   if (app.isPackaged) {
     return join(process.resourcesPath, 'logo.png');
   }
-  return join(__dirname, '../../../../resources/logo.png');
+  return join(__dirname, '../../resources/logo.png');
 }
 
 // Returns an ESC/POS GS v 0 raster bitmap buffer for the bundled logo,

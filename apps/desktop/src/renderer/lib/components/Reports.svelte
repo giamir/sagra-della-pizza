@@ -4,6 +4,7 @@
   import { isAdjKey } from '@sagra/shared/utils/adjustments';
   import { copertoEnabled } from '@sagra/shared/config/features';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
+  import { DAY_ROLLOVER_HOUR, startOfBusinessDay, businessDayKey, businessDayRange } from '$lib/business-day';
   import PrintPreview from './PrintPreview.svelte';
   import { ArrowLeft, X, RefreshCw, Banknote, CreditCard, ChevronUp, ChevronDown } from 'lucide-svelte';
 
@@ -163,10 +164,9 @@
 
   function activeRange(): [string, string] {
     // Custom from/to range takes priority over the quick period buttons.
+    // Calendar dates map to business days: 06:00 → 06:00 the day after.
     if (effectiveRange) {
-      const from = new Date(effectiveRange.from + 'T00:00:00').toISOString();
-      const to   = new Date(effectiveRange.to + 'T23:59:59.999').toISOString();
-      return [from, to];
+      return businessDayRange(effectiveRange.from, effectiveRange.to);
     }
     const now = new Date();
     const to = now.toISOString();
@@ -174,7 +174,7 @@
       return [new Date(now.getTime() - 60 * 60 * 1000).toISOString(), to];
     }
     if (period === 'today') {
-      return [new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(), to];
+      return [startOfBusinessDay(now).toISOString(), to];
     }
     return ['1970-01-01T00:00:00.000Z', to];
   }
@@ -472,9 +472,14 @@
       cur.cents += o.totalCents;
       map.set(h, cur);
     }
+    // The axis follows the business day: it starts at the 06:00 rollover, so a
+    // past-midnight hour (00, 01…) sits after 23 at the end of the evening.
+    const nowH = new Date().getHours();
+    const sinceRollover =
+      nowH >= DAY_ROLLOVER_HOUR ? nowH - DAY_ROLLOVER_HOUR + 1 : 24 - DAY_ROLLOVER_HOUR + nowH + 1;
     const hours = rangeActive || period === 'all'
-      ? Array.from({ length: 24 }, (_, i) => i)
-      : Array.from({ length: new Date().getHours() + 1 }, (_, i) => i);
+      ? Array.from({ length: 24 }, (_, i) => (DAY_ROLLOVER_HOUR + i) % 24)
+      : Array.from({ length: sinceRollover }, (_, i) => (DAY_ROLLOVER_HOUR + i) % 24);
     const maxOrders = Math.max(1, ...hours.map((h) => map.get(h)?.orders ?? 0));
     const maxRevenue = Math.max(1, ...hours.map((h) => map.get(h)?.cents ?? 0));
     return hours.map((h) => {
@@ -547,7 +552,7 @@
     let key: string;
     if (effectiveRange) {
       key = isSingleDay ? effectiveRange.from : `${effectiveRange.from}_${effectiveRange.to}`;
-    } else if (period === 'today') key = new Date().toISOString().slice(0, 10);
+    } else if (period === 'today') key = businessDayKey();
     else if (period === 'hour') key = `ultima-ora-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`;
     else key = 'tutto';
     return tillFilter ? `${key}-${slugifyTill(tillFilter)}` : key;

@@ -10,6 +10,7 @@
   import menuData from '@sagra/shared/data/menu.json';
   import type { Menu } from '@sagra/shared/types';
   import { copertoEnabled } from '@sagra/shared/config/features';
+  import { startOfBusinessDay } from '$lib/business-day';
   import ItemBrowser from './ItemBrowser.svelte';
   import CartPanel from './CartPanel.svelte';
   import VariantPicker from './VariantPicker.svelte';
@@ -305,10 +306,7 @@
 
   function todayRange(): [string, string] {
     const now = new Date();
-    return [
-      new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(),
-      now.toISOString()
-    ];
+    return [startOfBusinessDay(now).toISOString(), now.toISOString()];
   }
 
   function formatCents(cents: number): string {

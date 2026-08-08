@@ -123,21 +123,9 @@
               "band": "rame"
             },
             {
-              "id": "birra-spina-piccola",
-              "name": "Birra alla Spina Piccola",
-              "price": 3.5,
-              "band": "rame"
-            },
-            {
-              "id": "birra-spina-grande",
-              "name": "Birra alla Spina Grande",
-              "price": 5.0,
-              "band": "rame"
-            },
-            {
               "id": "ipa",
               "name": "Birra Artigianale IPA",
-              "price": 6.0,
+              "price": 4.0,
               "band": "rame"
             },
             {

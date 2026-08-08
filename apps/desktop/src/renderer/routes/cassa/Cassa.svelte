@@ -27,6 +27,7 @@
   import CatalogAdmin from '$lib/components/CatalogAdmin.svelte';
   import BackupRestore from '$lib/components/BackupRestore.svelte';
   import AboutUpdates from '$lib/components/AboutUpdates.svelte';
+  import ThemeSettings from '$lib/components/ThemeSettings.svelte';
   import { theme, toggleTheme } from '$lib/theme.svelte';
   import {
     ChartColumn,
@@ -39,6 +40,7 @@
     RefreshCw,
     Sun,
     Moon,
+    Palette,
   } from 'lucide-svelte';
 
   const DEFAULT_MENU = menuData as Menu;
@@ -108,6 +110,7 @@
   let catalogAdminOpen = $state(false);
   let backupOpen = $state(false);
   let aboutUpdatesOpen = $state(false);
+  let themeSettingsOpen = $state(false);
   let todayOrders = $state<ReportOrder[]>([]);
   let statsLoading = $state(false);
   let statsError = $state<string | null>(null);
@@ -919,8 +922,12 @@
           <span class="w-5 flex justify-center text-gray-400"><CreditCard size={16} /></span> Terminale Nexi
         </button>
         <button type="button" onclick={() => { tillSettingsOpen = true; menuOpen = false; }}
-          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2">
           <span class="w-5 flex justify-center text-gray-400"><Wifi size={16} /></span> Cassa / Rete
+        </button>
+        <button type="button" onclick={() => { themeSettingsOpen = true; menuOpen = false; }}
+          class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 flex items-center gap-2 pb-3">
+          <span class="w-5 flex justify-center text-gray-400"><Palette size={16} /></span> Aspetto
         </button>
 
         <div class="border-t border-gray-100 my-1"></div>
@@ -1129,6 +1136,11 @@
   <!-- App version / updates -->
   {#if aboutUpdatesOpen}
     <AboutUpdates onClose={() => aboutUpdatesOpen = false} />
+  {/if}
+
+  <!-- Appearance (accent colour + zoom) -->
+  {#if themeSettingsOpen}
+    <ThemeSettings onClose={() => themeSettingsOpen = false} />
   {/if}
 
 </div>

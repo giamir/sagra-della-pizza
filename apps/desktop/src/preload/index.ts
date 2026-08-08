@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 
 const api = {
@@ -6,6 +6,10 @@ const api = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('settings:save', settings),
   getLocalNetworkAddresses: () => ipcRenderer.invoke('settings:network-addresses:get'),
+
+  // UI zoom (Chromium page zoom of this window; persistence lives in the renderer)
+  getZoomFactor: () => webFrame.getZoomFactor(),
+  setZoomFactor: (factor: number) => webFrame.setZoomFactor(factor),
 
   // App / updates
   getAppInfo: () => ipcRenderer.invoke('app:info'),

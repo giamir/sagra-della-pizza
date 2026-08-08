@@ -12,10 +12,32 @@ const tenant = tenantJson as {
 // dark-mode tints in app.css derive from these same vars, so both themes follow.
 // Green stays the "confirm/success" accent — only its hue changes per tenant.
 // Red / amber / blue (danger / warning / info) are intentionally left untouched.
-export function applyTenantAccent(): void {
+//
+// A per-machine override (chosen in Aspetto) is kept in localStorage, same as
+// the light/dark choice; the tenant colour stays the fallback.
+
+const STORAGE_KEY = 'sagra-accent'
+
+export function tenantDefaultAccent(): string | undefined {
   // Dedicated till accent when set, else the web primary (leaf). Lets a tenant
   // give the till a brighter colour when its web primary reads too dark here.
-  const accent = tenant.theme?.tillAccent ?? tenant.theme?.colors?.leaf
+  return tenant.theme?.tillAccent ?? tenant.theme?.colors?.leaf
+}
+
+export function savedAccent(): string | null {
+  const value = localStorage.getItem(STORAGE_KEY)
+  return value && /^#[0-9a-f]{6}$/i.test(value) ? value : null
+}
+
+/** Persist (or clear, with null) the per-machine accent and repaint the ramp. */
+export function setAccent(color: string | null): void {
+  if (color === null) localStorage.removeItem(STORAGE_KEY)
+  else localStorage.setItem(STORAGE_KEY, color)
+  applyTenantAccent()
+}
+
+export function applyTenantAccent(): void {
+  const accent = savedAccent() ?? tenantDefaultAccent()
   if (!accent) return
 
   // The accent is anchored at the 600 step (where the till's primary buttons

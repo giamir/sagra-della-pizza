@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import type { Menu, MenuCategory, MenuGroup, MenuItem } from '@sagra/shared/types';
   import { copertoEnabled } from '@sagra/shared/config/features';
-  import { ArrowLeft, ChevronUp, ChevronDown, X } from 'lucide-svelte';
+  import { BAND_COLOURS, normalizeBand, type BandColour } from '@sagra/shared/utils/bands';
+  import { ArrowLeft, ChevronUp, ChevronDown, X, Ban } from 'lucide-svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -180,6 +181,32 @@
         };
       })
     };
+  }
+
+  // --- Fascia colore ---
+
+  // Same closed-set mapping idea as ItemBrowser: token → static class, so an
+  // unknown token can never reach a class string. Solid fills for the swatches.
+  const bandSwatchClasses: Record<BandColour, string> = {
+    lampone: 'bg-rose-500',
+    rame: 'bg-orange-500',
+    bruno: 'bg-amber-800',
+    ambra: 'bg-amber-400',
+    oliva: 'bg-lime-600',
+    verde: 'bg-green-600',
+    smeraldo: 'bg-emerald-500',
+    blu: 'bg-sky-500',
+    indaco: 'bg-indigo-500',
+    viola: 'bg-violet-500',
+    ciclamino: 'bg-pink-500'
+  };
+
+  // Item id whose band popover is open, or null.
+  let bandPickerFor = $state<string | null>(null);
+
+  function setBand(catId: string, groupLabel: string, itemId: string, band: BandColour | undefined) {
+    updateItem(catId, groupLabel, itemId, { band });
+    bandPickerFor = null;
   }
 
   function updateCoperto(value: number) {
@@ -567,10 +594,11 @@
             <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-4 mb-2 first:mt-0">{group.label}</p>
 
             <!-- Column headers -->
-            <div class="grid grid-cols-[1fr_1fr_7rem_11rem_2rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_2rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               <span>Nome</span>
               <span>Descrizione</span>
               <span>Prezzo (€)</span>
+              <span>Fascia</span>
               <span>Stazione</span>
               <span></span>
             </div>
@@ -578,7 +606,8 @@
             <!-- Item rows -->
             <div class="flex flex-col gap-0.5">
               {#each group.items as item}
-                <div class="grid grid-cols-[1fr_1fr_7rem_11rem_2rem] gap-2 items-center px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                {@const band = normalizeBand(item.band)}
+                <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_2rem] gap-2 items-center px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
                   <!-- Name -->
                   <div>
                     <input
@@ -613,6 +642,48 @@
                     oninput={(e) => updateItem(cat.id, group.label, item.id, { price: parseFloat((e.target as HTMLInputElement).value) || 0 })}
                     class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
                   />
+
+                  <!-- Fascia colore -->
+                  <div class="relative">
+                    <button
+                      type="button"
+                      onclick={() => bandPickerFor = bandPickerFor === item.id ? null : item.id}
+                      title={band ? `Fascia: ${band}` : 'Nessuna fascia'}
+                      aria-label={band ? `Fascia colore: ${band}` : 'Scegli fascia colore'}
+                      class="w-full h-[30px] rounded border border-gray-200 flex items-center justify-center hover:border-gray-400 {band ? bandSwatchClasses[band] : 'bg-white dark:bg-[#20242c]'}"
+                    >
+                      {#if !band}<span class="text-gray-300"><Ban size={14} /></span>{/if}
+                    </button>
+
+                    {#if bandPickerFor === item.id}
+                      <button
+                        type="button"
+                        class="fixed inset-0 z-40 cursor-default"
+                        aria-label="Chiudi selettore fascia"
+                        onclick={() => bandPickerFor = null}
+                      ></button>
+                      <div class="absolute z-50 top-full right-0 mt-1 p-2 w-44 bg-white dark:bg-[#20242c] rounded-lg shadow-2xl border border-gray-200 grid grid-cols-6 gap-1.5">
+                        <button
+                          type="button"
+                          onclick={() => setBand(cat.id, group.label, item.id, undefined)}
+                          title="Nessuna fascia"
+                          aria-label="Nessuna fascia"
+                          class="w-6 h-6 rounded border flex items-center justify-center text-gray-400 hover:border-gray-500 {band ? 'border-gray-200' : 'border-gray-700 dark:border-gray-300'}"
+                        >
+                          <Ban size={13} />
+                        </button>
+                        {#each BAND_COLOURS as token (token)}
+                          <button
+                            type="button"
+                            onclick={() => setBand(cat.id, group.label, item.id, token)}
+                            title={token}
+                            aria-label={`Fascia ${token}`}
+                            class="w-6 h-6 rounded border {bandSwatchClasses[token]} {band === token ? 'border-gray-700 dark:border-gray-100 ring-1 ring-gray-700 dark:ring-gray-100' : 'border-transparent hover:border-gray-400'}"
+                          ></button>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
 
                   <!-- Station -->
                   <select

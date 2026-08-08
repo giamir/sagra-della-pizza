@@ -28,7 +28,6 @@
               "id": "bigne-misti",
               "name": "Bignè Misti",
               "price": 4.0,
-              "description": "2 crema + 2 cioccolato",
               "band": "lampone"
             }
           ]
@@ -125,7 +124,8 @@
             {
               "id": "ipa",
               "name": "Birra Artigianale IPA",
-              "price": 4.0,
+              "price": 3.5,
+              "description": "400 ml",
               "band": "rame"
             },
             {

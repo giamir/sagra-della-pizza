@@ -5,7 +5,9 @@
 
   let enabled = $state(false);
   let host = $state('192.168.1.50');
-  let port = $state(8220);
+  // Kept as text (not a number input): spinners and empty-value quirks made the
+  // field fiddly on the till; save still normalizes and validates the integer.
+  let port = $state('8220');
   let timeoutMs = $state(120000);
   let fieldSeparatorHex = $state('1C');
   let lrcSeedHex = $state('7F');
@@ -27,7 +29,7 @@
     const c = await window.api.getPaymentConfig();
     enabled = c.enabled;
     host = c.host;
-    port = c.port;
+    port = String(c.port);
     timeoutMs = c.timeoutMs ?? 120000;
     fieldSeparatorHex = c.fieldSeparatorHex ?? '1C';
     lrcSeedHex = c.lrcSeedHex ?? '7F';
@@ -175,10 +177,10 @@
           <label class="flex flex-col gap-1">
             <span class="text-sm font-semibold text-gray-700">Porta TCP</span>
             <input
-              type="number"
+              type="text"
+              inputmode="numeric"
               bind:value={port}
-              min="1"
-              max="65535"
+              placeholder="8220"
               class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
             />
           </label>

@@ -57,6 +57,7 @@ const api = {
   // Reports
   getReports: (from: string, to: string) => ipcRenderer.invoke('reports:get', from, to),
   voidOrder: (orderId: string) => ipcRenderer.invoke('order:void', orderId),
+  exportPdf: (html: string, fileName: string) => ipcRenderer.invoke('pdf:export', html, fileName),
 
   // Cash floats (fondo cassa per till)
   getCashFloats: (date: string) => ipcRenderer.invoke('cash:get', date),

@@ -68,6 +68,8 @@
   let expandedId = $state<string | null>(null);
   let voidingId = $state<string | null>(null);
   let voidError = $state<string | null>(null);
+  let pdfExporting = $state(false);
+  let pdfError = $state<string | null>(null);
   let printingId = $state<string | null>(null);
   let printError = $state<{ id: string; message: string } | null>(null);
   let printSuccessId = $state<string | null>(null);
@@ -771,7 +773,7 @@
     URL.revokeObjectURL(url);
   }
 
-  function exportSoldItemsPdf() {
+  async function exportSoldItemsPdf() {
     const generatedAt = new Date().toLocaleString('it-IT');
     const rows = soldItems.map((item) => `
       <tr>
@@ -839,27 +841,16 @@
         </body>
       </html>`;
 
-    const frame = document.createElement('iframe');
-    frame.style.position = 'fixed';
-    frame.style.right = '0';
-    frame.style.bottom = '0';
-    frame.style.width = '0';
-    frame.style.height = '0';
-    frame.style.border = '0';
-    document.body.appendChild(frame);
-    const doc = frame.contentDocument;
-    if (!doc) {
-      frame.remove();
-      return;
+    pdfError = null;
+    pdfExporting = true;
+    try {
+      const result = await window.api.exportPdf(html, `articoli-venduti-${exportRangeKey()}.pdf`);
+      if (!result.ok && !result.cancelled) pdfError = result.error ?? 'Errore esportazione PDF';
+    } catch (e) {
+      pdfError = e instanceof Error ? e.message : 'Errore esportazione PDF';
+    } finally {
+      pdfExporting = false;
     }
-    doc.open();
-    doc.write(html);
-    doc.close();
-    frame.onload = () => {
-      frame.contentWindow?.focus();
-      frame.contentWindow?.print();
-      window.setTimeout(() => frame.remove(), 1000);
-    };
   }
 </script>
 
@@ -1491,10 +1482,10 @@
                 <button
                   type="button"
                   onclick={exportSoldItemsPdf}
-                  disabled={soldItems.length === 0}
+                  disabled={soldItems.length === 0 || pdfExporting}
                   class="rounded-lg border border-green-800 px-4 py-2 text-sm font-bold text-green-900 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent"
                 >
-                  PDF
+                  {pdfExporting ? 'PDF…' : 'PDF'}
                 </button>
                 <button
                   type="button"
@@ -1506,6 +1497,9 @@
                 </button>
               </div>
             </div>
+            {#if pdfError}
+              <p class="mt-2 text-sm font-semibold text-red-600">{pdfError}</p>
+            {/if}
           </div>
 
           <div class="overflow-hidden rounded-xl border border-gray-100">

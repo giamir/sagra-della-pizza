@@ -1,4 +1,6 @@
-import { ipcMain } from 'electron';
+import { ipcMain, dialog, app, BrowserWindow } from 'electron';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 import { queryOrders, voidOrder, type ReportOrder } from '../db/reports.js';
 import { broadcastStock } from '../server/index.js';
 import { loadTillSettings } from './settings.js';
@@ -16,6 +18,31 @@ export function registerReportsHandlers(): void {
       return { ok: true, orders: queryOrders(from, to) };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'Errore', orders: [] };
+    }
+  });
+
+  ipcMain.handle('pdf:export', async (_event, html: string, fileName: string) => {
+    const result = await dialog.showSaveDialog({
+      title: 'Salva PDF',
+      defaultPath: join(app.getPath('downloads'), fileName),
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    });
+    if (result.canceled || !result.filePath) return { ok: false, cancelled: true };
+
+    const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+    try {
+      await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      const pdf = await win.webContents.printToPDF({
+        pageSize: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true
+      });
+      writeFileSync(result.filePath, pdf);
+      return { ok: true, filePath: result.filePath };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    } finally {
+      win.destroy();
     }
   });
 

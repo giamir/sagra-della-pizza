@@ -24,6 +24,11 @@
   let errorMessage = $state('');
   let authCode = $state('');
 
+  // Monotonic token guarding the in-flight terminal request: bumped on every new
+  // attempt and on cancel, so a stale startPayment that resolves late (e.g. the
+  // customer tapped just as the cashier cancelled) can't record the order.
+  let attemptToken = 0;
+
   const total = $derived(totalCents / 100);
 
   // --- Cash / change calculator (display-only, nothing persisted) ---
@@ -75,9 +80,11 @@
       onCardApproved('');
       return;
     }
+    const token = ++attemptToken;
     state = 'waiting';
     try {
       const result = await window.api.startPayment(totalCents);
+      if (token !== attemptToken) return; // cancelled or superseded meanwhile
       if (!result.ok) {
         errorMessage = result.error ?? 'Errore terminale';
         state = 'error';
@@ -87,18 +94,22 @@
         authCode = result.authCode ?? '';
         state = 'approved';
         // Auto-proceed after a moment so cashier sees the approved screen
-        setTimeout(() => onCardApproved(authCode), 1500);
+        setTimeout(() => {
+          if (token === attemptToken) onCardApproved(authCode);
+        }, 1500);
       } else {
         errorMessage = `Rifiutato (codice ${result.responseCode})`;
         state = 'declined';
       }
     } catch (err) {
+      if (token !== attemptToken) return;
       errorMessage = err instanceof Error ? err.message : 'Errore';
       state = 'error';
     }
   }
 
   async function cancelCard() {
+    attemptToken++; // drop whatever the pending request resolves to
     await window.api.cancelPayment();
     state = 'choose';
   }
@@ -313,6 +324,10 @@
           </div>
           <p class="font-bold text-amber-700">Terminale non raggiungibile</p>
           <p class="text-sm text-gray-500 text-center">{errorMessage}</p>
+          <p class="text-xs font-semibold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 text-center">
+            Controlla sul terminale se il pagamento è già stato addebitato prima di riprovare:
+            se è passato, non ripetere l'addebito.
+          </p>
           <div class="flex gap-3 pt-2">
             <button type="button" onclick={retry}
               class="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
@@ -323,6 +338,10 @@
               Paga in contanti
             </button>
           </div>
+          <button type="button" onclick={() => onCardApproved('')}
+            class="px-4 py-2 rounded-lg border border-blue-300 text-sm font-semibold text-blue-700 hover:bg-blue-50">
+            Già addebitato sul terminale — registra carta
+          </button>
           <button type="button" onclick={onClose}
             class="text-sm text-gray-400 hover:text-gray-600">Annulla ordine</button>
         </div>

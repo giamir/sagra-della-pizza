@@ -313,6 +313,10 @@ export function testECR17Connection(config: ECR17Config): Promise<void> {
   });
 }
 
+// Pending purchase request, so a cancel can tear it down before the terminal's
+// (possibly approved) response reaches the renderer.
+let abortActivePayment: (() => void) | null = null;
+
 /**
  * Send a purchase request to the Nexi/Ingenico terminal.
  * Resolves when the terminal responds (approved or declined).
@@ -332,9 +336,16 @@ export function requestPayment(
     function settle(fn: () => void) {
       if (settled) return;
       settled = true;
+      if (abortActivePayment === abort) abortActivePayment = null;
       socket.destroy();
       fn();
     }
+
+    const abort = () => {
+      console.log('[ECR17] payment aborted by till');
+      settle(() => reject(new Error('Pagamento annullato dalla cassa')));
+    };
+    abortActivePayment = abort;
 
     socket.setTimeout(config.timeoutMs || ECR17_DEFAULTS.timeoutMs);
 
@@ -409,6 +420,9 @@ export function requestPayment(
  * Best-effort — ignores errors.
  */
 export function cancelPayment(config: ECR17Config): void {
+  // Kill the pending purchase first: once cancelled, a late approval from the
+  // terminal must never reach the till and get recorded as a paid order.
+  if (abortActivePayment) abortActivePayment();
   const socket = new net.Socket();
   socket.setTimeout(5000);
   socket.connect(config.port, config.host, () => {

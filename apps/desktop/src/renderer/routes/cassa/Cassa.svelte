@@ -80,6 +80,8 @@
   // never touch stock reservations; encoded into the order lines only at submit.
   let adjustments = $state<{ id: number; amountCents: number; reason?: string }[]>([]);
   let adjustmentModalOpen = $state(false);
+  // Cart line the adjustment modal was opened from (pre-fills a per-item sconto).
+  let adjustmentLine = $state<{ name: string; unitCents: number; qty: number } | null>(null);
   let nextAdjId = 0;
 
   // --- UI state ---
@@ -997,7 +999,11 @@
       onDec={decLine}
       onRemove={removeLine}
       onSetPeople={setPeople}
-      onAddAdjustment={() => (adjustmentModalOpen = true)}
+      onAddAdjustment={() => { adjustmentLine = null; adjustmentModalOpen = true; }}
+      onDiscountLine={(line) => {
+        adjustmentLine = { name: line.name, unitCents: Math.round(line.price * 100), qty: line.qty };
+        adjustmentModalOpen = true;
+      }}
       onRemoveAdjustment={removeAdjustment}
       onComplete={initiateOrder}
       onScanQr={startScan}
@@ -1039,6 +1045,7 @@
   <!-- Ad-hoc adjustment (sconto / supplemento) -->
   {#if adjustmentModalOpen}
     <AdjustmentModal
+      line={adjustmentLine}
       onAdd={(cents, reason) => { addAdjustment(cents, reason); adjustmentModalOpen = false; }}
       onClose={() => adjustmentModalOpen = false}
     />

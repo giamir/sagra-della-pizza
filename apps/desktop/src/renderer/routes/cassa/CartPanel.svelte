@@ -2,7 +2,7 @@
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { adjLabel } from '@sagra/shared/utils/adjustments';
   import { copertoEnabled } from '@sagra/shared/config/features';
-  import { Camera, ReceiptText } from 'lucide-svelte';
+  import { Camera, Percent, ReceiptText } from 'lucide-svelte';
 
   type CartLine = { id: string; name: string; categoryLabel: string; price: number; qty: number; subtotal: number };
   type Adjustment = { id: number; amountCents: number; reason?: string };
@@ -22,6 +22,7 @@
     onRemove,
     onSetPeople,
     onAddAdjustment,
+    onDiscountLine,
     onRemoveAdjustment,
     onComplete,
     onScanQr
@@ -40,6 +41,7 @@
     onRemove: (id: string) => void;
     onSetPeople: (n: number) => void;
     onAddAdjustment: () => void;
+    onDiscountLine: (line: CartLine) => void;
     onRemoveAdjustment: (id: number) => void;
     onComplete: () => void;
     onScanQr: () => void;
@@ -161,6 +163,12 @@
                       onclick={() => onInc(line.id)}
                       class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold text-base leading-none"
                     >+</button>
+                    <button
+                      type="button"
+                      onclick={() => onDiscountLine(line)}
+                      class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:bg-gray-100 ml-1"
+                      aria-label="Sconta {line.name}"
+                    ><Percent size={14} /></button>
                     <button
                       type="button"
                       onclick={() => onRemove(line.id)}

@@ -13,6 +13,9 @@ type SubmitOrderPayload = {
   lines: [string, number][];
   source?: 'qr' | 'manual';
   paymentMethod?: 'cash' | 'card';
+  // Set when re-confirming an "Annulla e correggi" order: the corrected order
+  // keeps the voided original's timestamp so reports attribute it correctly.
+  createdAt?: string;
 };
 
 type PrintOrderPayload = {
@@ -36,8 +39,9 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
   const db = getDb();
 
   const insertOrder = db.prepare(`
-    INSERT INTO orders (till_name, people, total_cents, status, source, payment_method)
-    VALUES (@tillName, @people, @totalCents, 'paid', @source, @paymentMethod)
+    INSERT INTO orders (till_name, people, total_cents, status, source, payment_method, created_at)
+    VALUES (@tillName, @people, @totalCents, 'paid', @source, @paymentMethod,
+            COALESCE(@createdAt, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')))
   `);
   const insertLine = db.prepare(`
     INSERT INTO order_lines (order_id, item_id, qty, unit_price_cents, name_snapshot, station)
@@ -48,7 +52,7 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
     const oversold = decrementStock(db, payload.lines, resolveStockItemId);
     if (oversold.length > 0) throw Object.assign(new Error('Esaurito'), { oversold });
 
-    const row = insertOrder.run({ tillName, people: payload.people, totalCents: payload.totalCents, source: payload.source ?? 'manual', paymentMethod: payload.paymentMethod ?? 'cash' });
+    const row = insertOrder.run({ tillName, people: payload.people, totalCents: payload.totalCents, source: payload.source ?? 'manual', paymentMethod: payload.paymentMethod ?? 'cash', createdAt: payload.createdAt ?? null });
     const orderId = row.lastInsertRowid;
     const priceIndex = getLivePriceIndex();
     const printLines: PrintOrderPayload['lines'] = [];
@@ -77,7 +81,7 @@ function submitLocal(payload: SubmitOrderPayload, tillName: string): { ok: boole
   broadcastStock();
   const order: PrintOrderPayload = {
     id: Number(result.orderId),
-    createdAt: new Date().toISOString(),
+    createdAt: payload.createdAt ?? new Date().toISOString(),
     people: payload.people,
     totalCents: payload.totalCents,
     lines: result.printLines

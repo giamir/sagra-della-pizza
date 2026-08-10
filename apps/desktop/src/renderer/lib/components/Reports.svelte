@@ -39,7 +39,7 @@
     onReloadCart,
   }: {
     onClose: () => void;
-    onReloadCart: (lines: { id: string; qty: number }[], people: number) => void;
+    onReloadCart: (lines: { id: string; qty: number }[], people: number, createdAt: string) => void;
   } = $props();
 
   type Period = 'hour' | 'today' | 'date' | 'all';
@@ -124,7 +124,7 @@
       expandedId = null;
       if (reload) {
         const cartLines = order.lines.map((l) => ({ id: l.itemId, qty: l.qty }));
-        onReloadCart(cartLines, order.people);
+        onReloadCart(cartLines, order.people, order.createdAt);
         onClose();
       }
     } catch (e) {

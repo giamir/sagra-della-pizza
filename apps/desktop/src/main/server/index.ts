@@ -250,13 +250,16 @@ export function startServer(port = 7331): void {
 
   // --- Submit order (used by client tills) ---
   app.post('/orders', (req, res) => {
-    const { people, totalCents, lines, source, tillName, paymentMethod } = req.body as {
+    const { people, totalCents, lines, source, tillName, paymentMethod, createdAt } = req.body as {
       people: number;
       totalCents: number;
       lines: [string, number][];
       source?: string;
       tillName?: string;
       paymentMethod?: string;
+      // Original timestamp of a voided order being corrected — keeps the
+      // corrected order attributed to the original moment in reports.
+      createdAt?: string;
     };
 
     if (!Array.isArray(lines) || typeof people !== 'number') {
@@ -267,8 +270,9 @@ export function startServer(port = 7331): void {
     const db = getDb();
 
     const insertOrder = db.prepare(`
-      INSERT INTO orders (till_name, people, total_cents, status, source, payment_method)
-      VALUES (@tillName, @people, @totalCents, 'paid', @source, @paymentMethod)
+      INSERT INTO orders (till_name, people, total_cents, status, source, payment_method, created_at)
+      VALUES (@tillName, @people, @totalCents, 'paid', @source, @paymentMethod,
+              COALESCE(@createdAt, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')))
     `);
     const insertLine = db.prepare(`
       INSERT INTO order_lines (order_id, item_id, qty, unit_price_cents, name_snapshot, station)
@@ -287,7 +291,8 @@ export function startServer(port = 7331): void {
           people,
           totalCents,
           source: source ?? 'manual',
-          paymentMethod: paymentMethod ?? 'cash'
+          paymentMethod: paymentMethod ?? 'cash',
+          createdAt: typeof createdAt === 'string' ? createdAt : null
         });
         const orderId = row.lastInsertRowid;
 
@@ -320,7 +325,7 @@ export function startServer(port = 7331): void {
       // locally — the client cannot re-load this id from its own db.
       const order = {
         id: Number(result.orderId),
-        createdAt: new Date().toISOString(),
+        createdAt: typeof createdAt === 'string' ? createdAt : new Date().toISOString(),
         people,
         totalCents,
         lines: result.printLines

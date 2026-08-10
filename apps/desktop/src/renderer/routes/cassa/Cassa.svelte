@@ -95,6 +95,9 @@
   let completing = $state(false);
   let statusMessage = $state<string | null>(null);
   let orderSource = $state<'manual' | 'qr'>('manual');
+  // Timestamp of the voided order being corrected ("Annulla e correggi"):
+  // the re-confirmed order is saved with this created_at instead of now.
+  let correctionCreatedAt = $state<string | null>(null);
   // Bumped each time a QR/phone order is loaded, so the cart panel can flash
   // even on back-to-back QR loads (where orderSource stays 'qr').
   let qrLoadTick = $state(0);
@@ -271,6 +274,7 @@
     adjustments = [];
     people = DEFAULT_PEOPLE;
     orderSource = 'manual';
+    correctionCreatedAt = null;
     statusMessage = null;
   }
 
@@ -620,7 +624,8 @@
           ...adjustments.map((a) => [encodeAdjKey(a.amountCents, a.reason), 1] as [string, number])
         ],
         source: orderSource,
-        paymentMethod
+        paymentMethod,
+        createdAt: correctionCreatedAt ?? undefined
       });
 
       if (!result.ok) {
@@ -1098,7 +1103,7 @@
         reportsOpen = false;
         void refreshLiveStats();
       }}
-      onReloadCart={(lines, p) => {
+      onReloadCart={(lines, p, createdAt) => {
         for (const k of Object.keys(cart)) delete cart[k];
         adjustments = [];
         for (const { id, qty } of lines) {
@@ -1111,6 +1116,7 @@
         }
         people = copertoEnabled ? p : 0;
         orderSource = 'manual';
+        correctionCreatedAt = createdAt;
         reportsOpen = false;
         statusMessage = 'Ordine annullato — correggi e riconferma';
         setTimeout(() => { statusMessage = null; }, 4000);

@@ -43,7 +43,8 @@
   "stations": {
     "order": [
       "Bignè",
-      "Bar"
+      "Bar",
+      "Cocktails"
     ],
     "copertoStation": "Bar",
     "aliases": {}

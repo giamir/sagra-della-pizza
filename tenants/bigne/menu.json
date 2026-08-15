@@ -137,6 +137,85 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cocktails",
+      "label": "Cocktails",
+      "subtitle": "Tutti a 5 euro!",
+      "station": "Cocktails",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            {
+              "id": "aperol-spritz",
+              "name": "Aperol Spritz",
+              "price": 5.0,
+              "band": "lampone"
+            },
+            {
+              "id": "campari-spritz",
+              "name": "Campari Spritz",
+              "price": 5.0,
+              "band": "lampone"
+            },
+            {
+              "id": "americano",
+              "name": "Americano",
+              "price": 5.0,
+              "band": "lampone"
+            },
+            {
+              "id": "negroni",
+              "name": "Negroni",
+              "price": 5.0,
+              "band": "lampone"
+            },
+            {
+              "id": "negroni-sbagliato",
+              "name": "Negroni Sbagliato",
+              "price": 5.0,
+              "band": "lampone"
+            },
+            {
+              "id": "gin-tonic",
+              "name": "Gin Tonic",
+              "price": 5.0,
+              "band": "blu"
+            },
+            {
+              "id": "gin-lemon",
+              "name": "Gin Lemon",
+              "price": 5.0,
+              "band": "blu"
+            },
+            {
+              "id": "vodka-tonic",
+              "name": "Vodka Tonic",
+              "price": 5.0,
+              "band": "blu"
+            },
+            {
+              "id": "vodka-lemon",
+              "name": "Vodka Lemon",
+              "price": 5.0,
+              "band": "blu"
+            },
+            {
+              "id": "cuba-libre",
+              "name": "Cuba Libre",
+              "price": 5.0,
+              "band": "blu"
+            },
+            {
+              "id": "bevuta",
+              "name": "Bevuta",
+              "price": 5.0,
+              "band": "viola"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

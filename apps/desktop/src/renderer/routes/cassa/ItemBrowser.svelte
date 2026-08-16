@@ -210,7 +210,7 @@
                 {item.variants.map((v) => v.label).join(' · ')}
               </span>
             {/if}
-            {#if item.choices?.length}
+            {#if item.choices?.length && !item.hideChoices}
               <span class="block text-xs text-gray-400 mt-1">
                 {choicesOf(item).map((c) => c.name).join(' · ')}
               </span>

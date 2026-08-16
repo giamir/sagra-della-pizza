@@ -212,6 +212,73 @@
               "name": "Bevuta",
               "price": 5.0,
               "band": "viola"
+            },
+            {
+              "id": "bevuta-analcolica",
+              "hideChoices": true,
+              "name": "Bevuta Analcolica",
+              "price": 2.5,
+              "choices": [
+                "bevuta-analcolica-tonica",
+                "bevuta-analcolica-lemonsoda",
+                "bevuta-analcolica-altro"
+              ],
+              "band": "viola"
+            },
+            {
+              "id": "bevuta-analcolica-tonica",
+              "name": "Tonica",
+              "price": 2.5,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-analcolica-lemonsoda",
+              "name": "Lemonsoda",
+              "price": 2.5,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-analcolica-altro",
+              "name": "Analcolica Altro",
+              "price": 2.5,
+              "hidden": true
+            },
+            {
+              "id": "shot",
+              "hideChoices": true,
+              "name": "Shot",
+              "price": 3.0,
+              "choices": [
+                "shot-vodka",
+                "shot-gin",
+                "shot-rum",
+                "shot-altro"
+              ],
+              "band": "viola"
+            },
+            {
+              "id": "shot-vodka",
+              "name": "Shot Vodka",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-gin",
+              "name": "Shot Gin",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-rum",
+              "name": "Shot Rum",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-altro",
+              "name": "Shot Altro",
+              "price": 3.0,
+              "hidden": true
             }
           ]
         }

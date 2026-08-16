@@ -20,12 +20,19 @@ export function saveCatalog(catalog: Menu): void {
   setSetting('catalog_json', JSON.stringify(catalog));
 }
 
-// Drops this till's locally-saved catalog so getCatalog() falls back to the
-// menu bundled with the installed app version. Used to adopt a menu shipped in
-// an app update (e.g. new options/variants the in-app editor can't express).
-// Station overrides are left untouched — they are this machine's print routing.
+// Settings that are catalog-scoped — they travel with backups and are cleared
+// by Ripristina — as opposed to machine-scoped config (printer_config,
+// ecr17_config, till_settings) which never leaves the till.
+export const CATALOG_SETTING_KEYS = ['catalog_json', 'station_overrides', 'stations_list', 'coperto_station'] as const;
+
+// Drops every catalog-scoped setting so it all falls back to what's bundled
+// with the installed app version (tenant menu, station order, category→station
+// mapping). Used to adopt a menu shipped in an app update. Overrides must go
+// too: every Catalogo save persists an explicit station for every item, so a
+// stale override would otherwise mask a station declared in the bundled menu
+// forever (e.g. a new category's station never showing up after Ripristina).
 export function resetCatalog(): void {
-  setSetting('catalog_json', '');
+  for (const key of CATALOG_SETTING_KEYS) setSetting(key, '');
 }
 
 export function getStationOverrides(): Record<string, string> {

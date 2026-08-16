@@ -1,10 +1,12 @@
 import { app } from 'electron';
 import { getDb, getSetting, setSetting } from './schema.js';
+import { CATALOG_SETTING_KEYS } from '../catalog/catalog.js';
 
-// Settings keys that travel with a backup. Deliberately excludes
+// Settings keys that travel with a backup: the catalog-scoped set (shared with
+// Ripristina, which clears the same keys). Deliberately excludes
 // machine-specific config (printer_config, ecr17_config, till_settings) so an
 // import never clobbers the target machine's hardware/network setup.
-const EXPORTED_SETTING_KEYS = ['catalog_json', 'station_overrides', 'stations_list', 'coperto_station'] as const;
+const EXPORTED_SETTING_KEYS = CATALOG_SETTING_KEYS;
 
 const BUNDLE_FORMAT = 'sagra-db';
 const BUNDLE_VERSION = 1;

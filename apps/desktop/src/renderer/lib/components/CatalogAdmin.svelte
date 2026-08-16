@@ -120,45 +120,44 @@
 
   // --- Item editing helpers ---
 
-  function updateItem(catId: string, groupLabel: string, itemId: string, patch: Partial<MenuItem>) {
+  // Item ids are unique catalog-wide (slugify enforces it), so patch by id
+  // wherever the item lives — a choice may sit in another group than its chooser.
+  function updateItem(itemId: string, patch: Partial<MenuItem>) {
     if (!catalog) return;
     catalog = {
       ...catalog,
-      categories: catalog.categories.map((cat) => {
-        if (cat.id !== catId) return cat;
-        return {
-          ...cat,
-          groups: cat.groups.map((g) => {
-            if (g.label !== groupLabel) return g;
-            return {
-              ...g,
-              items: g.items.map((item) => item.id === itemId ? { ...item, ...patch } : item)
-            };
-          })
-        };
-      })
+      categories: catalog.categories.map((cat) => ({
+        ...cat,
+        groups: cat.groups.map((g) => ({
+          ...g,
+          items: g.items.map((item) => item.id === itemId ? { ...item, ...patch } : item)
+        }))
+      }))
     };
   }
 
-  function deleteItem(catId: string, groupLabel: string, itemId: string) {
+  function deleteItem(itemId: string) {
     if (!catalog) return;
-    // Also remove station override
+    // A chooser takes its hidden choice items with it, wherever they live —
+    // but only choices no other chooser still references, and never non-hidden
+    // items (those stand on their own).
+    const doomed = new Set([
+      itemId,
+      ...(findItem(itemId)?.choices ?? []).filter((id) => {
+        if (!findItem(id)?.hidden) return false;
+        return !allItems.some((i) => i.id !== itemId && (i.choices ?? []).includes(id));
+      })
+    ]);
     const next = { ...stations };
-    delete next[itemId];
+    for (const id of doomed) delete next[id];
     stations = next;
 
     catalog = {
       ...catalog,
-      categories: catalog.categories.map((cat) => {
-        if (cat.id !== catId) return cat;
-        return {
-          ...cat,
-          groups: cat.groups.map((g) => {
-            if (g.label !== groupLabel) return g;
-            return { ...g, items: g.items.filter((item) => item.id !== itemId) };
-          })
-        };
-      })
+      categories: catalog.categories.map((cat) => ({
+        ...cat,
+        groups: cat.groups.map((g) => ({ ...g, items: g.items.filter((item) => !doomed.has(item.id)) }))
+      }))
     };
   }
 
@@ -183,6 +182,125 @@
     };
   }
 
+  // --- Scelte (chooser → hidden choice items, e.g. Shot → Shot Vodka) ---
+
+  // Item id whose choices panel is expanded, or null.
+  let choicesEditorFor = $state<string | null>(null);
+  let newChoiceName = $state('');
+
+  // Single O(n) pass over the catalog feeding every lookup below — rebuilt only
+  // when `catalog` changes, instead of one full scan per row per render.
+  const allItems = $derived((catalog?.categories ?? []).flatMap((c) => c.groups.flatMap((g) => g.items)));
+  const itemsById = $derived(new Map(allItems.map((i) => [i.id, i] as const)));
+  // Ids already taken catalog-wide, variants included — slugify must not mint
+  // an id that collides with a variant (stock and pricing key on those too).
+  const takenIds = $derived(new Set(allItems.flatMap((i) => [i.id, ...(i.variants ?? []).map((v) => v.id)])));
+  // Ids of hidden items reachable through some chooser — they are edited in the
+  // parent's Scelte panel, so the flat item list skips them. Orphaned hidden
+  // items (no chooser references them) stay visible as normal rows.
+  const referencedChoiceIds = $derived(new Set(allItems.flatMap((i) => i.choices ?? [])));
+
+  function findItem(id: string): MenuItem | undefined {
+    return itemsById.get(id);
+  }
+
+  function choicesOf(item: MenuItem): MenuItem[] {
+    return (item.choices ?? []).map((id) => findItem(id)).filter(Boolean) as MenuItem[];
+  }
+
+  function slugify(name: string): string {
+    const base = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'voce';
+    let id = base;
+    let n = 2;
+    while (takenIds.has(id)) id = `${base}-${n++}`;
+    return id;
+  }
+
+  function addChoice(catId: string, groupLabel: string, parent: MenuItem) {
+    const name = newChoiceName.trim();
+    if (!catalog || !name) return;
+    const id = slugify(name);
+    const choice: MenuItem = { id, name, price: parent.price, hidden: true };
+    // The choice prints where its chooser prints.
+    stations = { ...stations, [id]: stationFor(parent) };
+    catalog = {
+      ...catalog,
+      categories: catalog.categories.map((cat) => {
+        if (cat.id !== catId) return cat;
+        return {
+          ...cat,
+          groups: cat.groups.map((g) => {
+            if (g.label !== groupLabel) return g;
+            return {
+              ...g,
+              items: [...g.items.map((i) => i.id === parent.id ? { ...i, choices: [...(i.choices ?? []), id] } : i), choice]
+            };
+          })
+        };
+      })
+    };
+    newChoiceName = '';
+  }
+
+  function removeChoice(parent: MenuItem, choiceId: string) {
+    const remaining = (parent.choices ?? []).filter((id) => id !== choiceId);
+    updateItem(parent.id, { choices: remaining.length ? remaining : undefined });
+    // Delete the hidden item too — without a chooser it is unreachable. Keep it
+    // if another chooser still references it, or if it's a visible item.
+    const choice = findItem(choiceId);
+    const stillReferenced = allItems.some((i) => i.id !== parent.id && (i.choices ?? []).includes(choiceId));
+    if (choice?.hidden && !stillReferenced) deleteItem(choiceId);
+  }
+
+  // The rows shown in the editor: hidden items reachable via a chooser are
+  // managed in the parent's Scelte panel, not as their own row.
+  function visibleItems(group: MenuGroup): MenuItem[] {
+    return group.items.filter((i) => !i.hidden || !referencedChoiceIds.has(i.id));
+  }
+
+  // --- Reordering ---
+
+  // Move a visible item up/down within its group. The raw array interleaves
+  // hidden choice items (skipped in the list), so swap by visible neighbours,
+  // not by raw index — hidden items stay where they are.
+  function moveItem(catId: string, groupLabel: string, itemId: string, dir: -1 | 1) {
+    if (!catalog) return;
+    catalog = {
+      ...catalog,
+      categories: catalog.categories.map((cat) => {
+        if (cat.id !== catId) return cat;
+        return {
+          ...cat,
+          groups: cat.groups.map((g) => {
+            if (g.label !== groupLabel) return g;
+            const visible = visibleItems(g);
+            const vi = visible.findIndex((i) => i.id === itemId);
+            const vt = vi + dir;
+            if (vi < 0 || vt < 0 || vt >= visible.length) return g;
+            const items = [...g.items];
+            const a = items.indexOf(visible[vi]);
+            const b = items.indexOf(visible[vt]);
+            [items[a], items[b]] = [items[b], items[a]];
+            return { ...g, items };
+          })
+        };
+      })
+    };
+  }
+
+  // Move a choice within its chooser: the picker order IS the choices array
+  // order. Located by id, not display index — the rendered list skips ids that
+  // don't resolve, so an index could point at the wrong entry.
+  function moveChoice(parent: MenuItem, choiceId: string, dir: -1 | 1) {
+    const ids = [...(parent.choices ?? [])];
+    const index = ids.indexOf(choiceId);
+    const target = index + dir;
+    if (index < 0 || target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    updateItem(parent.id, { choices: ids });
+  }
+
   // --- Fascia colore ---
 
   // Same closed-set mapping idea as ItemBrowser: token → static class, so an
@@ -204,8 +322,8 @@
   // Item id whose band popover is open, or null.
   let bandPickerFor = $state<string | null>(null);
 
-  function setBand(catId: string, groupLabel: string, itemId: string, band: BandColour | undefined) {
-    updateItem(catId, groupLabel, itemId, { band });
+  function setBand(itemId: string, band: BandColour | undefined) {
+    updateItem(itemId, { band });
     bandPickerFor = null;
   }
 
@@ -219,12 +337,13 @@
   }
 
   function setStation(item: MenuItem, station: string) {
-    // Apply to all variant IDs too if the item has variants
+    // Apply to all variant and choice IDs too — they print where the parent prints.
     const next = { ...stations };
     next[item.id] = station;
     if (item.variants) {
       for (const v of item.variants) next[v.id] = station;
     }
+    for (const id of item.choices ?? []) next[id] = station;
     stations = next;
   }
 
@@ -590,11 +709,12 @@
         {@const cat = activeCategory()}
         {#if cat}
           {#each cat.groups as group}
+            {@const rows = visibleItems(group)}
             <!-- Group header -->
             <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-4 mb-2 first:mt-0">{group.label}</p>
 
             <!-- Column headers -->
-            <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_2rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_5.5rem] gap-2 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               <span>Nome</span>
               <span>Descrizione</span>
               <span>Prezzo (€)</span>
@@ -603,17 +723,17 @@
               <span></span>
             </div>
 
-            <!-- Item rows -->
+            <!-- Item rows (hidden choice items are edited in their chooser's Scelte panel) -->
             <div class="flex flex-col gap-0.5">
-              {#each group.items as item}
+              {#each rows as item, vi (item.id)}
                 {@const band = normalizeBand(item.band)}
-                <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_2rem] gap-2 items-center px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                <div class="grid grid-cols-[1fr_1fr_7rem_4rem_11rem_5.5rem] gap-2 items-start px-3 py-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
                   <!-- Name -->
                   <div>
                     <input
                       type="text"
                       value={item.name}
-                      oninput={(e) => updateItem(cat.id, group.label, item.id, { name: (e.target as HTMLInputElement).value })}
+                      oninput={(e) => updateItem(item.id, { name: (e.target as HTMLInputElement).value })}
                       placeholder="Nome voce"
                       class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
                     />
@@ -622,13 +742,23 @@
                         varianti: {item.variants.map((v) => v.label).join(', ')}
                       </p>
                     {/if}
+                    <button
+                      type="button"
+                      onclick={() => { choicesEditorFor = choicesEditorFor === item.id ? null : item.id; newChoiceName = ''; }}
+                      class="mt-0.5 text-xs font-semibold {item.choices?.length ? 'text-green-700 hover:text-green-900' : 'text-gray-400 hover:text-gray-600'}"
+                    >
+                      {item.choices?.length ? `Scelte (${item.choices.length})` : '+ Scelte'}
+                      {#if item.choices?.length}
+                        <span class="font-normal text-gray-400">· {choicesOf(item).map((c) => c.name).join(' · ')}</span>
+                      {/if}
+                    </button>
                   </div>
 
                   <!-- Description -->
                   <input
                     type="text"
                     value={item.description ?? ''}
-                    oninput={(e) => updateItem(cat.id, group.label, item.id, { description: (e.target as HTMLInputElement).value || undefined })}
+                    oninput={(e) => updateItem(item.id, { description: (e.target as HTMLInputElement).value || undefined })}
                     placeholder="—"
                     class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
                   />
@@ -639,7 +769,7 @@
                     min="0"
                     step="0.50"
                     value={item.price}
-                    oninput={(e) => updateItem(cat.id, group.label, item.id, { price: parseFloat((e.target as HTMLInputElement).value) || 0 })}
+                    oninput={(e) => updateItem(item.id, { price: parseFloat((e.target as HTMLInputElement).value) || 0 })}
                     class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
                   />
 
@@ -665,7 +795,7 @@
                       <div class="absolute z-50 top-full right-0 mt-1 p-2 w-44 bg-white dark:bg-[#20242c] rounded-lg shadow-2xl border border-gray-200 grid grid-cols-6 gap-1.5">
                         <button
                           type="button"
-                          onclick={() => setBand(cat.id, group.label, item.id, undefined)}
+                          onclick={() => setBand(item.id, undefined)}
                           title="Nessuna fascia"
                           aria-label="Nessuna fascia"
                           class="w-6 h-6 rounded border flex items-center justify-center text-gray-400 hover:border-gray-500 {band ? 'border-gray-200' : 'border-gray-700 dark:border-gray-300'}"
@@ -675,7 +805,7 @@
                         {#each BAND_COLOURS as token (token)}
                           <button
                             type="button"
-                            onclick={() => setBand(cat.id, group.label, item.id, token)}
+                            onclick={() => setBand(item.id, token)}
                             title={token}
                             aria-label={`Fascia ${token}`}
                             class="w-6 h-6 rounded border {bandSwatchClasses[token]} {band === token ? 'border-gray-700 dark:border-gray-100 ring-1 ring-gray-700 dark:ring-gray-100' : 'border-transparent hover:border-gray-400'}"
@@ -696,16 +826,116 @@
                     {/each}
                   </select>
 
-                  <!-- Delete -->
-                  <button
-                    type="button"
-                    onclick={() => deleteItem(cat.id, group.label, item.id)}
-                    class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
-                    title="Elimina voce"
-                  >
-                    <X size={16} />
-                  </button>
+                  <!-- Move / Delete -->
+                  <div class="flex items-center gap-0.5 pt-1">
+                    <button
+                      type="button"
+                      onclick={() => moveItem(cat.id, group.label, item.id, -1)}
+                      disabled={vi === 0}
+                      class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                      title="Sposta su"
+                    ><ChevronUp size={16} /></button>
+                    <button
+                      type="button"
+                      onclick={() => moveItem(cat.id, group.label, item.id, 1)}
+                      disabled={vi === rows.length - 1}
+                      class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                      title="Sposta giù"
+                    ><ChevronDown size={16} /></button>
+                    <button
+                      type="button"
+                      onclick={() => deleteItem(item.id)}
+                      class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
+                      title="Elimina voce"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
+
+                {#if choicesEditorFor === item.id}
+                  <!-- Scelte panel: the picker this button opens on the till.
+                       Each choice is a real (hidden) item with its own price. -->
+                  <div class="ml-6 mb-2 px-3 py-3 rounded-lg border border-green-200 bg-green-50/50">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                      Scelte di "{item.name || 'voce'}" — alla cassa si apre una finestra per scegliere
+                    </p>
+
+                    <div class="flex flex-col gap-1">
+                      {#each choicesOf(item) as choice, ci (choice.id)}
+                        <div class="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={choice.name}
+                            oninput={(e) => updateItem(choice.id, { name: (e.target as HTMLInputElement).value })}
+                            placeholder="Nome scelta"
+                            class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.50"
+                            value={choice.price}
+                            oninput={(e) => updateItem(choice.id, { price: parseFloat((e.target as HTMLInputElement).value) || 0 })}
+                            class="w-24 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+                          />
+                          <button
+                            type="button"
+                            onclick={() => moveChoice(item, choice.id, -1)}
+                            disabled={ci === 0}
+                            class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                            title="Sposta su"
+                          ><ChevronUp size={16} /></button>
+                          <button
+                            type="button"
+                            onclick={() => moveChoice(item, choice.id, 1)}
+                            disabled={ci === choicesOf(item).length - 1}
+                            class="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                            title="Sposta giù"
+                          ><ChevronDown size={16} /></button>
+                          <button
+                            type="button"
+                            onclick={() => removeChoice(item, choice.id)}
+                            class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50"
+                            title="Rimuovi scelta"
+                          ><X size={16} /></button>
+                        </div>
+                      {/each}
+                    </div>
+
+                    <div class="flex items-center gap-2 mt-2">
+                      <input
+                        type="text"
+                        bind:value={newChoiceName}
+                        onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addChoice(cat.id, group.label, item); } }}
+                        placeholder="Nuova scelta (es. Shot Vodka)"
+                        class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-600"
+                      />
+                      <button
+                        type="button"
+                        onclick={() => addChoice(cat.id, group.label, item)}
+                        class="px-3 py-1 rounded text-xs font-semibold text-green-700 border border-dashed border-green-300 hover:bg-green-50"
+                      >
+                        + Aggiungi
+                      </button>
+                    </div>
+
+                    {#if item.choices?.length}
+                      <label class="flex items-center gap-2 mt-3 text-xs text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={!item.hideChoices}
+                          onchange={(e) => updateItem(item.id, { hideChoices: (e.target as HTMLInputElement).checked ? undefined : true })}
+                          class="accent-green-700"
+                        />
+                        Mostra l'elenco delle scelte sul pulsante della cassa
+                      </label>
+                    {/if}
+                    <p class="text-xs text-gray-400 mt-2">
+                      Il nome della scelta è quello stampato su comanda e scontrino. Le scelte stampano sulla stazione della voce principale.
+                    </p>
+                  </div>
+                {/if}
               {/each}
             </div>
 

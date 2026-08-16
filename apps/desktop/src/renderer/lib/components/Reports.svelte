@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { formatEUR } from '@sagra/shared/utils/currency';
   import { isAdjKey } from '@sagra/shared/utils/adjustments';
+  import { buildPriceIndex } from '@sagra/shared/utils/pricing';
+  import type { Menu } from '@sagra/shared/types';
   import { copertoEnabled } from '@sagra/shared/config/features';
   import { STATION_ORDER, normalizeStation } from '$lib/station-order';
   import { DAY_ROLLOVER_HOUR, startOfBusinessDay, businessDayKey, businessDayRange } from '$lib/business-day';
@@ -205,6 +207,31 @@
 
   onMount(load);
   $effect(() => { period; fromDate; toDate; load(); });
+
+  // Catalog category map for the "Per categoria" breakdown. Order lines are
+  // keyed by cart key (plain id, variant id, or id||options combo), so the map
+  // comes from buildPriceIndex, which emits categoryLabel for every sellable
+  // key. Ids no longer in the catalog fall into "Altro". Labels are deduped so
+  // two same-named categories can't produce duplicate table rows.
+  let categoryOrder = $state<string[]>([]);
+  let lineCategory = $state<Record<string, string>>({});
+  async function loadCategoryMap() {
+    try {
+      const result = await window.api.getCatalog();
+      const catalog = result.catalog as Menu;
+      categoryOrder = [...new Set(catalog.categories.map((c) => c.label))];
+      lineCategory = Object.fromEntries(
+        Object.entries(buildPriceIndex(catalog)).map(([key, v]) => [key, v.categoryLabel])
+      );
+    } catch {
+      // No catalog: the section degrades to a single "Altro" row.
+    }
+  }
+  onMount(() => {
+    void loadCategoryMap();
+    // Stay current while this screen is open — catalog edits/resets broadcast.
+    return window.api.onCatalogUpdate(() => { void loadCategoryMap(); });
+  });
 
   // Tills present in the loaded (unfiltered) range — drives the dropdown so it never
   // collapses to a single entry once a filter is applied.
@@ -497,27 +524,34 @@
     );
   });
 
-  const byStation = $derived.by(() => {
+  // Shared qty/revenue rollup behind the "Per stazione" and "Per categoria"
+  // tables: accumulate per key, list known keys in their canonical order, then
+  // append unknown keys (e.g. legacy stations, ids gone from the catalog).
+  function rollupLines(keyOf: (l: ReportLine) => string, order: string[]) {
     const map = new Map<string, { qty: number; cents: number }>();
     for (const o of filteredOrders) {
       for (const l of o.lines) {
         if (isAdjKey(l.itemId)) continue;
-        const key = normalizeStation(l.station || 'Altro');
+        const key = keyOf(l);
         const cur = map.get(key) ?? { qty: 0, cents: 0 };
         cur.qty += l.qty;
         cur.cents += l.qty * l.unitPriceCents;
         map.set(key, cur);
       }
     }
-    return STATION_ORDER
-      .filter((s) => map.has(s))
-      .map((s) => ({ station: s, ...map.get(s)! }))
+    return order
+      .filter((k) => map.has(k))
+      .map((k) => ({ key: k, ...map.get(k)! }))
       .concat(
         Array.from(map.entries())
-          .filter(([s]) => !STATION_ORDER.includes(s))
-          .map(([s, v]) => ({ station: s, ...v }))
+          .filter(([k]) => !order.includes(k))
+          .map(([k, v]) => ({ key: k, ...v }))
       );
-  });
+  }
+
+  const byStation = $derived(rollupLines((l) => normalizeStation(l.station || 'Altro'), STATION_ORDER));
+  // Revenue by menu category (Bignè, Bar, Cocktails, …), in menu order.
+  const byCategory = $derived(rollupLines((l) => lineCategory[l.itemId] ?? 'Altro', categoryOrder));
 
   const soldItems = $derived.by(() => {
     const map = new Map<string, { itemId: string; name: string; qty: number; cents: number; unitPriceCents: number; station: string }>();
@@ -1221,6 +1255,29 @@
             </table>
           </div>
 
+          <!-- By category -->
+          <div class="border border-gray-100 rounded-xl overflow-hidden">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 px-4 py-2 bg-gray-50">Per categoria</p>
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs text-gray-400 border-b border-gray-100">
+                  <th class="text-left px-4 py-2 font-medium">Categoria</th>
+                  <th class="text-right px-4 py-2 font-medium">Pezzi</th>
+                  <th class="text-right px-4 py-2 font-medium">Incasso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each byCategory as row (row.key)}
+                  <tr class="border-b border-gray-50 last:border-0">
+                    <td class="px-4 py-2 font-medium text-gray-800">{row.key}</td>
+                    <td class="px-4 py-2 text-right text-gray-600">{row.qty}</td>
+                    <td class="px-4 py-2 text-right font-semibold text-green-800">{formatEUR(row.cents / 100)}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+
           <!-- By station -->
           <div class="border border-gray-100 rounded-xl overflow-hidden">
             <p class="text-xs font-bold uppercase tracking-wider text-gray-400 px-4 py-2 bg-gray-50">Per stazione</p>
@@ -1233,9 +1290,9 @@
                 </tr>
               </thead>
               <tbody>
-                {#each byStation as row}
+                {#each byStation as row (row.key)}
                   <tr class="border-b border-gray-50 last:border-0">
-                    <td class="px-4 py-2 font-medium text-gray-800">{row.station}</td>
+                    <td class="px-4 py-2 font-medium text-gray-800">{row.key}</td>
                     <td class="px-4 py-2 text-right text-gray-600">{row.qty}</td>
                     <td class="px-4 py-2 text-right font-semibold text-green-800">{formatEUR(row.cents / 100)}</td>
                   </tr>

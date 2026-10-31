@@ -1,0 +1,57 @@
+{
+  "coperto": {
+    "perPersona": 0
+  },
+  "categories": [
+    {
+      "id": "giropizza",
+      "label": "Giropizza",
+      "subtitle": "Pizza a volontà",
+      "station": "Giropizza",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            {
+              "id": "giropizza-adulti",
+              "name": "Giropizza Adulti",
+              "price": 20.0,
+              "band": "lampone"
+            },
+            {
+              "id": "giropizza-bambini",
+              "name": "Giropizza Bambini",
+              "price": 10.0,
+              "band": "ambra"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bar",
+      "label": "Bar",
+      "subtitle": "Cosa beviamo?",
+      "station": "Bar",
+      "groups": [
+        {
+          "label": "",
+          "items": [
+            {
+              "id": "bevuta",
+              "name": "Bevuta",
+              "price": 5.0,
+              "band": "viola"
+            },
+            {
+              "id": "caffe",
+              "name": "Caffè",
+              "price": 1.0,
+              "band": "bruno"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

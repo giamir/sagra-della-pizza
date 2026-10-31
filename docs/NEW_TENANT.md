@@ -75,8 +75,8 @@ npm run use-tenant <slug>
 This copies the overlay over the active files. Run it before every build/deploy for that
 association. It is idempotent. CI for a given association should run it as the first build step.
 
-Note it only *overwrites* — files left in `static/` by a previously activated tenant (e.g. the
-other association's logo) are not deleted. Harmless, but don't be surprised by them.
+Files another tenant's overlay put in `static/` or `apps/desktop/resources/` (e.g. its logo)
+are removed first, unless the activated tenant ships a file with the same name.
 
 ## 2b. Register the tenant in CI
 

@@ -26,6 +26,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
+          - tenant: rioni
+            blob_secret: BLOB_READ_WRITE_TOKEN_RIONI
     steps:
       - uses: actions/checkout@v4
 
@@ -93,6 +95,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
+          - tenant: rioni
+            blob_secret: BLOB_READ_WRITE_TOKEN_RIONI
     steps:
       - uses: actions/checkout@v4
 
@@ -149,6 +153,8 @@ jobs:
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
+          - tenant: rioni
+            blob_secret: BLOB_READ_WRITE_TOKEN_RIONI
     steps:
       - uses: actions/checkout@v4
 

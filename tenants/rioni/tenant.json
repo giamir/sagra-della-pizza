@@ -1,0 +1,67 @@
+{
+  "id": "rioni",
+  "brand": {
+    "name": "Rioni di Orentano",
+    "location": "Orentano",
+    "shortName": "Rioni",
+    "tagline": "Sfoglia il menù e ordina alla cassa.",
+    "logo": "/rioni-di-orentano.png",
+    "logoAlt": "Rioni di Orentano"
+  },
+  "theme": {
+    "colors": {
+      "cream-50": "#faf6ee",
+      "cream-100": "#f3ebdd",
+      "cream-200": "#e6d9bf",
+      "ink": "#1e2a44",
+      "leaf": "#1e2a44",
+      "leaf-dark": "#141c2f",
+      "tomato": "#b3122b",
+      "tomato-dark": "#8a0e21",
+      "focus": "#e0b400"
+    },
+    "themeColor": "#1e2a44",
+    "backgroundColor": "#faf6ee",
+    "tillAccent": "#6b3fa0"
+  },
+  "locale": {
+    "lang": "it",
+    "intl": "it-IT",
+    "currency": "EUR"
+  },
+  "receipt": {
+    "headerLines": [
+      "Rioni di Orentano"
+    ],
+    "customerCopyLabel": "Copia Cliente",
+    "footerLines": [
+      "Non e' scontrino fiscale",
+      "Grazie e buon divertimento!"
+    ]
+  },
+  "stations": {
+    "order": [
+      "Giropizza",
+      "Bar"
+    ],
+    "copertoStation": "Bar",
+    "aliases": {}
+  },
+  "network": {
+    "serverPort": 7331,
+    "defaultTillName": "Cassa 1"
+  },
+  "features": {
+    "qr": false,
+    "coperto": false,
+    "filaTavolo": false
+  },
+  "storagePrefix": "rioni",
+  "desktop": {
+    "appId": "it.orentano.rioni",
+    "productName": "Rioni di Orentano",
+    "author": "Rioni di Orentano",
+    "updateFeedUrl": "https://rioni.orentano.news/desktop-updates",
+    "downloadPageUrl": "https://rioni.orentano.news/download"
+  }
+}

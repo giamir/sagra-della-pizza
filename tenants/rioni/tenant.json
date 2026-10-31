@@ -61,7 +61,7 @@
     "appId": "it.orentano.rioni",
     "productName": "Rioni di Orentano",
     "author": "Rioni di Orentano",
-    "updateFeedUrl": "https://rioni.orentano.news/desktop-updates",
-    "downloadPageUrl": "https://rioni.orentano.news/download"
+    "updateFeedUrl": "https://eventi.rioni.orentano.news/desktop-updates",
+    "downloadPageUrl": "https://eventi.rioni.orentano.news/download"
   }
 }

@@ -8,7 +8,7 @@
 //   menu.json          -> shared/src/data/menu.json
 //   assets/*           -> static/*                    (web logo + PWA icons + favicon)
 //   desktop/*          -> apps/desktop/resources/*    (app icon.ico/.icns + runtime logo.png)
-import { cpSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { cpSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,6 +54,29 @@ function copyDir(fromDir, toDir, label) {
   }
 }
 
+function fileNames(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((name) => statSync(join(dir, name)).isFile());
+}
+
+// Remove files another tenant copied in (e.g. its logo) that this tenant doesn't
+// ship, so switching tenants doesn't leave stale untracked files behind.
+function pruneOtherTenants(sub, toDir, label) {
+  const keep = new Set(fileNames(join(overlay, sub)));
+  const tenantsDir = join(repoRoot, 'tenants');
+  for (const other of readdirSync(tenantsDir)) {
+    if (other === slug) continue;
+    for (const name of fileNames(join(tenantsDir, other, sub))) {
+      const target = join(toDir, name);
+      if (keep.has(name) || !existsSync(target)) continue;
+      rmSync(target);
+      console.log(`  removed ${label}/${name} (from tenant "${other}")`);
+    }
+  }
+}
+
+pruneOtherTenants('assets', join(repoRoot, 'static'), 'static');
+pruneOtherTenants('desktop', join(repoRoot, 'apps/desktop/resources'), 'resources');
 copyDir(join(overlay, 'assets'), join(repoRoot, 'static'), 'assets');
 copyDir(join(overlay, 'desktop'), join(repoRoot, 'apps/desktop/resources'), 'desktop');
 

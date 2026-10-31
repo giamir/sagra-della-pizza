@@ -13,6 +13,9 @@ import { registerBackupHandlers } from './ipc/backup.js';
 import { registerUpdateHandlers, startUpdateChecks } from './ipc/updates.js';
 import { snapshotDb, pruneSnapshots } from './db/auto-backup.js';
 import { tenant } from './config/tenant.js';
+import { isolateTenantUserData } from './config/user-data.js';
+
+isolateTenantUserData();
 
 let mainWindow: BrowserWindow | null = null;
 

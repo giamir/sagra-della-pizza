@@ -1,6 +1,9 @@
 <script lang="ts">
   import { tenant } from '$lib/config/tenant';
 
+  const downloadUrl = new URL(tenant.desktop.downloadPageUrl);
+  const siteHost = downloadUrl.host;
+
   const setupSteps = [
     {
       title: '1. Preparare le casse',
@@ -25,10 +28,10 @@
     {
       title: '3. Installare il gestionale',
       items: [
-        'Aprire sorsi.orentano.news/download dal PC della cassa.',
+        `Aprire ${siteHost}${downloadUrl.pathname} dal PC della cassa.`,
         'Scaricare l’installer Windows.',
         'Aprire il file scaricato e completare l’installazione.',
-        'Avviare l’app "Sorsi e Morsi" dal desktop o dal menu Start.'
+        `Avviare l’app "${tenant.desktop.productName}" dal desktop o dal menu Start.`
       ]
     },
     {
@@ -52,7 +55,7 @@
     {
       title: '6. Provare QR e pagamento',
       items: [
-        'Da telefono aprire sorsi.orentano.news e preparare un ordine di prova.',
+        `Da telefono aprire ${siteHost} e preparare un ordine di prova.`,
         'Mostrare il QR alla cassa.',
         'Scansionare il QR con webcam o pistola scanner 2D.',
         'Controllare che l’ordine caricato in cassa sia uguale a quello preparato dal cliente.',

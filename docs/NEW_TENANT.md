@@ -33,7 +33,7 @@ See `shared/src/config/types.ts` (`TenantConfig`) for the full typed schema. Key
 - `theme.themeColor` / `backgroundColor` — PWA + browser chrome.
 - `theme.tillAccent` — optional. Accent for the desktop till's `green-*` ramp (primary buttons,
   header, selected states). Defaults to `colors.leaf`; set it when the web primary is too dark/muted
-  to read well in the till (e.g. Sorsi e Morsi uses a bright orange so the till isn't near-black).
+  to read well in the till (e.g. the old Sorsi e Morsi used a bright orange so the till isn't near-black).
 - `locale` — `lang`, `intl` (number/date locale), `currency`.
 - `receipt` — `headerLines`, `customerCopyLabel`, `footerLines` (printed on tickets/receipts).
 - `stations` — `order` (print order), `copertoStation`, `aliases` (legacy→canonical station names).

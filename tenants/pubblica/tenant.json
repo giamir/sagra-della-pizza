@@ -1,0 +1,62 @@
+{
+  "id": "pubblica",
+  "brand": {
+    "name": "Croce Bianca",
+    "location": "Orentano",
+    "shortName": "Croce Bianca",
+    "tagline": "Sfoglia il menù e ordina alla cassa.",
+    "logo": "/croce-bianca-orentano.png",
+    "logoAlt": "Croce Bianca P.A. Orentano"
+  },
+  "theme": {
+    "colors": {
+      "cream-50": "#f6f8fc",
+      "cream-100": "#e8eef8",
+      "cream-200": "#d3ddf0",
+      "ink": "#13234a",
+      "leaf": "#0046c4",
+      "leaf-dark": "#00348f",
+      "tomato": "#d9191c",
+      "tomato-dark": "#a81316",
+      "focus": "#23c923"
+    },
+    "themeColor": "#0046c4",
+    "backgroundColor": "#f6f8fc",
+    "tillAccent": "#0046c4"
+  },
+  "locale": {
+    "lang": "it",
+    "intl": "it-IT",
+    "currency": "EUR"
+  },
+  "receipt": {
+    "headerLines": ["Croce Bianca", "P.A. Orentano"],
+    "customerCopyLabel": "Copia Cliente",
+    "footerLines": ["Non e' scontrino fiscale", "Grazie e buon divertimento!"]
+  },
+  "stations": {
+    "order": ["Bar", "Cocktail e Caffè", "Cucina", "Crostini", "Pizzeria", "Griglia", "Dolci"],
+    "copertoStation": "Bar",
+    "aliases": {
+      "Bevande": "Bar",
+      "Pizza": "Pizzeria",
+      "Griglia e contorni": "Griglia",
+      "Dolce": "Dolci"
+    }
+  },
+  "network": {
+    "serverPort": 7331,
+    "defaultTillName": "Cassa 1"
+  },
+  "features": {
+    "qr": false
+  },
+  "storagePrefix": "sorsi",
+  "desktop": {
+    "appId": "it.crocebiancaorentano.sorsiemorsi",
+    "productName": "Croce Bianca Orentano",
+    "author": "Croce Bianca P.A. Orentano",
+    "updateFeedUrl": "https://eventi.pubblica.orentano.news/desktop-updates",
+    "downloadPageUrl": "https://eventi.pubblica.orentano.news/download"
+  }
+}

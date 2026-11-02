@@ -4,7 +4,7 @@ import tenant from '@sagra/shared/config/tenant.json';
 export const prerender = false;
 
 // Installer filenames are branded with the tenant's productName (spaces become
-// hyphens once normalized), e.g. "Sorsi-e-Morsi-Setup-1.2.3.exe". Derive the
+// hyphens once normalized), e.g. "Croce-Bianca-Orentano-Setup-1.2.3.exe". Derive the
 // version-matching patterns from the active tenant so the history list works
 // for any association, not just Sagra.
 const PRODUCT_SLUG = tenant.desktop.productName

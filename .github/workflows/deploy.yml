@@ -37,7 +37,7 @@ jobs:
         run: |
           all=$(jq -c -n --arg sagra "$SAGRA_ID" --arg sorsi "$SORSI_ID" --arg bigne "$BIGNE_ID" --arg rioni "$RIONI_ID" '[
             {tenant:"sagra-della-pizza", project_id:$sagra},
-            {tenant:"sorsi-e-morsi",     project_id:$sorsi},
+            {tenant:"pubblica",          project_id:$sorsi},
             {tenant:"bigne",             project_id:$bigne},
             {tenant:"rioni",             project_id:$rioni}
           ]')

@@ -22,7 +22,7 @@ jobs:
         include:
           - tenant: sagra-della-pizza
             blob_secret: BLOB_READ_WRITE_TOKEN
-          - tenant: sorsi-e-morsi
+          - tenant: pubblica
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
@@ -91,7 +91,7 @@ jobs:
         include:
           - tenant: sagra-della-pizza
             blob_secret: BLOB_READ_WRITE_TOKEN
-          - tenant: sorsi-e-morsi
+          - tenant: pubblica
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE
@@ -149,7 +149,7 @@ jobs:
         include:
           - tenant: sagra-della-pizza
             blob_secret: BLOB_READ_WRITE_TOKEN
-          - tenant: sorsi-e-morsi
+          - tenant: pubblica
             blob_secret: BLOB_READ_WRITE_TOKEN_SORSI
           - tenant: bigne
             blob_secret: BLOB_READ_WRITE_TOKEN_BIGNE

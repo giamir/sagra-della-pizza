@@ -23,6 +23,12 @@
               "name": "Giropizza Bambini",
               "price": 10.0,
               "band": "ambra"
+            },
+            {
+              "id": "foulard-rione",
+              "name": "Foulard Rione",
+              "price": 5.0,
+              "band": "blu"
             }
           ]
         }
@@ -48,6 +54,49 @@
               "name": "Caffè",
               "price": 1.0,
               "band": "bruno"
+            },
+            {
+              "id": "caffe-corretto",
+              "name": "Caffè Corretto",
+              "price": 1.5,
+              "band": "bruno"
+            },
+            {
+              "id": "shot",
+              "name": "Shot",
+              "price": 3.0,
+              "hideChoices": true,
+              "choices": [
+                "shot-vodka",
+                "shot-gin",
+                "shot-rum",
+                "shot-altro"
+              ],
+              "band": "viola"
+            },
+            {
+              "id": "shot-vodka",
+              "name": "Shot Vodka",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-gin",
+              "name": "Shot Gin",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-rum",
+              "name": "Shot Rum",
+              "price": 3.0,
+              "hidden": true
+            },
+            {
+              "id": "shot-altro",
+              "name": "Shot Altro",
+              "price": 3.0,
+              "hidden": true
             }
           ]
         }

@@ -50,6 +50,12 @@
               "band": "viola"
             },
             {
+              "id": "lattina",
+              "name": "Lattina",
+              "price": 2.5,
+              "band": "ambra"
+            },
+            {
               "id": "caffe",
               "name": "Caffè",
               "price": 1.0,

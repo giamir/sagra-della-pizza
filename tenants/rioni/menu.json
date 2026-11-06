@@ -56,6 +56,12 @@
               "band": "ambra"
             },
             {
+              "id": "spumante-bicchiere",
+              "name": "Spumante Bicchiere",
+              "price": 2.5,
+              "band": "ambra"
+            },
+            {
               "id": "caffe",
               "name": "Caffè",
               "price": 1.0,
@@ -70,7 +76,7 @@
             {
               "id": "shot",
               "name": "Shot",
-              "price": 3.0,
+              "price": 2.5,
               "hideChoices": true,
               "choices": [
                 "shot-vodka",
@@ -83,25 +89,25 @@
             {
               "id": "shot-vodka",
               "name": "Shot Vodka",
-              "price": 3.0,
+              "price": 2.5,
               "hidden": true
             },
             {
               "id": "shot-gin",
               "name": "Shot Gin",
-              "price": 3.0,
+              "price": 2.5,
               "hidden": true
             },
             {
               "id": "shot-rum",
               "name": "Shot Rum",
-              "price": 3.0,
+              "price": 2.5,
               "hidden": true
             },
             {
               "id": "shot-altro",
               "name": "Shot Altro",
-              "price": 3.0,
+              "price": 2.5,
               "hidden": true
             }
           ]

@@ -59,7 +59,8 @@
                 "bevuta-gin-lemon",
                 "bevuta-cuba-libre",
                 "bevuta-aperol-spritz",
-                "bevuta-campari-spritz"
+                "bevuta-campari-spritz",
+                "bevuta-altro"
               ]
             },
             {
@@ -123,28 +124,10 @@
               "hidden": true
             },
             {
-              "id": "lattina",
-              "name": "Bibita in Lattina",
-              "price": 2.5,
-              "band": "ambra"
-            },
-            {
-              "id": "spumante-bicchiere",
-              "name": "Spumante Bicchiere",
-              "price": 2.5,
-              "band": "ambra"
-            },
-            {
-              "id": "caffe",
-              "name": "Caffè",
-              "price": 1.0,
-              "band": "bruno"
-            },
-            {
-              "id": "caffe-corretto",
-              "name": "Caffè Corretto",
-              "price": 1.5,
-              "band": "bruno"
+              "id": "bevuta-altro",
+              "name": "Bevuta Altro",
+              "price": 5.0,
+              "hidden": true
             },
             {
               "id": "shot",
@@ -155,6 +138,8 @@
                 "shot-vodka",
                 "shot-gin",
                 "shot-rum",
+                "shot-limoncello",
+                "shot-amaro-del-capo",
                 "shot-altro"
               ],
               "band": "viola"
@@ -178,10 +163,46 @@
               "hidden": true
             },
             {
+              "id": "shot-limoncello",
+              "name": "Shot Limoncello",
+              "price": 2.5,
+              "hidden": true
+            },
+            {
+              "id": "shot-amaro-del-capo",
+              "name": "Shot Amaro del Capo",
+              "price": 2.5,
+              "hidden": true
+            },
+            {
               "id": "shot-altro",
               "name": "Shot Altro",
               "price": 2.5,
               "hidden": true
+            },
+            {
+              "id": "lattina",
+              "name": "Bibita in Lattina",
+              "price": 2.5,
+              "band": "ambra"
+            },
+            {
+              "id": "spumante-bicchiere",
+              "name": "Spumante Bicchiere",
+              "price": 2.5,
+              "band": "ambra"
+            },
+            {
+              "id": "caffe",
+              "name": "Caffè",
+              "price": 1.0,
+              "band": "bruno"
+            },
+            {
+              "id": "caffe-corretto",
+              "name": "Caffè Corretto",
+              "price": 1.5,
+              "band": "bruno"
             }
           ]
         }

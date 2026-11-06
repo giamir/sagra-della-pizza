@@ -15,6 +15,10 @@
     onSelect: (choiceId: string) => void;
     onClose: () => void;
   } = $props();
+
+  // Long choosers (e.g. Bevuta's cocktails) spread across columns so they use
+  // the landscape till screen instead of scrolling one long list.
+  const columns = $derived(choices.length > 8 ? 3 : choices.length > 4 ? 2 : 1);
 </script>
 
 <!-- Backdrop -->
@@ -27,13 +31,19 @@
   onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
-  <div class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl p-6 w-80 max-w-[90vw]">
+  <div
+    class="bg-white dark:bg-[#20242c] rounded-2xl shadow-2xl p-6 max-w-[90vw] max-h-[90vh] overflow-y-auto {columns === 3
+      ? 'w-[52rem]'
+      : columns === 2
+        ? 'w-[36rem]'
+        : 'w-80'}"
+  >
     <h2 class="text-lg font-bold text-gray-900 mb-1">{item.name}</h2>
     {#if item.description}
       <p class="text-sm text-gray-500 mb-1">{item.description}</p>
     {/if}
     <p class="text-sm font-semibold text-gray-600 mb-3">Scegli l'opzione</p>
-    <div class="space-y-2">
+    <div class="grid gap-2 {columns === 3 ? 'grid-cols-3' : columns === 2 ? 'grid-cols-2' : ''}">
       {#each choices as choice}
         <button
           type="button"

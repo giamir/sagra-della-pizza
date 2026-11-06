@@ -47,11 +47,84 @@
               "id": "bevuta",
               "name": "Bevuta",
               "price": 5.0,
-              "band": "viola"
+              "band": "viola",
+              "hideChoices": true,
+              "choices": [
+                "bevuta-americano",
+                "bevuta-negroni",
+                "bevuta-negroni-sbagliato",
+                "bevuta-vodka-tonic",
+                "bevuta-vodka-lemon",
+                "bevuta-gin-tonic",
+                "bevuta-gin-lemon",
+                "bevuta-cuba-libre",
+                "bevuta-aperol-spritz",
+                "bevuta-campari-spritz"
+              ]
+            },
+            {
+              "id": "bevuta-americano",
+              "name": "Americano",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-negroni",
+              "name": "Negroni",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-negroni-sbagliato",
+              "name": "Negroni Sbagliato",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-vodka-tonic",
+              "name": "Vodka Tonic",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-vodka-lemon",
+              "name": "Vodka Lemon",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-gin-tonic",
+              "name": "Gin Tonic",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-gin-lemon",
+              "name": "Gin Lemon",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-cuba-libre",
+              "name": "Cuba Libre",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-aperol-spritz",
+              "name": "Aperol Spritz",
+              "price": 5.0,
+              "hidden": true
+            },
+            {
+              "id": "bevuta-campari-spritz",
+              "name": "Campari Spritz",
+              "price": 5.0,
+              "hidden": true
             },
             {
               "id": "lattina",
-              "name": "Lattina",
+              "name": "Bibita in Lattina",
               "price": 2.5,
               "band": "ambra"
             },
